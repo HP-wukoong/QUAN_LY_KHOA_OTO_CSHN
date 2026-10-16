@@ -1595,6 +1595,7 @@ async function restartTool() {
   await flushSave();
   try { await api('/api/restart', { body: {} }); } catch (e) { toast(e.message + ' — hãy đóng cửa sổ đen và mở lại CHAY_TOOL.bat.', 'err', 9000); return; }
   $('#view').innerHTML = '<div class="empty-st">Đang khởi động lại máy chủ…</div>';
+  await new Promise(r => setTimeout(r, 2500));
   for (let i = 0; i < 40; i++) { await new Promise(r => setTimeout(r, 750)); try { const r = await fetch('/api/ping'); if (r.ok) { location.reload(); return; } } catch { } }
   $('#view').innerHTML = '<div class="card note red">Chưa khởi động lại được — đóng cửa sổ đen và mở lại CHAY_TOOL.bat.</div>';
 }
