@@ -1,0 +1,20 @@
+# DỮ LIỆU HỌC VIÊN — TUYỆT ĐỐI KHÔNG ĐƯA LÊN GITHUB
+QLKhoaOto/data/
+QLKhoaOto/backups/
+QLKhoaOto/config.json
+*.db
+*.db-wal
+*.db-shm
+*.json.bak
+*.xlsx
+*.xls
+*.xlsm
+QLKhoaOto_SAOLUU_*.json
+QLKhoaOto_CHUA_LUU_*.json
+QLKhoaOto_BAN_CHO_*.json
+# khác
+__pycache__/
+*.pyc
+dist/
+.DS_Store
+Thumbs.db

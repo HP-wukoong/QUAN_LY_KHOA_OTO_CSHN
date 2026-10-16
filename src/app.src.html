@@ -1,0 +1,1846 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý khóa ô tô CSHN</title>
+<style>
+:root{
+  --bg:#f4f6fa; --panel:#fff; --ink:#1d2433; --muted:#667085; --line:#e3e7ef;
+  --blue:#4472c4; --blue-d:#2f5597; --blue-l:#e8eef9; --amber:#ffc000; --amber-l:#fff6d6;
+  --green:#5b9a3c; --green-l:#e9f4e3; --red:#c0392b; --red-l:#fdecea; --gray-l:#f1f3f7;
+  --r:10px; --sh:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--blue-d)}
+.app{display:grid;grid-template-columns:220px 1fr;height:100vh}
+aside{background:#1f2a44;color:#cfd6e6;display:flex;flex-direction:column;padding:14px 10px;gap:4px;overflow:auto}
+.brand{padding:6px 10px 14px;border-bottom:1px solid #33405f;margin-bottom:8px}
+.brand b{display:block;color:#fff;font-size:15px;letter-spacing:.2px}
+.brand small{color:#93a0bd}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:#cfd6e6;border:0;background:none;text-align:left;width:100%}
+.nav:hover{background:#2a3757}
+.nav.on{background:var(--blue);color:#fff}
+.nav .cnt{margin-left:auto;font-size:12px;background:#33405f;border-radius:10px;padding:0 7px}
+.nav.on .cnt{background:rgba(255,255,255,.25)}
+.aside-foot{margin-top:auto;font-size:12px;color:#93a0bd;padding:10px;border-top:1px solid #33405f}
+main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.top{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+.search{position:relative;flex:1;max-width:620px}
+.search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:8px;background:var(--gray-l)}
+.search input:focus{outline:2px solid var(--blue-l);border-color:var(--blue);background:#fff}
+.search svg{position:absolute;left:10px;top:10px;opacity:.5}
+.sres{position:absolute;top:42px;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);max-height:70vh;overflow:auto;z-index:50;display:none}
+.sres.show{display:block}
+.sres .grp{font-size:11px;text-transform:uppercase;color:var(--muted);padding:8px 12px 4px;letter-spacing:.5px}
+.sres .it{padding:8px 12px;cursor:pointer;display:flex;gap:10px;align-items:baseline}
+.sres .it:hover,.sres .it.act{background:var(--blue-l)}
+.sres .it small{color:var(--muted)}
+.bk{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 10px;border-radius:20px;cursor:pointer;border:1px solid var(--line);background:#fff;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block}
+.dot.ok{background:#3aa55d}.dot.warn{background:#e6a100}.dot.err{background:var(--red)}
+.view{flex:1;overflow:auto;padding:20px 24px 60px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.stat{border-left:4px solid var(--blue)}
+.stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.stat .v{font-size:26px;font-weight:700;margin:2px 0}
+.stat .d{font-size:12.5px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#c5cddc;background:#fafbfd}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue-d)}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+.btn.dan{color:var(--red);border-color:#f0c5c0}
+.btn.dan:hover{background:var(--red-l)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+table{border-collapse:collapse;width:100%}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+.tbl table th{position:sticky;top:0;background:var(--blue);color:#fff;font-weight:600;text-align:left;padding:8px 10px;font-size:13px;white-space:nowrap;z-index:1}
+.tbl table td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:middle}
+.tbl table tr:hover td{background:#fafbff}
+.tbl tr.hl td{background:var(--amber-l)!important;transition:background 1s}
+.tbl tr.out td{color:#9aa3b2;background:#fbfbfc}
+.tbl tr.near td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.c{text-align:center}
+.mono{white-space:nowrap;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
+.b-run{background:var(--green-l);color:#2e6b19}
+.b-new{background:var(--amber-l);color:#8a6400}
+.b-end{background:var(--gray-l);color:#5b6475}
+.b-miss{background:var(--red-l);color:var(--red)}
+.b-info{background:var(--blue-l);color:var(--blue-d)}
+.hang{font-weight:700;color:var(--blue-d)}
+input.in,select.in,textarea.in{padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;min-width:0}
+input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid var(--blue-l);border-color:var(--blue)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+label.f>*{color:var(--ink);font-size:14px}
+.cell-in{border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:5px;width:100%}
+.cell-in:hover{border-color:var(--line)}
+.cell-in:focus{border-color:var(--blue);background:#fff;outline:none}
+select.gv{padding:4px 6px;border:1px solid var(--line);border-radius:6px;max-width:170px;background:#fff}
+select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
+.drop{border:2px dashed #b9c4d8;border-radius:12px;padding:26px;text-align:center;color:var(--muted);background:#fafbfe;cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d)}
+.drop b{color:var(--ink);font-size:15px}
+.gdrop{position:fixed;inset:0;background:rgba(68,114,196,.18);border:4px dashed var(--blue);z-index:90;display:none;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--blue-d);pointer-events:none}
+.gdrop.show{display:flex}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 11px;border-radius:16px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;user-select:none}
+.chip:hover{border-color:var(--blue)}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip small{opacity:.7}
+.paint td{cursor:copy}
+.toast{position:fixed;right:20px;top:70px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast div{background:#1f2a44;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:420px;animation:tin .2s}
+.toast div.err{background:var(--red)}
+.toast div.ok{background:#2e7d32}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:80;padding:20px}
+.modal{background:#fff;border-radius:12px;max-width:620px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.modal header{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:16px}
+.modal .mb{padding:16px 20px}
+.modal footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.note{background:var(--amber-l);border:1px solid #f3dc8a;border-radius:8px;padding:10px 12px;font-size:13px}
+.note.blue{background:var(--blue-l);border-color:#c7d6f2}
+.note.red{background:var(--red-l);border-color:#f0c5c0}
+.empty-st{text-align:center;color:var(--muted);padding:30px}
+.kbd{border:1px solid #c9d0dd;border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:11.5px;background:#fff;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{padding:8px 14px;border:0;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted)}
+.tab.on{color:var(--blue-d);border-color:var(--blue);font-weight:600}
+.steps{display:flex;gap:8px;margin-bottom:14px}
+.steps span{padding:5px 12px;border-radius:14px;background:var(--gray-l);color:var(--muted);font-size:13px}
+.steps span.on{background:var(--blue);color:#fff}
+.alert-li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.alert-li:first-child{border-top:0}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.warn-t{color:#a15c00}
+.stick{position:sticky;top:-20px;z-index:6}
+.sticky-bar{position:sticky;bottom:-60px;background:#fff;border-top:1px solid var(--line);padding:12px 16px;margin:0 -24px -60px;display:flex;gap:10px;align-items:center;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="aside">
+    <div class="brand"><b>QUẢN LÝ KHÓA Ô TÔ</b><small id="brandSub">Cơ sở Hoài Nhơn</small></div>
+    <button class="nav" data-v="home">🏠 Tổng quan</button>
+    <button class="nav" data-v="khoa">📚 Khóa học <span class="cnt" id="cntKhoa">0</span></button>
+    <button class="nav" data-v="hv">🧑‍🎓 Học viên <span class="cnt" id="cntHv">0</span></button>
+    <button class="nav" data-v="gv">👨‍🏫 Giáo viên <span class="cnt" id="cntGv">0</span></button>
+    <button class="nav" data-v="madk">🔑 Kho mã ĐKI <span class="cnt" id="cntMiss" title="HV còn thiếu mã">0</span></button>
+    <button class="nav" data-v="check">✅ Kiểm tra dữ liệu</button>
+    <button class="nav" data-v="report">📊 Báo cáo</button>
+    <div style="height:8px"></div>
+    <button class="nav" data-v="backup">💾 Sao lưu &amp; Cài đặt</button>
+    <button class="nav" data-v="audit">📜 Nhật ký thay đổi</button>
+    <button class="nav" data-v="trash">🗑 Thùng rác <span class="cnt" id="cntTrash">0</span></button>
+    <button class="nav" data-v="help">❓ Hướng dẫn</button>
+    <div class="aside-foot">Kéo thả file Excel vào bất kỳ đâu trên màn hình để nhập.<br><br><span class="kbd">Ctrl</span>+<span class="kbd">K</span> tìm nhanh</div>
+  </aside>
+  <main>
+    <div class="top">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Tìm khóa (BSS-22, 22…), học viên (tên không dấu), CCCD, mã ĐKI, SĐT…  (Ctrl+K)" autocomplete="off">
+        <div class="sres" id="sres"></div>
+      </div>
+      <div class="sp"></div>
+      <div class="bk" id="bkStatus" title="Trạng thái sao lưu"><span class="dot"></span><span>Sao lưu</span></div>
+    </div>
+    <div class="view" id="view"></div>
+  </main>
+</div>
+<div class="gdrop" id="gdrop">Thả file Excel / file sao lưu vào đây</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="filePick" accept=".xls,.xlsx,.xlsm,.csv,.json" hidden>
+
+<!--__LIBS__-->
+<script>
+'use strict';
+/* =========================================================
+   TIỆN ÍCH CHUNG
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const pad2 = n => String(n).padStart(2, '0');
+const noAcc = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+const normName = s => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+const normKey = s => noAcc(s).replace(/[^a-z0-9]/g, '');
+function toast(msg, type = '', ms = 3500) {
+  const d = document.createElement('div'); d.className = type; d.textContent = msg; d.dataset.t = Date.now();
+  $('#toast').appendChild(d); setTimeout(() => d.remove(), ms);
+}
+/* Ngày: lưu nội bộ dạng ISO yyyy-mm-dd */
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const isoToVN = iso => iso ? iso.split('-').reverse().join('/') : '';
+function addDays(iso, n) { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); }
+function daysBetween(a, b) { const p = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }; return Math.round((p(b) - p(a)) / 864e5); }
+function serialToISO(n) { const t = new Date(Math.round((n - 25569) * 864e5)); return t.toISOString().slice(0, 10); }
+/* Chuẩn hóa mọi kiểu ngày (serial Excel, dd/mm/yyyy, Date, yyyy-mm-dd) -> ISO */
+function anyToISO(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())}`;
+  if (typeof v === 'number') return v > 1000 && v < 80000 ? serialToISO(v) : '';
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/); if (m) return `${m[3]}-${pad2(m[2])}-${pad2(m[1])}`;
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
+  if (/^\d+(\.\d+)?$/.test(s)) return anyToISO(Number(s));
+  return '';
+}
+/* Ngày sinh giữ dạng chữ dd/mm/yyyy giống file nguồn */
+function dobText(v) { if (v == null || v === '') return ''; if (typeof v === 'number') return v >= 1900 && v <= 2100 ? String(v) : isoToVN(serialToISO(v)); const s = String(v).trim(); const iso = anyToISO(s); return /^\d{4}$/.test(s) ? s : (iso ? isoToVN(iso) : s); }
+/* CCCD: luôn là chuỗi, bù số 0 đầu nếu Excel làm mất */
+function normCCCD(v) {
+  if (v == null) return ''; let s = String(v).trim().replace(/\s|\.0+$/g, '');
+  if (/^\d+$/.test(s)) { if (s.length === 11) s = '0' + s; else if (s.length === 8) s = '0' + s; }
+  return s;
+}
+/* Sắp xếp tên tiếng Việt: tên riêng → họ → tên đệm (so sánh không dấu trước, có dấu sau) */
+const VN_ORDER = 'aàảãáạăằẳẵắặâầẩẫấậbcdđeèẻẽéẹêềểễếệfghiìỉĩíịjklmnoòỏõóọôồổỗốộơờởỡớợpqrstuùủũúụưừửữứựvwxyỳỷỹýỵz';
+function vnKey(s) { return [...String(s).toLowerCase()].map(ch => { const i = VN_ORDER.indexOf(ch); return i < 0 ? ch : String.fromCharCode(0x100 + i); }).join(''); }
+function nameParts(full) { const p = normName(full).split(' ').filter(Boolean); return { ten: p[p.length - 1] || '', ho: p[0] || '', dem: p.slice(1, -1).join(' ') }; }
+function vnCompare(a, b) {
+  const A = nameParts(a), B = nameParts(b);
+  for (const k of ['ten', 'ho', 'dem']) { const x = noAcc(A[k]), y = noAcc(B[k]); if (x !== y) return x < y ? -1 : 1; }
+  for (const k of ['ten', 'ho', 'dem']) { const x = vnKey(A[k]), y = vnKey(B[k]); if (x !== y) return x < y ? -1 : 1; }
+  return 0;
+}
+
+/* =========================================================
+   LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
+   Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
+   ========================================================= */
+const APP_VER = 2, TOOL_VERSION = '2.2.0';
+const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
+function blankDB() {
+  return {
+    app: 'QLKhoaOtoCSHN', ver: APP_VER, savedAt: '', rev: 0,
+    settings: { maPrefix: '52002', coSo: 'Cơ sở Hoài Nhơn (CSHN)', donVi: 'Công ty CP ĐT và DV GTVT Bình Định', gvExport: 'short',
+      tenDonViIn: 'CÔNG TY CP ĐT VÀ DV GTVT BÌNH ĐỊNH', tenCoSoIn: 'CƠ SỞ ĐÀO TẠO LÁI XE HOÀI NHƠN', diaDanh: 'Hoài Nhơn', nguoiLap: '', phuTrach: '',
+      hocPhi: { BSS: 0, BSTD: 0, C1: 0 }, autoCloseDays: 30, trashDays: 30,
+      nearKeys: ['Hoài Nhơn', 'Bồng Sơn', 'Tam Quan', 'Hoài Ân', 'Hoài Hương', 'Hoài Thanh', 'Hoài Mỹ', 'Hoài Hảo', 'Hoài Đức', 'Hoài Sơn', 'Hoài Châu', 'Ân Hảo', 'Ân Tường', 'Đức Phổ', 'Quảng Ngãi'] },
+    hang: [ { code: 'BSS', name: 'B số sàn', days: 70, minAge: 18 }, { code: 'BSTD', name: 'B số tự động', days: 58, minAge: 18 }, { code: 'C1', name: 'C1 – Xe tải', days: 88, minAge: 18 } ],
+    gv: [], khoa: [], hv: [], madk: {}, drafts: {}, trash: [], log: []
+  };
+}
+let DB = blankDB();
+let LOADED = false, RECOVER = false, serverRev = 0, saveTimer = null, saving = false, dirtyAfterSend = false, netErr = '', lastSavedAt = '', SERVER = {}, META = {};
+let DEVICE = (() => { try { let d = localStorage.getItem('qlk_device'); if (!d) { d = 'may-' + uid(); localStorage.setItem('qlk_device', d); } return d; } catch { return 'may-' + uid(); } })();
+
+/* ---- IndexedDB nhỏ: chỉ giữ bản chờ khi mất kết nối ---- */
+let idb = null;
+function idbOpen() { return new Promise(res => { try { const r = indexedDB.open('QLKhoaOtoCSHN_v2', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(idb = r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+function kvDo(mode, fn) { return new Promise(res => { if (!idb) return res(null); try { const tx = idb.transaction('kv', mode); const q = fn(tx.objectStore('kv')); tx.oncomplete = () => res(q && q.result); tx.onerror = tx.onabort = () => res(null); } catch { res(null); } }); }
+const kvGet = k => kvDo('readonly', s => s.get(k));
+const kvSet = (k, v) => kvDo('readwrite', s => s.put(v, k));
+const kvDel = k => kvDo('readwrite', s => s.delete(k));
+
+/* ---- Gọi API ---- */
+let loginPromise = null;
+async function api(path, opts = {}) {
+  const o = { method: opts.method || (opts.body !== undefined || opts.raw ? 'POST' : 'GET'), headers: { 'X-QLK': '1', 'X-Device': DEVICE }, credentials: 'same-origin' };
+  if (opts.body !== undefined) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(opts.body); }
+  if (opts.raw) { o.body = opts.raw; Object.assign(o.headers, opts.headers || {}); }
+  const r = await fetch(path, o);
+  if (r.status === 401 && path !== '/api/login' && path !== '/api/pin') { await loginFlow(); return api(path, opts); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.err || ('Lỗi máy chủ ' + r.status));
+  return j;
+}
+function loginFlow(msg) {
+  if (loginPromise) return loginPromise;
+  loginPromise = (async () => {
+    let err = msg || '';
+    for (;;) {
+      const pin = await modal('🔒 Nhập mã PIN', `<p class="small muted">Tool đang khóa để bảo vệ dữ liệu cá nhân của học viên.</p>${err ? `<p class="note red small">${esc(err)}</p>` : ''}<label class="f">Mã PIN<input class="in" id="pinIn" type="password" autocomplete="current-password" inputmode="numeric"></label>`,
+        [{ t: 'Mở khóa', cls: 'pri', v: bg => $('#pinIn', bg).value }]);
+      try { const r = await fetch('/api/login', { method: 'POST', headers: { 'X-QLK': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin || '' }), credentials: 'same-origin' }); const j = await r.json().catch(() => ({})); if (r.ok) break; err = j.err || 'Sai mã PIN'; }
+      catch (e) { err = 'Không kết nối được máy chủ: ' + e.message; }
+    }
+    loginPromise = null; lastAct = Date.now();
+  })();
+  return loginPromise;
+}
+/* Tự khóa khi không dùng */
+let lastAct = Date.now();
+['mousedown', 'keydown', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { lastAct = Date.now(); }, { passive: true }));
+setInterval(async () => { if (!SERVER.needPin || loginPromise) return; if (Date.now() - lastAct > (SERVER.idleMin || 30) * 60e3) { await flushSave(); try { await api('/api/logout', { body: {} }); } catch { } loginFlow('Đã tự khóa do không dùng ' + (SERVER.idleMin || 30) + ' phút.'); } }, 30e3);
+
+function logAct(msg) { DB.log.unshift({ t: new Date().toISOString(), msg }); if (DB.log.length > 500) DB.log.length = 500; }
+function commit(msg) { if (!LOADED) { toast('Dữ liệu chưa tải xong — thao tác không được lưu. Tải lại trang.', 'err', 8000); return; } if (msg) logAct(msg); for (const h of DB.hv) { if (!h.tt) h.tt = 'hoc'; if (!h.thu) h.thu = []; } if (saving) dirtyAfterSend = true; clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; persist(); }, 500); refreshCounts(); renderBk('saving'); }
+async function persist(reason) {
+  if (!LOADED || RECOVER) return;
+  if (saving) { dirtyAfterSend = true; return; }
+  saving = true; dirtyAfterSend = false; renderBk('saving');
+  let snapshot;
+  try {
+    snapshot = JSON.parse(JSON.stringify(DB));
+    const r = await api('/api/state', { body: { baseRev: serverRev, data: snapshot, reason: reason || (DB.log[0]?.msg || '') } });
+    lastSavedAt = r.savedAt; netErr = '';
+    if (r.merged && r.data) {
+      if (dirtyAfterSend) {
+        /* Có thao tác mới trong lúc gửi: GIỮ bản đang sửa và giữ bản gốc cũ — lượt lưu kế tiếp máy chủ sẽ gộp lại đủ cả hai */
+      } else {
+        serverRev = r.rev; DB = migrate(r.data); DB.rev = r.rev; DB.savedAt = r.savedAt;
+        toast('Có thay đổi từ máy khác — đã gộp dữ liệu.', '', 5000); if (!$('.modal-bg')) render();
+      }
+    } else { serverRev = r.rev; DB.rev = r.rev; DB.savedAt = r.savedAt; }
+    await kvDel('pending');
+    dailyXlsx();
+  } catch (e) {
+    if (e.message === 'base_missing') { dirtyAfterSend = false; RECOVER = true; baseMissing(snapshot).finally(() => { RECOVER = false; }); return; }
+    netErr = e.message; await kvSet('pending', { baseRev: serverRev, data: snapshot || DB, at: new Date().toISOString() });
+    setTimeout(() => persist(), 5000);
+  } finally {
+    saving = false; renderBk();
+    if (dirtyAfterSend) { dirtyAfterSend = false; clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; persist(); }, 300); }
+  }
+}
+/* Máy chủ không còn bản gốc để gộp (máy này để lâu không lưu) → không đoán: tải bản mới, xuất phần chưa lưu ra file để đối chiếu */
+async function baseMissing(mine) {
+  clearTimeout(saveTimer); saveTimer = null;
+  downloadBlob(new Blob([JSON.stringify(mine)], { type: 'application/json' }), `QLKhoaOto_CHUA_LUU_${DEVICE}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  const st = await api('/api/state'); DB = migrate(st.data || blankDB()); serverRev = st.rev; DB.rev = st.rev; lastSavedAt = st.savedAt; await kvDel('pending');
+  await modal('Đã tải bản dữ liệu mới nhất', `<p>Máy này mở tool đã lâu mà chưa lưu, trong khi máy khác đã sửa rất nhiều. Để <b>không ghi đè</b> dữ liệu của máy khác, tool đã tải bản mới nhất.</p><p>Thao tác vừa rồi của máy này <b>chưa được lưu</b> — đã tải về file <b>QLKhoaOto_CHUA_LUU_….json</b> để đối chiếu. Hãy làm lại thao tác đó.</p>`, [{ t: 'Đã hiểu', cls: 'pri', v: true }]);
+  render();
+}
+/* Tự lấy dữ liệu mới khi máy khác vừa lưu (chỉ khi máy này không có gì đang chờ lưu) */
+async function syncIfChanged() {
+  if (!LOADED || saving || saveTimer || netErr || loginPromise || RECOVER || $('.modal-bg') || ROUTE.v === 'import' || document.activeElement?.matches?.('input,select,textarea')) return;
+  try { const r = await api('/api/rev'); if (r.rev !== serverRev) { const st = await api('/api/state'); if (saving || saveTimer) return; DB = migrate(st.data); serverRev = st.rev; DB.rev = st.rev; lastSavedAt = st.savedAt; render(); toast('Đã cập nhật dữ liệu mới từ máy khác.', '', 3000); } } catch { }
+}
+setInterval(syncIfChanged, 60e3);
+window.addEventListener('focus', syncIfChanged);
+async function flushSave(reason) { clearTimeout(saveTimer); saveTimer = null; while (saving) await new Promise(r => setTimeout(r, 100)); await persist(reason); }
+const snapNow = reason => flushSave(reason);
+/* Mỗi ngày 1 file Excel tổng hợp lưu vào backups/excel trên máy chủ (đọc được bằng Excel) */
+let xlsxBusy = false;
+async function dailyXlsx() {
+  if (xlsxBusy || !DB.khoa.length) return; const name = `QLKhoaOto_${todayISO()}.xlsx`;
+  if (META.last_xlsx && META.last_xlsx.name === name) return;
+  xlsxBusy = true;
+  try { const buf = await (await makeAllWorkbook()).xlsx.writeBuffer(); await api('/api/backup/xlsx', { raw: new Blob([buf]), headers: { 'X-Name': name } }); META.last_xlsx = { name, t: new Date().toISOString() }; }
+  catch (e) { console.warn('xlsx', e); } finally { xlsxBusy = false; }
+}
+function downloadBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+function downloadBackup() { downloadBlob(new Blob([JSON.stringify(DB)], { type: 'application/json' }), `QLKhoaOto_SAOLUU_${todayISO()}.json`); }
+function renderBk(state) {
+  const el = $('#bkStatus'); if (!el) return;
+  let cls = 'ok', txt = lastSavedAt ? `Đã lưu ${new Date(lastSavedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · bản #${serverRev}` : `Đã kết nối · bản #${serverRev}`;
+  if (state === 'saving' || saving || saveTimer) { cls = 'warn'; txt = 'Đang lưu…'; }
+  if (netErr) { cls = 'err'; txt = 'MẤT KẾT NỐI — chưa lưu (tự thử lại)'; }
+  const v = META.last_verify; if (!netErr && v && v.ok === false) { cls = 'err'; txt = 'Bản sao lưu lỗi — xem mục Sao lưu'; }
+  el.innerHTML = `<span class="dot ${cls}"></span><span>${esc(txt)}</span>`;
+  el.title = netErr ? 'Lỗi: ' + netErr + '\nDữ liệu đang giữ tạm trong trình duyệt. Kiểm tra cửa sổ máy chủ (CHAY_TOOL.bat) còn mở không.' : 'Dữ liệu lưu trong data/qlkhoa.db trên máy chủ';
+}
+function cmpTable(obj, label) {
+  const fmt = t => t ? new Date(t).toLocaleString('vi-VN') : '?';
+  return `<table style="width:100%;font-size:13px"><tr><th></th><th style="text-align:left">Đang dùng</th><th style="text-align:left">${esc(label)}</th></tr>
+    <tr><td>Lưu lúc</td><td>${fmt(DB.savedAt)}</td><td><b>${fmt(obj.savedAt)}</b></td></tr><tr><td>Khóa</td><td>${DB.khoa.length}</td><td>${obj.khoa.length}</td></tr><tr><td>Học viên</td><td>${DB.hv.length}</td><td>${obj.hv.length}</td></tr></table>`;
+}
+async function restoreFrom(obj, label) {
+  if (!obj || obj.app !== 'QLKhoaOtoCSHN' || !Array.isArray(obj.khoa)) { toast('File không phải bản sao lưu của tool này.', 'err'); return false; }
+  const older = obj.savedAt && DB.savedAt && obj.savedAt < DB.savedAt && DB.hv.length;
+  const ok = await modal('Khôi phục dữ liệu?', cmpTable(obj, label) + `
+    ${older ? `<p class="note red small" style="margin-top:10px">⚠ Bản này <b>CŨ HƠN</b> dữ liệu đang dùng. Khôi phục sẽ thay toàn bộ dữ liệu hiện tại.</p><label class="small"><input type="checkbox" id="rOld"> Tôi hiểu, vẫn khôi phục</label>` : ''}
+    <p class="small muted">Máy chủ tự chép bản hiện tại vào backups/truoc-khi-khoi-phuc trước khi khôi phục — luôn quay lại được.</p>`,
+    [{ t: 'Hủy', v: null }, { t: 'Khôi phục', cls: 'pri', v: bg => { if (older && !$('#rOld', bg).checked) { toast('Tick xác nhận trước khi khôi phục bản cũ.', 'err'); return false; } return true; } }]);
+  if (!ok) return false;
+  await flushSave();
+  const data = migrate(JSON.parse(JSON.stringify(obj)));
+  const r = await api('/api/restore', { body: { data, label } });
+  DB = data; serverRev = r.rev; DB.rev = r.rev; DB.savedAt = r.savedAt; lastSavedAt = r.savedAt;
+  toast('Đã khôi phục. Bản trước đó lưu ở: ' + r.pre, 'ok', 7000); go('home'); return true;
+}
+function migrate(o) {
+  const b = blankDB();
+  o.settings = Object.assign(b.settings, o.settings || {});
+  o.settings.hocPhi = Object.assign({}, b.settings.hocPhi, o.settings.hocPhi || {});
+  for (const k of ['gv', 'khoa', 'hv', 'log', 'trash']) if (!Array.isArray(o[k])) o[k] = [];
+  if (!o.madk || typeof o.madk !== 'object') o.madk = {};
+  if (!o.drafts) o.drafts = {};
+  if (!Array.isArray(o.hang) || !o.hang.length) o.hang = b.hang;
+  if ((o.ver || 1) < 2) { // dọn 1 lần cho dữ liệu từ bản HTML cũ: mã 52003 không phải mã ĐKI
+    const ok = v => !!v && String(v).startsWith('52002');
+    for (const h of o.hv) if (h.maDK && !ok(h.maDK)) { if (!h.maNguon) h.maNguon = h.maDK; h.maDK = ''; }
+    for (const [c, r] of Object.entries(o.madk)) if (!ok(r.maDK)) delete o.madk[c];
+  }
+  for (const h of o.hv) { if (!h.tt) h.tt = 'hoc'; if (!Array.isArray(h.thu)) h.thu = []; h.thu.forEach(x => { if (!x.id) x.id = uid(); }); }
+  o.app = 'QLKhoaOtoCSHN'; o.ver = APP_VER; return o;
+}
+/* ---- Thùng rác: không xóa thật, giữ N ngày ---- */
+function toTrash(type, data, label, reason, hvs) { DB.trash.unshift({ id: uid(), type, at: new Date().toISOString(), label, reason: reason || '', data, hvs: hvs || [] }); }
+function trashHv(h, reason) { DB.hv = DB.hv.filter(x => x !== h); const k = khoaById(h.khoaId); toTrash('hv', h, `${h.hoTen} (${k ? k.hang + '-' + pad2(k.so) : '?'})`, reason); }
+function trashKhoa(k, reason) { const hs = DB.hv.filter(h => h.khoaId === k.id); DB.hv = DB.hv.filter(h => h.khoaId !== k.id); DB.khoa = DB.khoa.filter(x => x !== k); delete DB.drafts[k.id]; toTrash('khoa', k, `Khóa ${k.hang}-${pad2(k.so)} (${hs.length} HV)`, reason, hs); }
+function purgeTrash() { const lim = Date.now() - (DB.settings.trashDays || 30) * 864e5; const n = DB.trash.length; DB.trash = DB.trash.filter(t => new Date(t.at).getTime() >= lim); return n - DB.trash.length; }
+/* ---- Đóng sổ khóa ---- */
+const isLocked = k => !!(k && k.dong);
+function autoCloseKhoa() {
+  const t = todayISO(), n = DB.settings.autoCloseDays || 30; let c = 0;
+  for (const k of DB.khoa) if (!k.dong && !k.moLai && k.ngayBG && daysBetween(k.ngayBG, t) > n) { k.dong = true; k.dongAt = new Date().toISOString(); k.dongBy = 'tự động'; c++; }
+  if (c) logAct(`Tự đóng sổ ${c} khóa đã kết thúc quá ${n} ngày`);
+  return c;
+}
+
+/* =========================================================
+   NGHIỆP VỤ
+   ========================================================= */
+const hangOf = code => DB.hang.find(h => h.code === code) || { code, name: code, days: 70, minAge: 18 };
+const kCode = k => esc(`${k.hang}-${pad2(k.so)}`);
+const khoaById = id => DB.khoa.find(k => k.id === id);
+const gvById = id => DB.gv.find(g => g.id === id);
+const hvOf = kid => DB.hv.filter(h => h.khoaId === kid);
+function kStatus(k) {
+  const t = todayISO();
+  if (!k.ngayKG) return { t: 'Chưa có ngày', c: 'b-end', o: 3 };
+  if (t < k.ngayKG) return { t: 'Chưa khai giảng', c: 'b-new', o: 0 };
+  if (!k.ngayBG || t <= k.ngayBG) return { t: 'Đang học', c: 'b-run', o: 1 };
+  return { t: 'Đã kết thúc', c: 'b-end', o: 2 };
+}
+function gvLabel(h) { if (h.gvGoc) return h.gvGoc; const g = gvById(h.gvId); if (g) return DB.settings.gvExport === 'full' ? g.hoTen : g.tenGoi; return h.gvText || ''; }
+function khoaGvText(k) {
+  const list = hvOf(k.id); const seen = []; for (const h of list) { const g = gvById(h.gvId); const t = g ? g.tenGoi : (h.gvText || ''); if (t && !seen.includes(t)) seen.push(t); }
+  if (k.gvText && hvOf(k.id).some(h => h.gvGoc)) return k.gvText; // khóa nhập từ file cũ: giữ đúng chữ gốc
+  return seen.length ? seen.join(', ') : (k.gvText || '');
+}
+/* Tên gọi tắt GV: tên riêng; trùng → chữ đầu tên đệm + tên; vẫn trùng → họ + tên */
+function suggestShort(full, others) {
+  const p = normName(full).split(' '); const ten = p[p.length - 1]; const dem = p.length > 2 ? p[p.length - 2] : ''; const ho = p[0];
+  const sameTen = others.filter(o => nameParts(o).ten === ten && normName(o) !== normName(full));
+  if (!sameTen.length) return ten;
+  const c1 = dem ? dem[0] + ' ' + ten : ho + ' ' + ten;
+  const clash = sameTen.some(o => { const q = normName(o).split(' '); const d = q.length > 2 ? q[q.length - 2] : ''; return d && d[0] === (dem[0] || ''); });
+  return clash ? ho + ' ' + ten : c1;
+}
+/* Chỉ đặt tên gọi tắt cho GV CHƯA có tên — tên đã có thì giữ nguyên mãi (xuất lại khóa cũ không đổi chữ) */
+function recomputeShorts() {
+  const names = DB.gv.map(g => g.hoTen);
+  DB.gv.forEach(g => { if (g.tenGoi) return; let t = suggestShort(g.hoTen, names); if (DB.gv.some(x => x !== g && x.tenGoi === t)) { const p = nameParts(g.hoTen); t = p.ho + ' ' + p.ten; } let n = 2, t0 = t; while (DB.gv.some(x => x !== g && x.tenGoi === t)) t = t0 + ' ' + n++; g.tenGoi = t; });
+}
+function findGvByText(t) {
+  const k = normKey(t); if (!k) return null;
+  return DB.gv.find(g => normKey(g.tenGoi) === k) || DB.gv.find(g => normKey(g.hoTen) === k) || DB.gv.find(g => (g.alias || []).some(a => normKey(a) === k)) || null;
+}
+/* Đoán GV cho chữ viết tắt trong file cũ: tên riêng phải khớp (có dấu), các chữ đầu còn lại phải khớp chữ đầu họ/đệm. Chỉ trả về khi duy nhất 1 GV. */
+function guessGv(t) {
+  const k = normName(t); if (/^TỰ NỘP$|^TU NOP$/.test(noAcc(k).toUpperCase()) || noAcc(k) === 'tu nop') return '__src';
+  const parts = k.split(' ').filter(Boolean); if (!parts.length) return '';
+  const ten = parts[parts.length - 1], pre = parts.slice(0, -1);
+  const cands = DB.gv.filter(g => { const p = normName(g.hoTen).split(' '); if (p[p.length - 1] !== ten) return false; const rest = p.slice(0, -1);
+    return pre.every(x => x.length === 1 ? rest.some(r => r[0] === x) : rest.includes(x)); });
+  return cands.length === 1 ? cands[0].id : '';
+}
+function gvSorted() {
+  // Thứ tự cố định theo tên gọi tắt (A→Z theo tên riêng) để tay quen chỗ
+  return DB.gv.filter(g => g.active !== false).slice().sort((a, b) => vnCompare(a.tenGoi, b.tenGoi));
+}
+/* Điền mã ĐKI từ kho cho HV còn thiếu */
+function fillFromKho(list) {
+  let n = 0;
+  for (const h of (list || DB.hv)) {
+    const r = DB.madk[h.cccd]; if (!r) continue;
+    if ((!h.maDK || h.maTuNguon) && maOK(r.maDK)) { h.maDK = r.maDK; delete h.maTuNguon; n++; }
+    for (const f of ['soHS', 'gioiTinh', 'quocTich', 'noiCuTru', 'ngayNhanHS']) if (!h[f] && r[f]) h[f] = r[f];
+    if (!h.diaChi && r.diaChi) h.diaChi = r.diaChi;
+  }
+  return n;
+}
+function upsertKho(rows, src) {
+  let add = 0, upd = 0, skip = 0;
+  for (const r of rows) {
+    if (!r.cccd || !r.maDK) continue;
+    if (!maOK(r.maDK)) { skip++; continue; } // chỉ nhận mã chuẩn 52002…
+    const old = DB.madk[r.cccd];
+    const rec = { maDK: r.maDK, soHS: r.soHS || '', hoTen: normName(r.hoTen), ngaySinh: r.ngaySinh || '', gioiTinh: r.gioiTinh || '', quocTich: r.quocTich || '', cccd: r.cccd, diaChi: r.diaChi || '', noiCuTru: r.noiCuTru || '', ngayNhanHS: r.ngayNhanHS || '', src, at: todayISO() };
+    if (!old) add++; else if (old.maDK !== r.maDK) { upd++; rec.maDKCu = old.maDK; }
+    const tgt = old || {}; for (const [f, v] of Object.entries(rec)) if (v !== '' && v != null) tgt[f] = v;
+    DB.madk[r.cccd] = tgt;
+  }
+  return { add, upd, skip };
+}
+/* Tiền tố mã ĐKI hợp lệ tự học từ kho (vd 52002) — file danh sách HV (file 2) có "Mã đăng ký" khác tiền tố (vd 52003) không phải mã ĐKI */
+const maOK = v => !!v && String(v).trim().startsWith(DB.settings.maPrefix || '52002');
+function khoPrefix() { const c = {}; for (const r of Object.values(DB.madk)) { const p = String(r.maDK || '').slice(0, 5); if (p) c[p] = (c[p] || 0) + 1; } const e = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return e ? e[0] : ''; }
+function looksLikeKho(rows) { const withMa = rows.filter(r => r.maDK); if (!withMa.length) return null; return withMa.filter(r => maOK(r.maDK)).length / withMa.length >= 0.6; }
+function missingMa(all) { return DB.hv.filter(h => !h.maDK && h.tt !== 'bohoc' && (all || kStatus(khoaById(h.khoaId) || {}).o !== 2)); }
+
+/* =========================================================
+   ĐỌC FILE EXCEL
+   ========================================================= */
+const COLS = {
+  hoTen: ['hovaten', 'hoten', 'tenhocvien', 'hotenhocvien'],
+  ngaySinh: ['ngaysinh', 'ngaythangnamsinh'],
+  cccd: ['socmndhc', 'cmndcccd', 'socccd', 'cccd', 'cmnd', 'socmnd', 'socancuoc', 'cancuoc', 'socmndcccd', 'sodinhdanh'],
+  maDK: ['madangky', 'madki', 'madk', 'madangki'],
+  soHS: ['sohoso', 'sohs'],
+  gioiTinh: ['gioitinh'], quocTich: ['quoctich'],
+  diaChi: ['diachithuongtru', 'diachi', 'thuongtru'],
+  noiCuTru: ['noicutru'],
+  ngayNhanHS: ['ngaynhanhoso'],
+  sdt: ['sodienthoai', 'sdt', 'dienthoai', 'dt'],
+  gv: ['giaovienkhaithac', 'giaovien', 'gv', 'gvkhaithac'],
+  stt: ['stt', 'tt']
+};
+function mapHeader(row) {
+  const m = {};
+  row.forEach((c, i) => { const k = normKey(c); if (!k) return; for (const [f, keys] of Object.entries(COLS)) { if (m[f] != null) continue; if (keys.includes(k) || (f !== 'stt' && f !== 'gv' && keys.some(x => x.length > 4 && k.startsWith(x)))) { m[f] = i; break; } } });
+  return m;
+}
+function findHeader(aoa) {
+  let best = { score: 0 };
+  for (let r = 0; r < Math.min(aoa.length, 25); r++) {
+    const m = mapHeader(aoa[r] || []); const score = ['hoTen', 'cccd', 'ngaySinh', 'maDK', 'sdt'].filter(f => m[f] != null).length;
+    if (score > best.score) best = { r, m, score };
+  }
+  return best.score >= 2 ? best : null;
+}
+async function readWorkbook(file) {
+  const buf = await file.arrayBuffer();
+  return XLSX.read(buf, { type: 'array', cellDates: false, cellFormula: false, cellStyles: false });
+}
+/* Tên sheet khóa trong file cũ: HẠNG-SỐ (BSS-22, BSTD-27, C1-21, hạng mới cũng nhận) */
+const KSHEET = /^([A-Z][A-Z0-9]{0,5})-(\d{1,3})$/i;
+const MA_RE = /^\d{5}-\d{8}-\d{3,}$/;
+const sheetAoa = ws => XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
+/* Đọc danh sách người từ 1 sheet (file 2 / file mã ĐKI / dán từ Excel) */
+function rowsFromAoa(aoa) {
+  const h = findHeader(aoa); if (!h) return null;
+  const m = h.m, out = [];
+  for (let r = h.r + 1; r < aoa.length; r++) {
+    const row = aoa[r]; const get = f => m[f] == null ? '' : row[m[f]];
+    const hoTen = normName(get('hoTen')); const cccd = normCCCD(get('cccd'));
+    if (!hoTen && !cccd) continue;
+    if (/^(tong|cong|nguoi lap)/.test(noAcc(hoTen))) continue;
+    out.push({ hoTen, ngaySinh: dobText(get('ngaySinh')), cccd, maDK: String(get('maDK') || '').trim(), soHS: soHSText(get('soHS')),
+      gioiTinh: String(get('gioiTinh') || '').trim(), quocTich: String(get('quocTich') || '').trim(), diaChi: String(get('diaChi') || '').trim(),
+      noiCuTru: String(get('noiCuTru') || '').trim(), ngayNhanHS: dobText(get('ngayNhanHS')), sdt: phoneText(get('sdt')), gvText: String(get('gv') || '').trim() });
+  }
+  return { rows: out, headerRow: h.r, map: m };
+}
+const soHSText = v => { if (v === '' || v == null) return ''; const s = String(v).trim(); return /^\d{1,2}$/.test(s) ? s.padStart(3, '0') : s; };
+const phoneText = v => { if (v === '' || v == null) return ''; let s = String(v).replace(/[\s.]/g, ''); if (/^\d{9}$/.test(s)) s = '0' + s; return s; };
+function parsePasted(text) {
+  const aoa = text.replace(/\r/g, '').split('\n').filter(l => l.trim()).map(l => l.split('\t'));
+  return rowsFromAoa(aoa);
+}
+/* Nhận diện file: file 1 cũ (có sheet KHOA), sao lưu JSON, hay danh sách HV */
+async function sniffFile(file) {
+  if (/\.json$/i.test(file.name)) return { kind: 'json', data: JSON.parse(await file.text()) };
+  const wb = await readWorkbook(file);
+  if (wb.SheetNames.includes('KHOA') && wb.SheetNames.some(n => KSHEET.test(n))) return { kind: 'file1', wb };
+  for (const n of wb.SheetNames) { const res = rowsFromAoa(sheetAoa(wb.Sheets[n])); if (res && res.rows.length) return { kind: 'list', wb, sheet: n, ...res }; }
+  return { kind: 'unknown', wb };
+}
+
+/* =========================================================
+   NHẬP DỮ LIỆU CŨ TỪ FILE 1 (QUAN_LY_KHOA_DAO_TAO.xlsm)
+   ========================================================= */
+function importFile1(wb) {
+  const rep = { gv: 0, khoa: 0, hv: 0, kho: 0, skip: 0 };
+  // 1. Giáo viên
+  const gvS = wb.Sheets['GV'];
+  if (gvS) {
+    const a = sheetAoa(gvS);
+    for (const r of a) { const n = normName(r[0]); if (!n || /^(TEN GIAO VIEN|QUAN LY)/.test(noAcc(n).toUpperCase())) continue;
+      if (DB.gv.some(g => normName(g.hoTen) === n)) continue;
+      DB.gv.push({ id: uid(), hoTen: n, sdt: phoneText(r[1]), chucVu: String(r[2] || '').trim(), active: true, uses: 0, alias: [] }); rep.gv++; }
+    recomputeShorts();
+  }
+  // 2. Kho mã ĐKI
+  const dS = wb.Sheets['data MÃ ĐKI'] || wb.Sheets[wb.SheetNames.find(n => /data.*m/i.test(n) && /ki/i.test(normKey(n)))];
+  if (dS) { const res = rowsFromAoa(sheetAoa(dS)); if (res) { const u = upsertKho(res.rows, 'File 1 – data MÃ ĐKI'); rep.kho = u.add + u.upd; } }
+  // 3. Danh sách khóa (sheet KHOA)
+  const kS = wb.Sheets['KHOA']; const listInfo = {};
+  if (kS) { const a = sheetAoa(kS); for (let i = 18; i < a.length; i++) { const r = a[i]; const so = parseInt(r[1]); const hang = String(r[2] || '').trim().toUpperCase(); if (!so || !/^[A-Z0-9]{1,6}$/.test(hang)) continue; listInfo[`${hang}-${pad2(so)}`] = { hang, so, ngayKG: anyToISO(r[3]), ngayBG: anyToISO(r[4]), gvText: String(r[5] || '').trim() }; } }
+  // 4. Từng sheet khóa
+  const names = new Set(Object.keys(listInfo));
+  wb.SheetNames.forEach(n => { const m = n.match(KSHEET); if (m && +m[2] > 0) names.add(`${m[1].toUpperCase()}-${pad2(+m[2])}`); });
+  for (const code of names) {
+    const [hang, soS] = code.split('-'); const so = +soS;
+    if (DB.khoa.some(k => k.hang === hang && k.so === so)) { rep.skip++; continue; }
+    const info = listInfo[code] || {}; const ws = wb.Sheets[code] || wb.Sheets[`${hang}-${so}`];
+    let ngayKG = info.ngayKG || '', ngayBG = info.ngayBG || '', gvText = info.gvText || '';
+    if (ws) { const a = sheetAoa(ws); const r3 = a[2] || []; ngayKG = ngayKG || anyToISO(r3[1]); ngayBG = ngayBG || anyToISO(r3[4]); gvText = gvText || String(r3[7] || '').trim(); }
+    if (!DB.hang.some(h => h.code === hang)) DB.hang.push({ code: hang, name: hang, days: 70 });
+    const k = { id: uid(), hang, so, ngayKG, ngayBG, gvText, ghiChu: 'Nhập từ file Excel cũ', createdAt: new Date().toISOString() };
+    DB.khoa.push(k); rep.khoa++;
+    if (!ws) continue;
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+    let hr = aoa.findIndex(r => normKey(r[1]) === 'hovaten'); if (hr < 0) continue;
+    const m = mapHeader(aoa[hr]); const H = aoa[hr];
+    const maIdx = H.findIndex(c => normKey(c) === 'madki');
+    const extra = ['ghichu', 'hocphi', 'trangthai'].map(x => H.findIndex(c => normKey(c) === x));
+    for (let i = hr + 1; i < aoa.length; i++) {
+      const r = aoa[i]; const hoTen = normName(r[m.hoTen ?? 1]); if (!hoTen) continue;
+      const h = { id: uid(), khoaId: k.id, hoTen, ngaySinh: dobText(r[m.ngaySinh ?? 2]), cccd: normCCCD(r[m.cccd ?? 3]), sdt: phoneText(r[m.sdt ?? 4]), diaChi: String(r[m.diaChi ?? 5] || '').trim(), order: i - hr - 1, gvText: String(r[m.gv ?? 6] || '').trim(), ghiChu: '' };
+      if (maIdx >= 0) { h.maDK = String(r[maIdx] || '').trim(); if (!maOK(h.maDK)) { if (MA_RE.test(h.maDK)) h.maNguon = h.maDK; h.maDK = ''; } if (h.maDK) { h.soHS = soHSText(r[maIdx + 1]); h.gioiTinh = String(r[maIdx + 4] || ''); h.quocTich = String(r[maIdx + 5] || ''); } }
+      // Cột GHI CHÚ / HỌC PHÍ / TRẠNG THÁI của mẫu cũ: mã 52003… → mã nguồn, còn lại giữ vào ghi chú
+      const notes = [];
+      extra.forEach((ix, j) => { if (ix < 0) return; const v = String(r[ix] ?? '').trim(); if (!v || v === '0') return; if (MA_RE.test(v) && !h.maNguon) h.maNguon = v; else notes.push((['', 'Học phí: ', 'Trạng thái: '][j]) + v); });
+      h.ghiChu = notes.join('; ');
+      if (h.gvText) h.gvGoc = h.gvText; // xuất lại đúng chữ gốc của file cũ
+      const g = findGvByText(h.gvText); if (g) { h.gvId = g.id; h.gvText = ''; }
+      if (h.cccd && DB.hv.some(x => x.khoaId === k.id && x.cccd === h.cccd)) continue;
+      DB.hv.push(h); rep.hv++;
+    }
+  }
+  fillFromKho();
+  return rep;
+}
+
+/* =========================================================
+   XUẤT EXCEL THEO MẪU FILE 1
+   ========================================================= */
+const XFONT = { name: 'Times New Roman', size: 11 };
+const THIN = { style: 'thin', color: { argb: 'FF000000' } };
+const BOX = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+function fill(argb) { return { type: 'pattern', pattern: 'solid', fgColor: { argb } }; }
+function vnDate(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+function buildKhoaSheet(wb, k, sheetName, opt = {}) {
+  const ws = wb.addWorksheet(sheetName || `${k.hang}-${pad2(k.so)}`, { views: [{ state: 'frozen', ySplit: 6 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  const widths = [8, 32, 13, 16, 14, 40, 22, 26];
+  ws.columns = widths.map(w => ({ width: w }));
+  ws.mergeCells('A1:H1'); ws.mergeCells('A2:H2'); ws.mergeCells('A5:H5');
+  const c1 = ws.getCell('A1'); c1.value = `KHÓA ĐÀO TẠO ${k.hang} - ${pad2(k.so)}`; c1.font = { ...XFONT, size: 16, bold: true, color: { argb: 'FFFFFFFF' } }; c1.fill = fill('FFFFC000'); c1.alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(1).height = 34.5;
+  const c2 = ws.getCell('A2'); c2.value = `${hangOf(k.hang).name} — ${DB.settings.coSo} — Xuất ngày ${isoToVN(todayISO())}`; c2.font = { ...XFONT, bold: true, color: { argb: 'FFFFFFFF' } }; c2.fill = fill('FF70AD47'); c2.alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(2).height = 22;
+  const lab = (a, t) => { const c = ws.getCell(a); c.value = t; c.font = { ...XFONT, bold: true }; };
+  lab('A3', 'Ngày khai giảng:'); lab('D3', 'Ngày bế giảng:'); lab('G3', 'Giáo viên:');
+  for (const [a, iso] of [['B3', k.ngayKG], ['E3', k.ngayBG]]) { const c = ws.getCell(a); c.value = iso ? vnDate(iso) : ''; c.numFmt = 'dd/mm/yyyy'; c.font = XFONT; c.alignment = { horizontal: 'left' }; }
+  const g3 = ws.getCell('H3'); g3.value = khoaGvText(k); g3.font = XFONT;
+  const c5 = ws.getCell('A5'); c5.value = 'DANH SÁCH HỌC VIÊN'; c5.font = { ...XFONT, size: 14, bold: true }; c5.fill = fill('FFD9E1F2'); c5.alignment = { horizontal: 'center', vertical: 'middle' }; ws.getRow(5).height = 25;
+  const head = ['STT', 'HỌ VÀ TÊN', 'NGÀY SINH', 'CMND/CCCD', 'SỐ ĐIỆN THOẠI', 'ĐỊA CHỈ', 'GIÁO VIÊN KHAI THÁC', 'MÃ ĐKI'];
+  const hr = ws.getRow(6); hr.height = 25;
+  head.forEach((t, i) => { const c = hr.getCell(i + 1); c.value = t; c.font = { ...XFONT, bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = fill('FF4472C4'); c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = BOX; });
+  const list = khoaRows(k, opt);
+  list.forEach((h, i) => {
+    const r = ws.getRow(7 + i);
+    const ok = !!h.maDK;
+    const vals = [i + 1, h.hoTen, h.ngaySinh, h.cccd, h.sdt || '', h.noiCuTru || h.diaChi || '', gvLabel(h), h.maDK || ''];
+    vals.forEach((v, j) => { const c = r.getCell(j + 1); c.value = v; c.font = XFONT; c.border = BOX; c.numFmt = '@'; c.alignment = { horizontal: j === 0 ? 'center' : 'left', vertical: 'middle' }; });
+    if (!ok) r.getCell(8).fill = fill('FFFDECEA');
+  });
+  return ws;
+}
+async function exportKhoa(k, opt = {}) {
+  const wb = new ExcelJS.Workbook(); wb.creator = 'QL Khóa ô tô CSHN'; buildKhoaSheet(wb, k, null, opt);
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${k.hang}-${pad2(k.so)}.xlsx`);
+  const miss = khoaRows(k, opt).filter(h => !h.maDK).length;
+  toast(`Đã xuất ${kCode(k)}.xlsx` + (miss ? ` — còn ${miss} HV thiếu mã ĐKI (tô đỏ)` : ''), miss ? '' : 'ok', 5000);
+}
+/* Danh sách dùng để xuất/in: mặc định chỉ Đang học + Hoàn thành */
+function khoaRows(k, opt = {}) { return hvOf(k.id).filter(h => opt.all || h.tt === 'hoc' || h.tt === 'xong' || !h.tt).sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9)); }
+async function exportKhoaDialog(k) {
+  const n = hvOf(k.id).filter(h => h.tt === 'baoluu' || h.tt === 'bohoc').length;
+  if (!n) return exportKhoa(k);
+  const r = await modal('Xuất Excel ' + kCode(k), `<p>Khóa có <b>${n}</b> học viên bảo lưu / bỏ học.</p><label class="small"><input type="checkbox" id="eAll"> Gồm cả những người này</label>`, [{ t: 'Hủy', v: null }, { t: 'Xuất', cls: 'pri', v: bg => ({ all: $('#eAll', bg).checked }) }]);
+  if (r) exportKhoa(k, r);
+}
+async function exportFee(k, list) {
+  const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Học phí ' + k.hang + '-' + pad2(k.so));
+  ws.columns = [6, 30, 13, 16, 16, 14, 16, 16, 16, 40].map(w => ({ width: w }));
+  ws.mergeCells('A1:J1'); const t = ws.getCell('A1'); t.value = `THEO DÕI HỌC PHÍ KHÓA ${k.hang} - ${pad2(k.so)}`; t.font = { ...XFONT, size: 14, bold: true }; t.alignment = { horizontal: 'center' };
+  const hr = ws.getRow(3); ['STT', 'HỌ VÀ TÊN', 'NGÀY SINH', 'CCCD', 'GV KHAI THÁC', 'TRẠNG THÁI', 'PHẢI ĐÓNG', 'ĐÃ ĐÓNG', 'CÒN NỢ', 'CÁC LẦN THU'].forEach((x, i) => { const c = hr.getCell(i + 1); c.value = x; c.font = { ...XFONT, bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = fill('FF4472C4'); c.border = BOX; c.alignment = { horizontal: 'center', wrapText: true }; });
+  let r0 = 4; const s = feeSum(list);
+  list.forEach((h, i) => { const p = paid(h); const no = h.tt === 'bohoc' ? 0 : Math.max(0, (+h.hocPhi || 0) - p); const row = ws.getRow(r0 + i);
+    [i + 1, h.hoTen, h.ngaySinh, h.cccd, gvLabel(h), HV_TT[h.tt], +h.hocPhi || 0, p, no, (h.thu || []).map(x => `${isoToVN(x.d)}: ${money(x.st)}${x.gc ? ' (' + x.gc + ')' : ''}`).join('; ')].forEach((v, j) => { const c = row.getCell(j + 1); c.value = v; c.font = XFONT; c.border = BOX; if (j >= 6 && j <= 8) c.numFmt = '#,##0'; }); });
+  const tr = ws.getRow(r0 + list.length); tr.getCell(2).value = 'TỔNG'; [[7, s.phai], [8, s.thu], [9, s.no]].forEach(([c, v]) => { tr.getCell(c).value = v; tr.getCell(c).numFmt = '#,##0'; }); tr.font = { ...XFONT, bold: true };
+  downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `HocPhi_${k.hang}-${pad2(k.so)}_${todayISO()}.xlsx`);
+}
+/* Danh sách cho sổ nhật ký giảng dạy / DAT: GV họ tên đầy đủ */
+async function exportDat(k) {
+  const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('DS ' + k.hang + '-' + pad2(k.so));
+  ws.columns = [6, 30, 13, 16, 8, 10, 30, 26, 14, 14].map(w => ({ width: w }));
+  const head = ['STT', 'Họ và tên', 'Ngày sinh', 'CCCD', 'Hạng', 'Khóa', 'Giáo viên', 'Mã ĐKI', 'SĐT', 'Trạng thái'];
+  const hr = ws.getRow(1); head.forEach((x, i) => { const c = hr.getCell(i + 1); c.value = x; c.font = { ...XFONT, bold: true }; c.border = BOX; });
+  khoaRows(k).forEach((h, i) => { const g = gvById(h.gvId); const row = ws.getRow(2 + i); [i + 1, h.hoTen, h.ngaySinh, h.cccd, k.hang, `${k.hang}-${pad2(k.so)}`, g ? g.hoTen : (h.gvGoc || h.gvText || ''), h.maDK || '', h.sdt || '', HV_TT[h.tt]].forEach((v, j) => { const c = row.getCell(j + 1); c.value = v; c.font = XFONT; c.border = BOX; c.numFmt = '@'; }); });
+  downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `DS_SoNhatKy_${k.hang}-${pad2(k.so)}.xlsx`);
+  toast('Đã xuất danh sách cho sổ nhật ký / DAT.', 'ok');
+}
+/* In danh sách theo mẫu có tiêu đề đơn vị + chỗ ký */
+function printKhoa(k) {
+  const S = DB.settings, list = khoaRows(k), d = new Date();
+  const w = window.open('', '_blank'); if (!w) { toast('Trình duyệt chặn cửa sổ in — cho phép popup cho trang này.', 'err', 7000); return; }
+  w.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>DS ${esc(k.hang)}-${pad2(k.so)}</title><style>
+    @page{size:A4 landscape;margin:12mm}body{font:13px "Times New Roman",serif;color:#000}table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:3px 5px;font-size:12.5px}th{background:#eee}
+    .hd{display:flex;justify-content:space-between;text-align:center;font-weight:bold}.hd div{width:48%}.t{text-align:center;font-size:17px;font-weight:bold;margin:14px 0 2px}.st{text-align:center;margin-bottom:10px}
+    .sg{display:flex;justify-content:space-between;text-align:center;margin-top:16px}.sg div{width:40%}.c{text-align:center}.m{font-family:Consolas,monospace;font-size:12px}</style></head><body>
+    <div class="hd"><div>${esc(S.tenDonViIn)}<br>${esc(S.tenCoSoIn)}<br>———</div><div>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>Độc lập - Tự do - Hạnh phúc<br>———</div></div>
+    <div class="t">DANH SÁCH HỌC VIÊN KHÓA ${esc(k.hang)} - ${pad2(k.so)}</div>
+    <div class="st">Hạng ${esc(hangOf(k.hang).name)} · Khai giảng: ${isoToVN(k.ngayKG)} · Bế giảng: ${isoToVN(k.ngayBG)} · Tổng số: ${list.length} học viên</div>
+    <table><thead><tr><th>STT</th><th>Họ và tên</th><th>Ngày sinh</th><th>CMND/CCCD</th><th>Số điện thoại</th><th>Địa chỉ</th><th>GV khai thác</th><th>Mã ĐKI</th></tr></thead><tbody>
+    ${list.map((h, i) => `<tr><td class="c">${i + 1}</td><td>${esc(h.hoTen)}</td><td class="c">${esc(h.ngaySinh)}</td><td class="m">${esc(h.cccd)}</td><td class="m">${esc(h.sdt || '')}</td><td>${esc(h.noiCuTru || h.diaChi || '')}</td><td>${esc(gvLabel(h))}</td><td class="m">${esc(h.maDK || '')}</td></tr>`).join('')}</tbody></table>
+    <div class="sg"><div><br><b>NGƯỜI LẬP</b><br><br><br><br><br>${esc(S.nguoiLap)}</div><div><i>${esc(S.diaDanh)}, ngày ${d.getDate()} tháng ${d.getMonth() + 1} năm ${d.getFullYear()}</i><br><b>PHỤ TRÁCH CƠ SỞ</b><br><br><br><br><br>${esc(S.phuTrach)}</div></div>
+    <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  w.document.close();
+}
+async function exportAll() {
+  const wb = await makeAllWorkbook(); const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(new Blob([buf]), `QUAN_LY_KHOA_OTO_TONGHOP_${todayISO()}.xlsx`);
+  toast('Đã xuất file tổng hợp toàn bộ khóa.', 'ok');
+}
+async function makeAllWorkbook() {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('KHOA');
+  ws.columns = [8, 10, 9, 16, 16, 40, 16, 8, 10].map(w => ({ width: w }));
+  ws.mergeCells('A1:I1'); const t = ws.getCell('A1'); t.value = 'QUẢN LÝ KHÓA ĐÀO TẠO LÁI XE'; t.font = { ...XFONT, size: 16, bold: true, color: { argb: 'FFFFFFFF' } }; t.fill = fill('FFFFC000'); t.alignment = { horizontal: 'center' };
+  const head = ['STT', 'MÃ KHÓA', 'HẠNG', 'NGÀY KHAI GIẢNG', 'NGÀY BẾ GIẢNG', 'GIÁO VIÊN', 'TRẠNG THÁI', 'SỐ HV', 'THIẾU MÃ'];
+  const hr = ws.getRow(3); head.forEach((x, i) => { const c = hr.getCell(i + 1); c.value = x; c.font = { ...XFONT, bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = fill('FF4472C4'); c.border = BOX; c.alignment = { horizontal: 'center' }; });
+  const ks = sortedKhoa();
+  ks.forEach((k, i) => { const r = ws.getRow(4 + i); const l = hvOf(k.id); [i + 1, k.so, k.hang, vnDate(k.ngayKG), vnDate(k.ngayBG), khoaGvText(k), kStatus(k).t, l.length, l.filter(h => !h.maDK).length].forEach((v, j) => { const c = r.getCell(j + 1); c.value = v === '' ? null : v; c.font = XFONT; c.border = BOX; if (j === 3 || j === 4) c.numFmt = 'dd/mm/yyyy'; }); });
+  for (const k of ks.slice().reverse()) buildKhoaSheet(wb, k);
+  const g = wb.addWorksheet('GV'); g.columns = [{ width: 30 }, { width: 14 }, { width: 16 }, { width: 20 }];
+  g.addRow(['TÊN GIÁO VIÊN', 'TÊN GỌI TẮT', 'SỐ ĐIỆN THOẠI', 'CHỨC VỤ']).font = { ...XFONT, bold: true };
+  DB.gv.forEach(x => g.addRow([x.hoTen, x.tenGoi, x.sdt, x.chucVu]));
+  const d = wb.addWorksheet('data MÃ ĐKI'); d.columns = [6, 24, 8, 28, 12, 8, 10, 15, 40, 40, 14].map(w => ({ width: w }));
+  d.addRow(['STT', 'Mã đăng ký', 'Số Hồ sơ', 'Họ và tên', 'Ngày sinh', 'Giới tính', 'Quốc tịch', 'Số CMND/ HC', 'Địa chỉ thường trú', 'Nơi cư trú', 'Ngày nhận Hồ sơ']).font = { ...XFONT, bold: true };
+  Object.values(DB.madk).forEach((r, i) => d.addRow([i + 1, r.maDK, r.soHS, r.hoTen, r.ngaySinh, r.gioiTinh, r.quocTich, r.cccd, r.diaChi, r.noiCuTru, r.ngayNhanHS]));
+  return wb;
+}
+
+/* =========================================================
+   GIAO DIỆN — ĐIỀU HƯỚNG
+   ========================================================= */
+let ROUTE = { v: 'home' };
+function go(v, p = {}) { $$('#toast div').forEach(d => { if (Date.now() - d.dataset.t > 400) d.remove(); }); ROUTE = { v, ...p }; location.hash = v + (p.id ? '/' + p.id : ''); render(); $('#view').scrollTop = 0; }
+function render() {
+  $$('.nav').forEach(b => b.classList.toggle('on', b.dataset.v === ROUTE.v || (ROUTE.v === 'khoaDetail' && b.dataset.v === 'khoa') || (ROUTE.v === 'import' && b.dataset.v === 'khoa')));
+  const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp }[ROUTE.v] || vHome;
+  $('#view').innerHTML = ''; V($('#view')); refreshCounts(); renderBk();
+}
+function refreshCounts() {
+  $('#cntKhoa').textContent = DB.khoa.length; $('#cntHv').textContent = DB.hv.length; $('#cntGv').textContent = DB.gv.length;
+  $('#cntTrash').textContent = DB.trash.length; const m = missingMa().length; $('#cntMiss').textContent = m; $('#cntMiss').style.background = m ? '#c0392b' : '';
+  $('#brandSub').textContent = DB.settings.coSo;
+}
+function sortedKhoa() { return DB.khoa.slice().sort((a, b) => (b.ngayKG || '').localeCompare(a.ngayKG || '') || a.hang.localeCompare(b.hang) || b.so - a.so); }
+const stBadge = k => { const s = kStatus(k); return `<span class="badge ${s.c}">${s.t}</span>`; };
+
+/* ---------- Hộp thoại ---------- */
+function modal(title, body, buttons) {
+  return new Promise(res => {
+    const bg = document.createElement('div'); bg.className = 'modal-bg';
+    bg.innerHTML = `<div class="modal"><header>${esc(title)}</header><div class="mb">${body}</div><footer></footer></div>`;
+    const ft = $('footer', bg);
+    buttons.forEach(b => { const x = document.createElement('button'); x.className = 'btn ' + (b.cls || ''); x.textContent = b.t; x.onclick = () => { const v = b.v instanceof Function ? b.v(bg) : b.v; if (v === false) return; bg.remove(); res(v); }; ft.appendChild(x); });
+    bg.addEventListener('keydown', e => { if (e.key === 'Escape') { bg.remove(); res(null); } else if (e.key === 'Enter' && e.target.matches('input:not([type=checkbox]):not([type=radio])')) { e.preventDefault(); $('footer .pri', bg)?.click(); } });
+    document.body.appendChild(bg); bindMoney(bg); const f = $('input,select,textarea', bg) || $('footer .pri', bg) || $('footer button:last-child', bg); f && f.focus();
+  });
+}
+const confirmBox = (t, body, okT = 'Đồng ý', dan) => modal(t, body, [{ t: 'Hủy', v: null }, { t: okT, cls: dan ? 'dan' : 'pri', v: true }]).then(v => !!v);
+
+/* ---------- TỔNG QUAN ---------- */
+function vHome(el) {
+  const t = todayISO();
+  const stats = DB.hang.map(h => { const ks = DB.khoa.filter(k => k.hang === h.code); const last = ks.slice().sort((a, b) => b.so - a.so)[0]; const run = ks.filter(k => kStatus(k).o === 1); return { h, n: ks.length, last, run, hv: run.reduce((s, k) => s + hvOf(k.id).length, 0) }; });
+  const soon = DB.khoa.filter(k => k.ngayKG && k.ngayKG >= t && daysBetween(t, k.ngayKG) <= 14).sort((a, b) => a.ngayKG.localeCompare(b.ngayKG));
+  const ending = DB.khoa.filter(k => k.ngayBG && k.ngayBG >= t && daysBetween(t, k.ngayBG) <= 14).sort((a, b) => a.ngayBG.localeCompare(b.ngayBG));
+  const emptyK = DB.khoa.filter(k => kStatus(k).o < 2 && !hvOf(k.id).length);
+  const miss = missingMa(); const missK = {}; miss.forEach(h => { const k = khoaById(h.khoaId); if (k && kStatus(k).o < 2) missK[k.id] = (missK[k.id] || 0) + 1; });
+  const drafts = Object.keys(DB.drafts || {}).map(khoaById).filter(Boolean);
+  el.innerHTML = `
+  <h1>Tổng quan</h1><p class="sub">${esc(DB.settings.coSo)} · Hôm nay ${isoToVN(t)}</p>
+  ${!DB.khoa.length ? `<div class="card note blue"><b>Bắt đầu nhanh:</b> kéo thả file <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> cũ vào đây để chuyển toàn bộ khóa, học viên, giáo viên và mã ĐKI sang tool — hoặc vào <a href="#" data-go="khoa">Khóa học</a> để tạo khóa mới.</div>` : ''}
+  ${homeBackupNote()}
+  <div class="grid g4">
+    ${stats.map(s => `<div class="card stat"><div class="k">${esc(s.h.name)}</div><div class="v">${s.n} <span class="small muted">khóa</span></div>
+      <div class="d">Gần nhất: ${s.last ? `<a href="#" data-k="${s.last.id}">${kCode(s.last)}</a> (KG ${isoToVN(s.last.ngayKG)})` : '—'}<br>Đang học: <b>${s.run.length}</b> khóa · <b>${s.hv}</b> HV</div></div>`).join('')}
+    <div class="card stat" style="border-color:var(--red)"><div class="k">Thiếu mã ĐKI <span style="text-transform:none">(khóa chưa kết thúc)</span></div><div class="v">${miss.length}</div><div class="d">${Object.keys(missK).length} khóa chưa kết thúc còn thiếu · <a href="#" data-go="madk">Nạp file mã</a></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2>Việc cần làm</h2><div id="todo"></div></div>
+    <div class="card"><h2>Lịch 14 ngày tới</h2><div id="cal"></div></div>
+  </div>
+  <div class="card"><div class="row"><h2 style="margin:0">Khóa đang học &amp; sắp khai giảng</h2><span class="sp"></span><button class="btn pri" data-go="khoa" data-new="1">＋ Tạo khóa mới</button></div><div id="runT" style="margin-top:10px"></div></div>`;
+  const todo = [];
+  drafts.forEach(k => todo.push(`<div class="alert-li">📝 <span>Đang chọn GV dở cho <b>${kCode(k)}</b></span><span class="sp"></span><button class="btn sm pri" data-imp="${k.id}">Tiếp tục</button></div>`));
+  emptyK.forEach(k => todo.push(`<div class="alert-li">📥 <span><b>${kCode(k)}</b> chưa có học viên</span><span class="sp"></span><button class="btn sm" data-imp="${k.id}">Nhập HV</button></div>`));
+  Object.entries(missK).forEach(([id, n]) => { const k = khoaById(id); todo.push(`<div class="alert-li">🔑 <span><b>${kCode(k)}</b> còn <b>${n}</b> HV thiếu mã ĐKI</span><span class="sp"></span><button class="btn sm" data-k="${id}">Xem</button></div>`); });
+  const unl = new Set(DB.hv.filter(h => !h.gvId && h.gvText).map(h => h.gvText));
+  if (unl.size) todo.push(`<div class="alert-li">👨‍🏫 <span><b>${unl.size}</b> tên GV từ file cũ chưa ghép với danh sách GV</span><span class="sp"></span><button class="btn sm" data-go="gv">Ghép</button></div>`);
+  $('#todo', el).innerHTML = todo.join('') || '<div class="muted">Không có việc tồn đọng. 👍</div>';
+  const ev = [...soon.map(k => ({ d: k.ngayKG, t: 'Khai giảng', k })), ...ending.map(k => ({ d: k.ngayBG, t: 'Bế giảng', k }))].sort((a, b) => a.d.localeCompare(b.d));
+  $('#cal', el).innerHTML = ev.map(e => { const n = daysBetween(t, e.d); return `<div class="alert-li"><span class="badge ${e.t === 'Khai giảng' ? 'b-new' : 'b-info'}">${e.t}</span><a href="#" data-k="${e.k.id}"><b>${kCode(e.k)}</b></a><span class="sp"></span><span>${isoToVN(e.d)}</span><span class="small muted" style="width:70px;text-align:right">${n === 0 ? 'hôm nay' : 'còn ' + n + ' ngày'}</span></div>`; }).join('') || '<div class="muted">Không có khai giảng/bế giảng trong 14 ngày tới.</div>';
+  const run = DB.khoa.filter(k => kStatus(k).o <= 1).sort((a, b) => (a.ngayKG || '').localeCompare(b.ngayKG || ''));
+  $('#runT', el).innerHTML = khoaTable(run);
+  bindCommon(el);
+}
+function khoaTable(list, selectable) {
+  if (!list.length) return '<div class="empty-st">Không có khóa nào.</div>';
+  return `<div class="tbl"><table><thead><tr>${selectable ? '<th style="width:34px"><input type="checkbox" id="kCkAll" title="Chọn tất cả khóa đang hiện"></th>' : ''}<th>Mã khóa</th><th>Hạng</th><th>Khai giảng</th><th>Bế giảng</th><th>Giáo viên</th><th class="num">Số HV</th><th class="num">Thiếu mã</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+  ${list.map(k => { const l = hvOf(k.id).filter(h => h.tt !== "bohoc"); const m = l.filter(h => !h.maDK).length; const cv = l.filter(h => !h.maDK && MA_RE.test(h.maNguon || '')).length, dn = l.filter(h => h.maTuNguon).length; const sel = selectable && kSel.has(k.id); return `<tr class="${sel ? 'hl' : ''}">${selectable ? `<td><input type="checkbox" class="kck" data-id="${k.id}" ${sel ? 'checked' : ''}></td>` : ''}<td><a href="#" data-k="${k.id}" class="hang">${kCode(k)}</a>${isLocked(k) ? ' 🔒' : ''}${DB.drafts?.[k.id] ? ' <span class="badge b-new" title="Đang chọn GV dở">nháp</span>' : ''}</td><td>${esc(hangOf(k.hang).name)}</td><td>${isoToVN(k.ngayKG)}</td><td>${isoToVN(k.ngayBG)}</td><td class="small">${esc(khoaGvText(k))}</td><td class="num">${l.length}</td><td class="num">${m ? `<span class="badge b-miss">${m}</span>` : '<span class="muted">0</span>'}${cv ? ` <span class="badge b-new" title="${cv} HV có mã 52003 chưa chuyển — tick khóa rồi bấm 'Dùng mã 52003'">52003: ${cv}</span>` : ''}${dn ? ` <span class="badge b-info" title="Đang dùng mã 52003 cho ${dn} HV">dùng 52003</span>` : ''}</td><td>${stBadge(k)}</td><td><button class="btn sm" data-k="${k.id}">Mở</button></td></tr>`; }).join('')}</tbody></table></div>`;
+}
+function bindCommon(el) {
+  $$('[data-upd]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('help', { check: true }); }));
+  $$('[data-k]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('khoaDetail', { id: a.dataset.k }); }));
+  $$('[data-go]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.go); if (a.dataset.new) newKhoaDialog(); }));
+  $$('[data-imp]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('import', { id: a.dataset.imp }); }));
+}
+
+/* ---------- KHÓA HỌC (chọn 1 / nhiều khóa + thao tác hàng loạt) ---------- */
+let kFilter = { hang: '', st: '', q: '', ma: '' };
+const kSel = new Set();
+const nguonHv = k => hvOf(k.id).filter(h => h.tt !== 'bohoc' && !h.maDK && MA_RE.test(h.maNguon || ''));   // còn thiếu mã nhưng có mã nguồn (52003)
+const daNguonHv = k => hvOf(k.id).filter(h => h.maTuNguon);
+function vKhoa(el) {
+  el.innerHTML = `<div class="row"><div><h1>Khóa học</h1><p class="sub">Tick chọn 1 hoặc nhiều khóa để thao tác hàng loạt (dùng mã 52003, đóng/mở sổ, xuất Excel…).</p></div><span class="sp"></span><button class="btn" id="kAll">⬇ Xuất tổng hợp tất cả khóa</button><button class="btn pri" id="kNew">＋ Tạo khóa mới</button></div>
+  <div class="card"><div class="row"><select class="in" id="fH"><option value="">Tất cả hạng</option>${DB.hang.map(h => `<option value="${h.code}">${esc(h.name)}</option>`).join('')}</select>
+  <select class="in" id="fS"><option value="">Mọi trạng thái</option><option value="0">Chưa khai giảng</option><option value="1">Đang học</option><option value="2">Đã kết thúc</option><option value="lock">Đã đóng sổ</option></select>
+  <select class="in" id="fM"><option value="">Mọi tình trạng mã</option><option value="miss">Còn thiếu mã ĐKI</option><option value="nguon">Có mã 52003 chưa chuyển</option><option value="danguon">Đang dùng mã 52003</option><option value="du">Đủ mã</option></select>
+  <input class="in" id="fQ" placeholder="Lọc mã khóa / GV…" style="width:200px"><span class="sp"></span><span class="muted small" id="fN"></span></div>
+  <div id="kBulk" class="note blue" style="margin-top:12px;display:none"></div>
+  <div id="kT" style="margin-top:12px"></div></div>`;
+  $('#fH', el).value = kFilter.hang; $('#fS', el).value = kFilter.st; $('#fQ', el).value = kFilter.q; $('#fM', el).value = kFilter.ma;
+  let shown = [];
+  const bulk = () => {
+    for (const id of [...kSel]) if (!khoaById(id)) kSel.delete(id);
+    const box = $('#kBulk', el); const sel = [...kSel].map(khoaById);
+    if (!sel.length) { box.style.display = 'none'; return; }
+    const canNguon = sel.reduce((s, k) => s + nguonHv(k).length, 0), isNguon = sel.reduce((s, k) => s + daNguonHv(k).length, 0);
+    box.style.display = '';
+    box.innerHTML = `<div class="row"><b>Đã chọn ${sel.length} khóa:</b> <span class="small">${sel.slice(0, 12).map(k => kCode(k)).join(', ')}${sel.length > 12 ? '…' : ''}</span><span class="sp"></span><button class="btn sm" id="bNone">Bỏ chọn</button></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn sm pri" id="bNguon" ${canNguon ? '' : 'disabled'}>Dùng mã 52003 cho ${canNguon} HV thiếu mã</button>
+        <button class="btn sm" id="bUnNguon" ${isNguon ? '' : 'disabled'}>Bỏ dùng mã 52003 (${isNguon})</button>
+        <button class="btn sm" id="bLock">🔒 Đóng sổ</button><button class="btn sm" id="bUnlock">🔓 Mở sổ</button>
+        <button class="btn sm ok" id="bExp">⬇ Xuất Excel các khóa chọn</button>
+        <button class="btn sm dan" id="bDel">🗑 Xóa</button></div>`;
+    $('#bNone', box).onclick = () => { kSel.clear(); draw(); };
+    $('#bNguon', box).onclick = () => useNguon(sel, true).then(draw);
+    $('#bUnNguon', box).onclick = () => useNguon(sel, false).then(draw);
+    $('#bLock', box).onclick = async () => { const t = sel.filter(k => !k.dong); if (!t.length) return toast('Các khóa chọn đều đã đóng sổ.'); if (!await confirmBox(`Đóng sổ ${t.length} khóa?`, t.map(k => kCode(k)).join(', '), 'Đóng sổ')) return; t.forEach(k => { k.dong = true; k.dongAt = new Date().toISOString(); k.dongBy = 'thủ công (hàng loạt)'; delete k.moLai; }); commit(`Đóng sổ ${t.length} khóa: ${t.map(k => k.hang + '-' + pad2(k.so)).join(', ')}`); draw(); };
+    $('#bUnlock', box).onclick = async () => { const t = sel.filter(k => k.dong); if (!t.length) return toast('Các khóa chọn đều đang mở.'); const r = await modal(`Mở sổ ${t.length} khóa`, `<p class="small">${t.map(k => kCode(k)).join(', ')}</p><label class="f">Lý do mở lại<input class="in" id="ulR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Mở sổ', cls: 'pri', v: bg => { const x = $('#ulR', bg).value.trim(); if (!x) { toast('Nhập lý do.', 'err'); return false; } return x; } }]); if (!r) return; t.forEach(k => { k.dong = false; k.moLai = { at: new Date().toISOString(), lyDo: r }; }); commit(`Mở sổ ${t.length} khóa: ${r}`); draw(); };
+    $('#bExp', box).onclick = async () => { const wb = new ExcelJS.Workbook(); sel.slice().sort((a, b) => (a.ngayKG || '').localeCompare(b.ngayKG || '')).forEach(k => buildKhoaSheet(wb, k)); downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), sel.length === 1 ? `${sel[0].hang}-${pad2(sel[0].so)}.xlsx` : `CacKhoa_${sel.length}_${todayISO()}.xlsx`); toast(`Đã xuất ${sel.length} khóa (mỗi khóa 1 sheet).`, 'ok'); };
+    $('#bDel', box).onclick = async () => { const lk = sel.filter(isLocked); if (lk.length) return toast(`Có ${lk.length} khóa đã đóng sổ — mở sổ trước khi xóa.`, 'err', 6000); const n = sel.reduce((s, k) => s + hvOf(k.id).length, 0); const r = await modal(`Xóa ${sel.length} khóa?`, `<p>${sel.map(k => kCode(k)).join(', ')} — tổng <b>${n}</b> học viên. Vào thùng rác ${DB.settings.trashDays} ngày, khôi phục được.</p><label class="f">Lý do<input class="in" id="xR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Xóa', cls: 'dan', v: bg => $('#xR', bg).value.trim() || '(không ghi)' }]); if (!r) return; sel.forEach(k => trashKhoa(k, r)); kSel.clear(); commit(`Xóa ${sel.length} khóa → thùng rác`); draw(); };
+  };
+  const draw = () => {
+    const q = noAcc(kFilter.q);
+    shown = sortedKhoa().filter(k => (!kFilter.hang || k.hang === kFilter.hang)
+      && (kFilter.st === '' || (kFilter.st === 'lock' ? isLocked(k) : String(kStatus(k).o) === kFilter.st))
+      && (!kFilter.ma || (kFilter.ma === 'miss' ? hvOf(k.id).some(h => h.tt !== 'bohoc' && !h.maDK) : kFilter.ma === 'nguon' ? nguonHv(k).length : kFilter.ma === 'danguon' ? daNguonHv(k).length : !hvOf(k.id).some(h => h.tt !== 'bohoc' && !h.maDK)))
+      && (!q || noAcc(kCode(k) + ' ' + khoaGvText(k)).includes(q)));
+    $('#kT', el).innerHTML = khoaTable(shown, true); $('#fN', el).textContent = `${shown.length} khóa`; bindCommon($('#kT', el));
+    const all = $('#kCkAll', el); if (all) { all.checked = shown.length && shown.every(k => kSel.has(k.id)); all.onchange = e => { shown.forEach(k => e.target.checked ? kSel.add(k.id) : kSel.delete(k.id)); draw(); }; }
+    $$('.kck', el).forEach(c => c.onchange = () => { c.checked ? kSel.add(c.dataset.id) : kSel.delete(c.dataset.id); c.closest('tr').classList.toggle('hl', c.checked); bulk(); if (all) all.checked = shown.every(k => kSel.has(k.id)); });
+    bulk();
+  };
+  $('#fH', el).onchange = e => { kFilter.hang = e.target.value; draw(); };
+  $('#fS', el).onchange = e => { kFilter.st = e.target.value; draw(); };
+  $('#fM', el).onchange = e => { kFilter.ma = e.target.value; draw(); };
+  $('#fQ', el).oninput = e => { kFilter.q = e.target.value; draw(); };
+  $('#kNew', el).onclick = () => newKhoaDialog();
+  $('#kAll', el).onclick = exportAll;
+  draw();
+}
+/* Dùng mã nguồn (52003) làm mã ĐKI — CHỈ cho các khóa được chọn. Khi nạp kho có mã 52002 thật, mã thật tự thay thế. */
+async function useNguon(list, on) {
+  if (on) {
+    const t = list.map(k => [k, nguonHv(k)]).filter(([, a]) => a.length); const n = t.reduce((s, [, a]) => s + a.length, 0);
+    if (!n) return;
+    const lk = t.filter(([k]) => isLocked(k)).length;
+    const ok = await confirmBox('Dùng mã 52003 cho khóa đã chọn?', `<p>Điền mã nguồn (52003…) vào cột Mã ĐKI cho <b>${n}</b> học viên đang thiếu mã ở ${t.length} khóa:</p><p class="small">${t.map(([k, a]) => `${kCode(k)} (${a.length})`).join(', ')}</p>
+      <p class="small muted">Học viên này không còn bị tính "thiếu mã". Mã được đánh dấu <span class="badge b-new">52003</span> để phân biệt; nếu sau này nạp kho có mã 52002 thật thì tự thay. Hoàn tác được bằng nút "Bỏ dùng mã 52003".${lk ? ` Có ${lk} khóa đã đóng sổ — thao tác này vẫn áp dụng và được ghi nhật ký.` : ''}</p>`, 'Dùng mã 52003');
+    if (!ok) return;
+    t.forEach(([k, a]) => { a.forEach(h => { h.maDK = h.maNguon; h.maTuNguon = true; }); k.dungMaNguon = true; });
+    commit(`Dùng mã 52003 cho ${n} HV ở ${t.length} khóa: ${t.map(([k]) => k.hang + '-' + pad2(k.so)).join(', ')}`); toast(`Đã điền mã 52003 cho ${n} học viên.`, 'ok');
+  } else {
+    const t = list.map(k => [k, daNguonHv(k)]).filter(([, a]) => a.length); const n = t.reduce((s, [, a]) => s + a.length, 0);
+    if (!n || !await confirmBox('Bỏ dùng mã 52003?', `<p><b>${n}</b> học viên ở ${t.map(([k]) => kCode(k)).join(', ')} sẽ trở lại trạng thái <b>thiếu mã ĐKI</b> (mã 52003 vẫn giữ ở mã nguồn).</p>`, 'Bỏ dùng', true)) return;
+    t.forEach(([k, a]) => { a.forEach(h => { h.maDK = ''; delete h.maTuNguon; }); k.dungMaNguon = false; });
+    commit(`Bỏ dùng mã 52003 cho ${n} HV`); toast(`Đã bỏ — ${n} học viên trở lại thiếu mã.`);
+  }
+}
+function avgDays(hang) {
+  const ds = DB.khoa.filter(k => k.hang === hang && k.ngayKG && k.ngayBG).sort((a, b) => a.ngayKG.localeCompare(b.ngayKG)).map(k => daysBetween(k.ngayKG, k.ngayBG)).filter(n => n > 20 && n < 200).slice(-6);
+  if (!ds.length) return hangOf(hang).days; ds.sort((a, b) => a - b); return ds[Math.floor(ds.length / 2)];
+}
+let newKhoaFile = null;
+async function newKhoaDialog(preset = {}) {
+  newKhoaFile = null;
+  const lastHang = DB.settings.lastHang || DB.hang[0].code;
+  const nextSo = h => (Math.max(0, ...DB.khoa.filter(k => k.hang === h).map(k => k.so)) + 1);
+  const body = `<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+    <label class="f">Hạng đào tạo<select class="in" id="nH">${DB.hang.map(h => `<option value="${h.code}">${esc(h.name)} (${h.code})</option>`).join('')}</select></label>
+    <label class="f">Số khóa<input class="in" id="nS" type="number" min="1"></label>
+    <label class="f">Ngày khai giảng<input class="in" id="nKG" type="date"></label>
+    <label class="f">Ngày bế giảng <span class="small warn-t" id="nHint"></span><input class="in" id="nBG" type="date"></label>
+    <label class="f" style="grid-column:1/-1">Ghi chú (không bắt buộc)<input class="in" id="nNote"></label></div>
+    ${preset.rows ? `<p class="note blue small" style="margin-top:12px">Danh sách: <b>${esc(preset.src)}</b> (${preset.rows.length} người) — tạo xong sẽ chuyển sang chọn GV.</p>` : `<div class="drop" id="nDrop" style="margin-top:14px;padding:16px"><b>Nạp file Excel danh sách học viên</b><br><span class="small">Kéo thả vào đây hoặc bấm để chọn — tạo khóa xong sẽ chuyển ngay sang chọn GV</span></div>`}
+    <p class="small muted" id="nPrev" style="margin:12px 0 0"></p>`;
+  const res = await modal('Tạo khóa mới', body, [{ t: 'Hủy', v: null }, { t: 'Tạo khóa', cls: 'pri', v: bg => {
+    const hang = $('#nH', bg).value, so = parseInt($('#nS', bg).value), kg = $('#nKG', bg).value, bgd = $('#nBG', bg).value;
+    if (!so || so < 1) { toast('Nhập số khóa.', 'err'); return false; }
+    if (!kg) { toast('Chọn ngày khai giảng.', 'err'); return false; }
+    if (bgd && bgd < kg) { toast('Ngày bế giảng phải sau ngày khai giảng.', 'err'); return false; }
+    if (DB.khoa.some(k => k.hang === hang && k.so === so)) { toast(`Khóa ${hang}-${pad2(so)} đã tồn tại.`, 'err'); return false; }
+    return { hang, so, ngayKG: kg, ngayBG: bgd, ghiChu: $('#nNote', bg).value.trim() };
+  } }]);
+  // khởi tạo giá trị (modal đã gắn vào DOM)
+  if (res) {
+    const k = { id: uid(), ...res, gvText: '', createdAt: new Date().toISOString() };
+    DB.khoa.push(k); DB.settings.lastHang = k.hang; commit('Tạo khóa ' + kCode(k));
+    toast(`Đã tạo khóa ${kCode(k)}.`, 'ok');
+    if (preset.rows) await startDraft(k, preset.rows, preset.src, preset.hasMa);
+    else if (newKhoaFile) { const f = newKhoaFile; newKhoaFile = null; go('import', { id: k.id }); await startImportFile(k, f); }
+    else go('import', { id: k.id });
+  }
+  return res;
+}
+// Gắn hành vi cho form tạo khóa ngay khi modal xuất hiện
+new MutationObserver(() => {
+  const h = $('#nH'); if (!h || h.dataset.bound) return; h.dataset.bound = 1;
+  const nd = $('#nDrop'); if (nd) setupDrop(nd, f => { newKhoaFile = f; nd.innerHTML = `<b>📄 ${esc(f.name)}</b><br><span class="small">Đã chọn — bấm "Tạo khóa" để nạp. Bấm vào đây để đổi file.</span>`; nd.style.borderColor = 'var(--green)'; });
+  const s = $('#nS'), kg = $('#nKG'), bg = $('#nBG'), hint = $('#nHint'), prev = $('#nPrev');
+  h.value = DB.settings.lastHang || DB.hang[0].code;
+  const upd = (auto) => {
+    const hang = h.value; const max = Math.max(0, ...DB.khoa.filter(k => k.hang === hang).map(k => k.so));
+    if (auto) s.value = max + 1;
+    const d = avgDays(hang);
+    if (kg.value && (auto || !bg.dataset.touched)) bg.value = addDays(kg.value, d);
+    const guess = !bg.dataset.touched && bg.value; bg.style.background = guess ? 'var(--amber-l)' : ''; hint.textContent = guess ? `(dự kiến +${d} ngày)` : ''; bg.title = guess ? `Tự đoán theo các khóa ${hang} trước — kiểm lại` : '';
+    const so = parseInt(s.value); const dup = DB.khoa.some(k => k.hang === hang && k.so === so);
+    prev.innerHTML = so ? (dup ? `<span style="color:var(--red)">⚠ ${hang}-${pad2(so)} đã tồn tại</span>` : `Sẽ tạo: <b>${hang}-${pad2(so)}</b>` + (bg.value && kg.value ? ` · ${daysBetween(kg.value, bg.value)} ngày` : '') + ` · khóa trước của hạng này: ${max ? hang + '-' + pad2(max) : 'chưa có'}`) : '';
+  };
+  h.onchange = () => upd(true); s.oninput = () => upd(false); kg.onchange = () => upd(false); bg.onchange = () => { bg.dataset.touched = 1; upd(false); };
+  upd(true);
+}).observe(document.body, { childList: true });
+
+/* ---------- CHI TIẾT KHÓA ---------- */
+let hlHv = null, dTab = 'ds';
+function lockGuard(k) { if (isLocked(k)) { toast(`Khóa ${k.hang}-${pad2(k.so)} đã đóng sổ — bấm "Mở khóa để sửa" trước.`, 'err', 5000); return true; } return false; }
+async function toggleLock(k) {
+  if (isLocked(k)) {
+    const r = await modal('Mở khóa sổ ' + kCode(k), `<p>Khóa đã đóng sổ ${k.dongAt ? 'từ ' + fmtT(k.dongAt) : ''}${k.dongBy ? ' (' + esc(k.dongBy) + ')' : ''}. Mở lại để sửa — lý do được ghi vào nhật ký.</p><label class="f">Lý do mở lại<input class="in" id="ulR" placeholder="vd: bổ sung SĐT, sửa sai ngày sinh…"></label>`,
+      [{ t: 'Hủy', v: null }, { t: 'Mở khóa', cls: 'pri', v: bg => { const x = $('#ulR', bg).value.trim(); if (!x) { toast('Nhập lý do.', 'err'); return false; } return x; } }]);
+    if (!r) return; k.dong = false; k.moLai = { at: new Date().toISOString(), lyDo: r }; commit(`Mở sổ ${kCode(k)}: ${r}`);
+  } else {
+    if (!await confirmBox('Đóng sổ ' + kCode(k) + '?', '<p>Sau khi đóng sổ, danh sách chỉ xem/xuất/in được, không sửa, không thêm, không xóa. Muốn sửa phải mở lại và ghi lý do.</p>', 'Đóng sổ')) return;
+    k.dong = true; k.dongAt = new Date().toISOString(); k.dongBy = 'thủ công'; delete k.moLai; commit('Đóng sổ ' + kCode(k));
+  }
+  render();
+}
+function vKhoaDetail(el) {
+  const k = khoaById(ROUTE.id); if (!k) { el.innerHTML = '<div class="empty-st">Không tìm thấy khóa.</div>'; return; }
+  const L = isLocked(k), dis = L ? 'disabled' : '';
+  const list = hvOf(k.id).sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9));
+  const act = list.filter(h => h.tt === 'hoc' || h.tt === 'xong');
+  const miss = act.filter(h => !h.maDK).length, noPhone = act.filter(h => !h.sdt).length;
+  const ttC = {}; list.forEach(h => ttC[h.tt] = (ttC[h.tt] || 0) + 1);
+  const gvCount = {}; act.forEach(h => { const t = gvById(h.gvId)?.tenGoi || h.gvGoc || h.gvText || '(chưa có)'; gvCount[t] = (gvCount[t] || 0) + 1; });
+  const fee = feeSum(list);
+  el.innerHTML = `
+  <div class="row"><a href="#" id="back">← Khóa học</a></div>
+  <div class="row" style="margin:8px 0 14px"><div><h1><span class="hang">KHÓA ${kCode(k).replace('-', ' - ')}</span> ${stBadge(k)} ${L ? '<span class="badge b-end">🔒 đã đóng sổ</span>' : ''}</h1>
+   <div class="muted">${esc(hangOf(k.hang).name)} · KG <b>${isoToVN(k.ngayKG) || '—'}</b> → BG <b>${isoToVN(k.ngayBG) || '—'}</b>${k.ngayKG && k.ngayBG ? ` (${daysBetween(k.ngayKG, k.ngayBG)} ngày)` : ''} ${k.ghiChu ? '· ' + esc(k.ghiChu) : ''}</div></div>
+   <span class="sp"></span><button class="btn" id="dLock">${L ? '🔓 Mở khóa để sửa' : '🔒 Đóng sổ'}</button><button class="btn" id="dEdit" ${dis}>✎ Sửa khóa</button><button class="btn" id="dPrint">🖨 In danh sách</button><button class="btn ok" id="dExp">⬇ Xuất Excel</button></div>
+  ${L ? `<div class="card note small">🔒 Khóa đã đóng sổ${k.dongAt ? ' lúc ' + fmtT(k.dongAt) : ''}${k.dongBy ? ' (' + esc(k.dongBy) + ')' : ''}: chỉ xem, xuất, in. ${k.moLai ? '' : ''}</div>` : (k.moLai ? `<div class="card note small">Khóa đang được <b>mở lại để sửa</b> từ ${fmtT(k.moLai.at)} — lý do: ${esc(k.moLai.lyDo)}. Sửa xong nhớ bấm <b>Đóng sổ</b>.</div>` : '')}
+  ${DB.drafts?.[k.id] && !L ? `<div class="card note"><b>Có danh sách đang chọn GV dở</b> (${DB.drafts[k.id].rows.length} người). <button class="btn sm pri" data-imp="${k.id}">Tiếp tục chọn GV</button> <button class="btn sm dan" id="dDraftDel">Bỏ nháp</button></div>` : ''}
+  <div class="grid g4">
+    <div class="card stat"><div class="k">Học viên</div><div class="v">${act.length}${list.length > act.length ? ` <span class="small muted">/ ${list.length}</span>` : ''}</div><div class="d">${Object.entries(gvCount).map(([t, n]) => `${esc(t)}: ${n}`).join(' · ') || '—'}${ttC.baoluu || ttC.bohoc ? `<br>Bảo lưu ${ttC.baoluu || 0} · Bỏ học ${ttC.bohoc || 0}` : ''}</div></div>
+    <div class="card stat" style="border-color:${miss ? 'var(--red)' : 'var(--green)'}"><div class="k">Thiếu mã ĐKI</div><div class="v">${miss}</div><div class="d">${miss ? '<a href="#" data-go="madk">Nạp file mã ĐKI</a>' : 'Đủ mã ✓'}${nguonHv(k).length ? `<br><button class="btn sm" id="dNguon">Dùng mã 52003 cho ${nguonHv(k).length} HV</button>` : ''}${daNguonHv(k).length ? `<br><span class="small">Đang dùng mã 52003: ${daNguonHv(k).length} HV</span> <a href="#" id="dUnNguon">bỏ</a>` : ''}</div></div>
+    <div class="card stat" style="border-color:var(--amber)"><div class="k">Chưa có SĐT</div><div class="v">${noPhone}</div><div class="d">${L ? '' : '<a href="#" id="dSdtLink">Nạp SĐT từ file</a> hoặc gõ vào ô'}</div></div>
+    <div class="card stat" style="border-color:${fee.no > 0 ? 'var(--red)' : 'var(--green)'}"><div class="k">Học phí còn nợ</div><div class="v" style="font-size:20px">${money(fee.no)} đ</div><div class="d">Đã thu ${money(fee.thu)} / ${money(fee.phai)} đ</div></div>
+  </div>
+  <div class="tabs"><button class="tab ${dTab === 'ds' ? 'on' : ''}" data-tab="ds">Danh sách học viên</button><button class="tab ${dTab === 'hp' ? 'on' : ''}" data-tab="hp">Học phí</button></div>
+  <div id="dBody"></div>
+  <div class="row" style="margin-top:12px"><button class="btn sm" id="dDat">⬇ Xuất DS cho sổ nhật ký / DAT</button><span class="small muted">Tool khác đọc trực tiếp: <span class="mono">/api/khoa/${kCode(k)}.json</span></span><span class="sp"></span><button class="btn dan" id="dDel" ${dis}>🗑 Xóa khóa</button></div>`;
+  $$('[data-tab]', el).forEach(b => b.onclick = () => { dTab = b.dataset.tab; render(); });
+  if (dTab === 'hp') feeTab($('#dBody', el), k, list, L); else listTab($('#dBody', el), k, list, L);
+  $('#back', el).onclick = e => { e.preventDefault(); go('khoa'); };
+  $('#dLock', el).onclick = () => toggleLock(k);
+  $('#dNguon', el)?.addEventListener('click', () => useNguon([k], true).then(render));
+  $('#dUnNguon', el)?.addEventListener('click', e => { e.preventDefault(); useNguon([k], false).then(render); });
+  $('#dExp', el).onclick = () => exportKhoaDialog(k);
+  $('#dPrint', el).onclick = () => printKhoa(k);
+  $('#dDat', el).onclick = () => exportDat(k);
+  $('#dEdit', el).onclick = () => { if (!lockGuard(k)) editKhoa(k); };
+  $('#dSdtLink', el)?.addEventListener('click', e => { e.preventDefault(); pickFile(f => importSdt(f, k)); });
+  $('#dDel', el).onclick = async () => { if (lockGuard(k)) return; const n = list.length; const r = await modal('Xóa khóa ' + kCode(k) + '?', `<p>Xóa khóa và <b>${n}</b> học viên trong khóa. Khóa vào <b>thùng rác</b> ${DB.settings.trashDays} ngày, khôi phục được.</p><label class="f">Lý do<input class="in" id="xR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Xóa khóa', cls: 'dan', v: bg => $('#xR', bg).value.trim() || '(không ghi)' }]); if (r) { trashKhoa(k, r); commit('Xóa khóa ' + kCode(k) + ' → thùng rác'); go('khoa'); } };
+  $('#dDraftDel', el)?.addEventListener('click', async () => { if (await confirmBox('Bỏ danh sách nháp?', 'Danh sách đang chọn GV dở sẽ bị bỏ.', 'Bỏ nháp', true)) { delete DB.drafts[k.id]; commit(); render(); } });
+  bindCommon(el);
+}
+function listTab(box, k, list, L) {
+  box.innerHTML = `<div class="card">
+    ${L ? '' : `<div class="drop" id="dDrop"><b>＋ Thêm học viên từ file Excel (file 2)</b><br>Kéo thả file vào đây, bấm để chọn file, hoặc dán (Ctrl+V) bảng copy từ Excel</div>`}
+    <div class="row" style="margin:14px 0 10px"><input class="in" id="dQ" placeholder="Lọc trong khóa…" style="width:220px"><select class="in" id="dTt"><option value="">Mọi trạng thái</option>${Object.entries(HV_TT).map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select>
+      ${L ? '' : '<button class="btn sm" id="dSort" title="Sắp xếp theo tên riêng → họ → tên đệm">A→Z theo tên</button><button class="btn sm" id="dAdd">＋ Thêm 1 HV tay</button><button class="btn sm" id="dSdt">📞 Nạp SĐT từ file</button>'}
+      <span class="sp"></span><span class="small muted">${L ? 'Chỉ xem (đã đóng sổ)' : 'Ô có viền khi rê chuột là sửa được trực tiếp'}</span></div>
+    <div class="tbl" id="dT"></div></div>`;
+  const dis = L ? 'disabled' : '';
+  const gvOpts = sel => `<option value="">—</option>` + gvSorted().map(g => `<option value="${g.id}" ${g.id === sel ? 'selected' : ''}>${esc(g.tenGoi)}</option>`).join('');
+  const draw = () => {
+    const q = noAcc($('#dQ', box).value), tf = $('#dTt', box).value;
+    const rows = list.filter(h => (!tf || h.tt === tf) && (!q || noAcc(`${h.hoTen} ${h.cccd} ${h.maDK} ${h.sdt} ${h.diaChi} ${gvLabel(h)}`).includes(q)));
+    $('#dT', box).innerHTML = rows.length ? `<table><thead><tr><th class="c">STT</th><th>Họ và tên</th><th>Ngày sinh</th><th>CMND/CCCD</th><th>Số điện thoại</th><th>Địa chỉ</th><th>GV khai thác</th><th>Mã ĐKI</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+      ${rows.map(h => `<tr data-id="${h.id}" class="${h.id === hlHv ? 'hl' : ''} ${h.tt === 'bohoc' || h.tt === 'baoluu' ? 'out' : ''}"><td class="c">${list.indexOf(h) + 1}</td>
+      <td><input class="cell-in" data-f="hoTen" value="${esc(h.hoTen)}" style="min-width:190px;font-weight:600" ${dis}>${hvWarn(h, k).map(w => `<span class="badge b-new" style="margin-left:5px">${esc(w)}</span>`).join('')}</td>
+      <td><input class="cell-in" data-f="ngaySinh" value="${esc(h.ngaySinh)}" style="width:100px" ${dis}></td>
+      <td><input class="cell-in mono" data-f="cccd" value="${esc(h.cccd)}" style="width:125px" ${dis}></td>
+      <td><input class="cell-in mono" data-f="sdt" value="${esc(h.sdt || '')}" placeholder="${L ? '' : 'nhập SĐT'}" style="width:115px" ${dis}></td>
+      <td class="small" style="min-width:170px">${esc(h.noiCuTru || h.diaChi || '')}</td>
+      <td><select class="gv ${h.gvId || h.gvText || h.gvGoc ? '' : 'empty'}" data-f="gvId" ${dis}>${gvOpts(h.gvId)}${!h.gvId && (h.gvGoc || h.gvText) ? `<option selected value="">${esc(h.gvGoc || h.gvText)}${h.gvText ? ' (?)' : ''}</option>` : ''}</select></td>
+      <td>${h.maDK ? `<span class="mono">${esc(h.maDK)}</span>${h.maTuNguon ? ' <span class="badge b-new" title="Mã nguồn 52003, dùng tạm cho khóa cũ">52003</span>' : ''}` : (L ? '<span class="badge b-miss">thiếu</span>' : `<input class="cell-in mono" data-f="maDK" placeholder="thiếu mã" style="width:170px;background:var(--red-l)">`)}</td>
+      <td><select class="gv" data-tt="${h.id}" ${dis} title="${esc(h.ttNote || '')}">${Object.entries(HV_TT).map(([a, b]) => `<option value="${a}" ${h.tt === a ? 'selected' : ''}>${b}</option>`).join('')}</select>${h.ttNote ? `<div class="small muted" style="max-width:150px">${esc(h.ttNote)}</div>` : ''}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-his="${h.id}" title="Lịch sử thay đổi">🕘</button>${L ? '' : ` <button class="btn sm" data-mv="${h.id}" title="Chuyển sang khóa khác">⇄</button> <button class="btn sm dan" data-del="${h.id}" title="Xóa (vào thùng rác)">✕</button>`}</td></tr>`).join('')}</tbody></table>` : `<div class="empty-st">${list.length ? 'Không có học viên khớp bộ lọc.' : 'Chưa có học viên. Kéo thả file Excel (file 2) vào ô phía trên.'}</div>`;
+    const T = $('#dT', box);
+    $$('input.cell-in', T).forEach(inp => inp.addEventListener('change', () => {
+      if (lockGuard(k)) return;
+      const h = DB.hv.find(x => x.id === inp.closest('tr').dataset.id); let v = inp.value.trim(); const f = inp.dataset.f;
+      if (f === 'hoTen') v = normName(v); if (f === 'cccd') v = normCCCD(v); if (f === 'sdt') v = phoneText(v);
+      if (f === 'maDK' && v && !maOK(v)) { toast(`Mã ĐKI phải bắt đầu ${DB.settings.maPrefix}.`, 'err'); inp.value = ''; return; }
+      if (f === 'cccd' && v && DB.hv.some(x => x.cccd === v && x.id !== h.id && x.khoaId === h.khoaId)) { toast('CCCD này đã có trong khóa.', 'err'); inp.value = h.cccd; return; }
+      h[f] = v; if (f === 'maDK') delete h.maTuNguon; if (f === 'cccd') fillFromKho([h]); commit(`Sửa ${FIELD_VN[f] || f} của ${h.hoTen}`); inp.value = v; if (f === 'cccd' || f === 'maDK') render();
+    }));
+    $$('input.cell-in', T).forEach(inp => inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const tr = inp.closest('tr'); const nx = (e.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling); const t = nx && $(`[data-f="${inp.dataset.f}"]`, nx); inp.dispatchEvent(new Event('change')); t && t.focus(); } }));
+    $$('select[data-f="gvId"]', T).forEach(s => s.addEventListener('change', () => { if (lockGuard(k)) return; const h = DB.hv.find(x => x.id === s.closest('tr').dataset.id); h.gvId = s.value; h.gvGoc = ''; if (s.value) { h.gvText = ''; const g = gvById(s.value); g.uses = (g.uses || 0) + 1; } commit(`Đổi GV của ${h.hoTen}`); s.classList.toggle('empty', !s.value); }));
+    $$('select[data-tt]', T).forEach(s => s.addEventListener('change', async () => {
+      const h = DB.hv.find(x => x.id === s.dataset.tt); const v = s.value;
+      let note = '';
+      if (v === 'baoluu' || v === 'bohoc') { note = await modal(`${HV_TT[v]}: ${h.hoTen}`, `<label class="f">Lý do / ghi chú (ngày, đơn xin…)<input class="in" id="ttN" value="${isoToVN(todayISO())}: "></label>`, [{ t: 'Hủy', v: null }, { t: 'Lưu', cls: 'pri', v: bg => $('#ttN', bg).value.trim() }]); if (note == null) { s.value = h.tt; return; } }
+      h.tt = v; h.ttNote = note; h.ttAt = new Date().toISOString(); commit(`${h.hoTen}: trạng thái → ${HV_TT[v]}`); render();
+    }));
+    $$('[data-his]', T).forEach(b => b.onclick = () => showHvHistory(DB.hv.find(x => x.id === b.dataset.his)));
+    $$('[data-del]', T).forEach(b => b.onclick = async () => { if (lockGuard(k)) return; const h = DB.hv.find(x => x.id === b.dataset.del); const r = await modal('Xóa học viên?', `<p>Xóa <b>${esc(h.hoTen)}</b> khỏi khóa ${kCode(k)}? (vào thùng rác ${DB.settings.trashDays} ngày)</p><p class="small muted">Nếu học viên nghỉ/bảo lưu thì nên đổi <b>Trạng thái</b> thay vì xóa.</p><label class="f">Lý do<input class="in" id="xR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Xóa', cls: 'dan', v: bg => $('#xR', bg).value.trim() || '(không ghi)' }]); if (r) { trashHv(h, r); commit(`Xóa HV ${h.hoTen} khỏi ${kCode(k)} → thùng rác`); render(); } });
+    $$('[data-mv]', T).forEach(b => b.onclick = () => moveHv(DB.hv.find(x => x.id === b.dataset.mv)));
+    if (hlHv) { const tr = $(`tr[data-id="${hlHv}"]`, box); tr && tr.scrollIntoView({ block: 'center' }); setTimeout(() => { hlHv = null; }, 50); }
+  };
+  draw();
+  $('#dQ', box).oninput = draw; $('#dTt', box).onchange = draw;
+  $('#dSort', box)?.addEventListener('click', () => { list.sort((a, b) => vnCompare(a.hoTen, b.hoTen)).forEach((h, i) => h.order = i); commit('Sắp xếp ' + kCode(k)); render(); toast('Đã sắp xếp theo tên riêng → họ → tên đệm.'); });
+  $('#dAdd', box)?.addEventListener('click', () => addHvManual(k));
+  $('#dSdt', box)?.addEventListener('click', () => pickFile(f => importSdt(f, k)));
+  if ($('#dDrop', box)) setupDrop($('#dDrop', box), f => startImportFile(k, f));
+}
+/* ---- Học phí ---- */
+const paid = h => (h.thu || []).reduce((s, x) => s + (+x.st || 0), 0);
+function feeSum(list) { let phai = 0, thu = 0; for (const h of list) { if (h.tt === 'bohoc') { thu += paid(h); continue; } phai += +h.hocPhi || 0; thu += paid(h); } return { phai, thu, no: Math.max(0, phai - thu) }; }
+function feeTab(box, k, list, L) {
+  const dis = L ? 'disabled' : ''; const def = DB.settings.hocPhi[k.hang] || 0;
+  const s = feeSum(list);
+  box.innerHTML = `<div class="card"><div class="row" style="margin-bottom:10px"><span>Mức mặc định hạng ${esc(k.hang)}: <b>${def ? money(def) + ' đ' : 'chưa đặt'}</b> <span class="small muted">(đặt trong Sao lưu & Cài đặt)</span></span><span class="sp"></span>
+    ${L ? '' : `<button class="btn sm" id="fDef" ${def ? '' : 'disabled'}>Áp mức mặc định cho HV chưa có</button>`}<button class="btn sm ok" id="fExp">⬇ Xuất Excel học phí</button></div>
+    <div class="tbl"><table><thead><tr><th class="c">STT</th><th>Họ và tên</th><th>GV</th><th>Trạng thái</th><th class="num">Phải đóng</th><th class="num">Đã đóng</th><th class="num">Còn nợ</th><th>Các lần thu</th><th></th></tr></thead><tbody>
+    ${list.map((h, i) => { const p = paid(h), no = h.tt === 'bohoc' ? 0 : Math.max(0, (+h.hocPhi || 0) - p); return `<tr data-id="${h.id}" class="${h.tt === 'bohoc' ? 'out' : ''}"><td class="c">${i + 1}</td><td><b>${esc(h.hoTen)}</b></td><td class="small">${esc(gvLabel(h))}</td><td class="small">${HV_TT[h.tt]}</td>
+      <td class="num"><input class="cell-in money num" data-hp="${h.id}" value="${h.hocPhi ? money(h.hocPhi) : ''}" placeholder="0" style="width:110px" ${dis}></td><td class="num">${money(p)}</td><td class="num">${no ? `<b style="color:var(--red)">${money(no)}</b>` : '<span class="muted">0</span>'}</td>
+      <td class="small">${(h.thu || []).map((x, j) => `<span class="badge b-info" title="${esc(x.gc || '')}">${isoToVN(x.d)}: ${money(x.st)}${L ? '' : ` <a href="#" data-xp="${h.id}|${j}" style="color:var(--red);text-decoration:none">×</a>`}</span>`).join(' ')}</td>
+      <td>${L ? '' : `<button class="btn sm pri" data-pay="${h.id}">＋ Thu</button>`}</td></tr>`; }).join('')}
+    <tr style="font-weight:700"><td></td><td>TỔNG</td><td></td><td></td><td class="num">${money(s.phai)}</td><td class="num">${money(s.thu)}</td><td class="num" style="color:var(--red)">${money(s.no)}</td><td></td><td></td></tr></tbody></table></div></div>`;
+  bindMoney(box);
+  $$('[data-hp]', box).forEach(i => i.addEventListener('change', () => { if (lockGuard(k)) return; const h = DB.hv.find(x => x.id === i.dataset.hp); h.hocPhi = parseMoney(i.value); commit(`Học phí phải đóng của ${h.hoTen}: ${money(h.hocPhi)}`); render(); }));
+  $$('[data-pay]', box).forEach(b => b.onclick = async () => {
+    const h = DB.hv.find(x => x.id === b.dataset.pay); const con = Math.max(0, (+h.hocPhi || 0) - paid(h));
+    const r = await modal('Thu học phí: ' + h.hoTen, `<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px"><label class="f">Số tiền (đồng)<input class="in money" id="pSt" value="${con ? money(con) : ''}"></label><label class="f">Ngày thu<input class="in" type="date" id="pD" value="${todayISO()}"></label><label class="f" style="grid-column:1/-1">Ghi chú (số biên lai, người nộp…)<input class="in" id="pG"></label></div><p class="small muted">Còn nợ hiện tại: ${money(con)} đ</p>`,
+      [{ t: 'Hủy', v: null }, { t: 'Lưu', cls: 'pri', v: bg => { const st = parseMoney($('#pSt', bg).value); if (!st) { toast('Nhập số tiền.', 'err'); return false; } return { id: uid(), st, d: $('#pD', bg).value || todayISO(), gc: $('#pG', bg).value.trim() }; } }]);
+    if (!r) return; h.thu = [...(h.thu || []), r]; commit(`Thu ${money(r.st)} đ của ${h.hoTen} (${kCode(k)})`); render();
+  });
+  $$('[data-xp]', box).forEach(a => a.onclick = async e => { e.preventDefault(); const [id, j] = a.dataset.xp.split('|'); const h = DB.hv.find(x => x.id === id); const x = h.thu[+j]; if (await confirmBox('Xóa lần thu?', `Xóa lần thu ${money(x.st)} đ ngày ${isoToVN(x.d)} của <b>${esc(h.hoTen)}</b>?`, 'Xóa', true)) { h.thu = h.thu.filter((_, q) => q !== +j); commit(`Xóa lần thu ${money(x.st)} đ của ${h.hoTen}`); render(); } });
+  $('#fDef', box)?.addEventListener('click', () => { let n = 0; list.forEach(h => { if (!h.hocPhi && h.tt !== 'bohoc') { h.hocPhi = def; n++; } }); commit(`Áp học phí mặc định cho ${n} HV ${kCode(k)}`); toast(`Đã áp cho ${n} học viên.`, 'ok'); render(); });
+  $('#fExp', box).onclick = () => exportFee(k, list);
+}
+async function editKhoa(k) {
+  const r = await modal('Sửa khóa ' + kCode(k), `<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+    <label class="f">Ngày khai giảng<input class="in" type="date" id="eKG" value="${k.ngayKG || ''}"></label>
+    <label class="f">Ngày bế giảng<input class="in" type="date" id="eBG" value="${k.ngayBG || ''}"></label>
+    <label class="f">Số khóa<input class="in" type="number" id="eS" value="${k.so}"></label>
+    <label class="f">Ghi chú<input class="in" id="eN" value="${esc(k.ghiChu || '')}"></label></div>`,
+    [{ t: 'Hủy', v: null }, { t: 'Lưu', cls: 'pri', v: bg => { const so = parseInt($('#eS', bg).value); if (!so || so < 1) { toast('Số khóa phải ≥ 1.', 'err'); return false; } if (DB.khoa.some(x => x !== k && x.hang === k.hang && x.so === so)) { toast('Trùng số khóa.', 'err'); return false; } const kg = $('#eKG', bg).value, bgd = $('#eBG', bg).value; if (kg && bgd && bgd < kg) { toast('Ngày bế giảng phải sau khai giảng.', 'err'); return false; } return { so, ngayKG: kg, ngayBG: bgd, ghiChu: $('#eN', bg).value.trim() }; } }]);
+  if (r) { Object.assign(k, r); commit('Sửa khóa ' + kCode(k)); render(); }
+}
+async function addHvManual(k) {
+  if (lockGuard(k)) return;
+  const r = await modal('Thêm học viên vào ' + kCode(k), `<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+    <label class="f" style="grid-column:1/-1">Họ và tên<input class="in" id="mN"></label>
+    <label class="f">Ngày sinh (dd/mm/yyyy)<input class="in" id="mD"></label><label class="f">CMND/CCCD<input class="in" id="mC"></label>
+    <label class="f">Số điện thoại<input class="in" id="mP"></label><label class="f">Giáo viên<select class="in" id="mG"><option value="">—</option>${gvSorted().map(g => `<option value="${g.id}">${esc(g.tenGoi)} – ${esc(g.hoTen)}</option>`).join('')}</select></label>
+    <label class="f" style="grid-column:1/-1">Địa chỉ<input class="in" id="mA"></label></div><p class="small muted">Nếu CCCD đã có trong kho mã ĐKI, tool tự điền mã ĐKI.</p>`,
+    [{ t: 'Hủy', v: null }, { t: 'Thêm', cls: 'pri', v: bg => { const n = normName($('#mN', bg).value); if (!n) { toast('Nhập họ tên.', 'err'); return false; } if (!$('#mG', bg).value) { toast('Chọn giáo viên.', 'err'); return false; } return { hoTen: n, ngaySinh: dobText($('#mD', bg).value), cccd: normCCCD($('#mC', bg).value), sdt: phoneText($('#mP', bg).value), gvId: $('#mG', bg).value, diaChi: $('#mA', bg).value.trim() }; } }]);
+  if (!r) return;
+  if (r.cccd && hvOf(k.id).some(h => h.cccd === r.cccd)) { toast('CCCD đã có trong khóa.', 'err'); return; }
+  const h = { id: uid(), khoaId: k.id, ...r, tt: 'hoc', thu: [], hocPhi: DB.settings.hocPhi[k.hang] || 0, order: hvOf(k.id).length }; fillFromKho([h]); DB.hv.push(h); commit(`Thêm HV ${h.hoTen} vào ${kCode(k)}`); render();
+}
+async function moveHv(h) {
+  const cur = khoaById(h.khoaId); if (lockGuard(cur)) return;
+  const opts = sortedKhoa().filter(k => k.id !== h.khoaId && !isLocked(k) && kStatus(k).o < 2).map(k => `<option value="${k.id}">${kCode(k)} – ${kStatus(k).t}</option>`).join('');
+  if (!opts) { toast('Không có khóa nào đang mở để chuyển sang.', 'err'); return; }
+  const r = await modal('Chuyển khóa', `<p><b>${esc(h.hoTen)}</b> đang ở ${kCode(cur)}.</p><label class="f">Chuyển sang khóa<select class="in" id="mvK">${opts}</select></label><label class="f" style="margin-top:10px">Lý do (vd: bảo lưu xong học tiếp)<input class="in" id="mvR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Chuyển', cls: 'pri', v: bg => ({ id: $('#mvK', bg).value, ly: $('#mvR', bg).value.trim() }) }]);
+  if (!r) return; const to = khoaById(r.id);
+  if (hvOf(to.id).some(x => x.cccd && x.cccd === h.cccd)) { toast('Khóa đích đã có CCCD này.', 'err'); return; }
+  h.lichSuKhoa = [...(h.lichSuKhoa || []), { tu: `${cur.hang}-${pad2(cur.so)}`, sang: `${to.hang}-${pad2(to.so)}`, at: todayISO(), ly: r.ly }];
+  h.khoaId = to.id; h.order = hvOf(to.id).length; h.tt = 'hoc'; h.ghiChu = `Chuyển từ ${cur.hang}-${pad2(cur.so)} ngày ${isoToVN(todayISO())}${r.ly ? ' — ' + r.ly : ''}`;
+  commit(`Chuyển ${h.hoTen}: ${kCode(cur)} → ${kCode(to)}`); toast(`Đã chuyển sang ${kCode(to)}.`, 'ok'); render();
+}
+function pickFile(cb) { const p = $('#filePick'); p.value = ''; p.onchange = () => p.files[0] && cb(p.files[0]); p.click(); }
+/* ---- Nạp SĐT hàng loạt (khớp CCCD, rồi họ tên + ngày sinh) ---- */
+async function importSdt(file, k) {
+  try {
+    const s = await sniffFile(file);
+    if (s.kind !== 'list' || s.map.sdt == null) { toast('Cần file có cột Số điện thoại + CCCD (hoặc Họ tên + Ngày sinh).', 'err', 7000); return; }
+    const pool = k ? hvOf(k.id) : DB.hv.filter(h => !isLocked(khoaById(h.khoaId)));
+    const fill = [], diff = [], none = [];
+    for (const r of s.rows) {
+      if (!r.sdt) continue;
+      const h = pool.find(x => r.cccd && x.cccd === r.cccd) || pool.find(x => x.hoTen === r.hoTen && r.ngaySinh && x.ngaySinh === r.ngaySinh);
+      if (!h) { none.push(r); continue; }
+      if (!h.sdt) fill.push([h, r.sdt]); else if (h.sdt !== r.sdt) diff.push([h, r.sdt]);
+    }
+    const ok = await modal('Nạp số điện thoại', `<p>File <b>${esc(file.name)}</b>: điền mới <b>${fill.length}</b> học viên${k ? ' trong ' + kCode(k) : ''}.</p>
+      ${diff.length ? `<div class="note small"><b>${diff.length}</b> người đã có SĐT khác: ${diff.slice(0, 15).map(([h, p]) => `${esc(h.hoTen)} (${esc(h.sdt)} → ${esc(p)})`).join('; ')}${diff.length > 15 ? '…' : ''}<br><label><input type="checkbox" id="sdO"> Ghi đè các số này</label></div>` : ''}
+      ${none.length ? `<p class="small muted">${none.length} dòng không khớp học viên nào (khóa đã đóng sổ không được sửa).</p>` : ''}`,
+      [{ t: 'Hủy', v: null }, { t: 'Nạp', cls: 'pri', v: bg => ({ over: !!$('#sdO', bg)?.checked }) }]);
+    if (!ok) return;
+    fill.forEach(([h, p]) => h.sdt = p); if (ok.over) diff.forEach(([h, p]) => h.sdt = p);
+    const n = fill.length + (ok.over ? diff.length : 0);
+    commit(`Nạp SĐT từ ${file.name}: ${n} HV`); toast(`Đã cập nhật SĐT cho ${n} học viên.`, 'ok'); render();
+  } catch (e) { toast('Lỗi đọc file: ' + e.message, 'err'); }
+}
+
+/* ---------- NHẬP HỌC VIÊN + CHỌN GV ---------- */
+function setupDrop(zone, onFile) {
+  zone.addEventListener('click', () => { const p = $('#filePick'); p.value = ''; p.onchange = () => p.files[0] && onFile(p.files[0]); p.click(); });
+  zone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); zone.classList.remove('over'); $('#gdrop').classList.remove('show'); const f = e.dataTransfer.files[0]; f && onFile(f); });
+}
+async function startImportFile(k, file) {
+  try {
+    const s = await sniffFile(file);
+    if (s.kind !== 'list') { toast('Không tìm thấy bảng danh sách (cần có cột Họ và tên + CCCD/Ngày sinh).', 'err', 6000); return; }
+    await startDraft(k, s.rows, file.name, s.map.maDK != null);
+  } catch (e) { toast('Không đọc được file: ' + e.message, 'err', 6000); }
+}
+/* Kiểm hồ sơ: chỉ CẢNH BÁO, không chặn */
+function hvWarn(h, k) {
+  const w = []; const c = h.cccd || '';
+  if (!c) w.push('thiếu CCCD');
+  else if (/^\d{9}$/.test(c)) w.push('CMND 9 số');
+  else if (!/^\d{12}$/.test(c)) w.push('CCCD không đủ 12 số');
+  const m = String(h.ngaySinh || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})$/) || String(h.ngaySinh || '').match(/^()()(\d{4})$/);
+  const y = m ? +m[3] : 0;
+  if (y && /^\d{12}$/.test(c)) { const cen = +c[3] <= 1 ? 1900 : +c[3] <= 3 ? 2000 : 2100; if (cen + +c.slice(4, 6) !== y) w.push('CCCD lệch năm sinh'); }
+  const minAge = hangOf(k?.hang).minAge ?? 18; const ref = k?.ngayBG || k?.ngayKG;
+  if (y && ref && minAge) {
+    const [ry, rm, rd] = ref.split('-').map(Number); const bm = +m[2] || 1, bd = +m[1] || 1;
+    const age = ry - y - ((rm < bm || (rm === bm && rd < bd)) ? 1 : 0);
+    if (age < minAge) w.push(`chưa đủ ${minAge} tuổi tại ngày ${k.ngayBG ? 'BG' : 'KG'}`);
+  }
+  return w;
+}
+/* Ai đang ở khóa khác CÙNG HẠNG chưa kết thúc → có thể là trùng hồ sơ */
+function activeDup(cccd, k) { if (!cccd) return []; return DB.hv.filter(h => h.cccd === cccd && h.khoaId !== k.id && (h.tt || 'hoc') === 'hoc').map(h => khoaById(h.khoaId)).filter(x => x && x.hang === k.hang && kStatus(x).o < 2); }
+async function startDraft(k, rows, src, hasMa) {
+  if (lockGuard(k)) return;
+  const old = DB.drafts[k.id];
+  if (old && old.rows.some(r => r.gvId) && !await confirmBox('Thay danh sách đang chọn dở?', `<p>Khóa ${kCode(k)} đang có danh sách nháp với <b>${old.rows.filter(r => r.gvId).length}</b> người đã chọn GV (nguồn: ${esc(old.src)}).</p><p>Nạp danh sách mới sẽ <b>bỏ hết</b> các lựa chọn đó.</p>`, 'Bỏ và nạp mới', true)) return;
+  const inKhoa = new Set(hvOf(k.id).map(h => h.cccd).filter(Boolean));
+  const seen = new Set(); const dr = [];
+  for (const r of rows) {
+    if (r.cccd && seen.has(r.cccd)) continue; if (r.cccd) seen.add(r.cccd);
+    const other = r.cccd ? DB.hv.filter(h => h.cccd === r.cccd && h.khoaId !== k.id).map(h => kCode(khoaById(h.khoaId))) : [];
+    const dup = activeDup(r.cccd, k).map(kCode);
+    let gvId = ''; const g = r.gvText && findGvByText(r.gvText); if (g && !dup.length) gvId = g.id;
+    // Mã đăng ký trong file danh sách luôn là MÃ NGUỒN; mã ĐKI chỉ lấy từ kho mã ĐKI
+    dr.push({ ...r, maNguon: r.maDK, maDK: '', _id: uid(), gvId, already: inKhoa.has(r.cccd), other, dup, warn: hvWarn(r, k) });
+  }
+  DB.drafts[k.id] = { src, at: new Date().toISOString(), rows: dr, hasMa: !!hasMa };
+  commit(); go('import', { id: k.id });
+}
+let paintGv = '', impOnly = '';
+function isNear(r) { const a = noAcc((r.noiCuTru || '') + ' ' + (r.diaChi || '')); return (DB.settings.nearKeys || []).some(x => x && a.includes(noAcc(x))); }
+function vImport(el) {
+  const k = khoaById(ROUTE.id); if (!k) { go('khoa'); return; }
+  if (isLocked(k)) { el.innerHTML = `<div class="card note">Khóa ${kCode(k)} đã đóng sổ — mở khóa để nhập thêm học viên. <a href="#" data-k="${k.id}">Về khóa</a></div>`; bindCommon(el); return; }
+  const dr = DB.drafts[k.id];
+  if (!dr) {
+    el.innerHTML = `<div class="row"><a href="#" data-k="${k.id}">← ${kCode(k)}</a></div><h1 style="margin-top:8px">Nhập học viên vào <span class="hang">${kCode(k)}</span></h1>
+    <div class="steps"><span class="on">1. Chọn file</span><span>2. Chọn giáo viên</span><span>3. Chốt danh sách</span></div>
+    <div class="card"><div class="drop" id="iDrop" style="padding:50px"><b>Kéo thả file Excel danh sách học viên (file 2) vào đây</b><br>hoặc bấm để chọn file (.xls, .xlsx) · hoặc copy bảng trong Excel (kèm dòng tiêu đề) rồi bấm <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ở trang này</div>
+    <p class="small muted">Tool tự tìm dòng tiêu đề (Họ và tên, Ngày sinh, Số CMND/HC…). Mã ĐKI sẽ tự điền từ kho mã ĐKI theo CCCD.</p></div>`;
+    setupDrop($('#iDrop', el), f => startImportFile(k, f)); bindCommon(el); return;
+  }
+  const rows = dr.rows;
+  rows.forEach(r => { if (r.gvId && !gvById(r.gvId)) r.gvId = ''; }); // GV đã bị xóa
+  const nDup = rows.filter(r => r.dup?.length).length, nWarn = rows.filter(r => r.warn?.length).length;
+  el.innerHTML = `<div class="row"><a href="#" data-k="${k.id}">← ${kCode(k)}</a><span class="sp"></span><div class="steps" style="margin:0"><span>1. Chọn file</span><span class="on">2. Chọn giáo viên</span><span>3. Chốt</span></div></div>
+  <h1 style="margin:6px 0 4px">Chọn giáo viên — <span class="hang">${kCode(k)}</span></h1>
+  <p class="small muted" style="margin:0 0 10px">Nguồn <b>${esc(dr.src)}</b> · ${rows.length} người · <b style="color:var(--ink)">Có GV thì vào khóa, để trống thì bị loại.</b> Bấm 1 chip GV rồi bấm vào dòng để tô (bấm lại để bỏ). Tự lưu nháp.${dr.hasMa ? ' Cột "Mã đăng ký" của file được lưu làm <i>mã nguồn</i>, không phải mã ĐKI.' : ''}</p>
+  <div class="card stick" style="padding:10px 12px">
+    <div class="row" style="margin-bottom:6px"><b class="small">Tô bằng GV:</b><span class="small" id="pHint" style="color:var(--blue-d)"></span><span class="sp"></span><button class="btn sm" id="iAddGv">＋ GV mới</button></div>
+    <div class="chips" id="iChips"></div>
+  </div>
+  <div class="card" style="padding:12px">
+    <div class="row" style="margin-bottom:10px"><input class="in" id="iQ" placeholder="Lọc tên / địa chỉ / CCCD…" style="width:220px">
+      <select class="in" id="iOnly"><option value="">Tất cả (${rows.length})</option><option value="none">Chưa có GV</option><option value="has">Đã có GV</option>${nDup ? `<option value="dup">Đang ở khóa ${esc(k.hang)} khác (${nDup})</option>` : ''}${nWarn ? `<option value="warn">Có cảnh báo hồ sơ (${nWarn})</option>` : ''}</select>
+      <label class="small"><input type="checkbox" id="iNear" ${DB.settings.nearFirst === true ? 'checked' : ''}> Đưa địa bàn gần cơ sở lên đầu</label>
+      <span class="sp"></span>
+      <select class="in" id="iBulk" style="width:200px;display:none"></select>
+    </div>
+    <div class="tbl" style="max-height:calc(100vh - 300px)" id="iT"></div>
+  </div>
+  <div class="sticky-bar"><span id="iSum"></span><span class="sp"></span><button class="btn dan" id="iCancel">Hủy nháp</button><button class="btn" id="iRe">Chọn file khác</button><button class="btn pri" id="iOk">Chốt danh sách →</button></div>`;
+  $('#iOnly', el).value = impOnly;
+  const hint = () => { $('#pHint', el).textContent = paintGv && gvById(paintGv) ? `đang tô ${gvById(paintGv).tenGoi} — bấm vào dòng học viên` : '(chưa chọn — bấm 1 chip)'; };
+  const chips = () => {
+    const cnt = {}; rows.forEach(r => r.gvId && (cnt[r.gvId] = (cnt[r.gvId] || 0) + 1));
+    $('#iChips', el).innerHTML = gvSorted().map(g => `<span class="chip ${paintGv === g.id ? 'on' : ''}" data-g="${g.id}" title="${esc(g.hoTen)}">${esc(g.tenGoi)}${cnt[g.id] ? ` <small>(${cnt[g.id]})</small>` : ''}</span>`).join('') || '<span class="muted small">Chưa có giáo viên — bấm "＋ GV mới" hoặc vào mục Giáo viên.</span>';
+    $$('.chip', el).forEach(c => c.onclick = () => { paintGv = paintGv === c.dataset.g ? '' : c.dataset.g; hint(); chips(); $('#iT', el).classList.toggle('paint', !!paintGv); });
+    hint();
+  };
+  const sum = () => { const a = rows.filter(r => r.gvId).length; $('#iSum', el).innerHTML = `Đã chọn GV: <b>${a}</b>/${rows.length} · <span style="color:var(--red)">sẽ loại <b>${rows.length - a}</b></span>`; };
+  const saveDraft = () => { dr.at = new Date().toISOString(); commit(); };
+  const gvSel = r => `<select class="gv ${r.gvId ? '' : 'empty'}" data-r="${r._id}"><option value="">— không chọn (loại) —</option>${gvSorted().map(g => `<option value="${g.id}" ${g.id === r.gvId ? 'selected' : ''}>${esc(g.tenGoi)}</option>`).join('')}</select>`;
+  const bulk = () => { const n = $$('.ck:checked', el).length; const b = $('#iBulk', el); b.style.display = n ? '' : 'none'; b.innerHTML = `<option value="">Gán GV cho ${n} dòng đã tick…</option>${gvSorted().map(g => `<option value="${g.id}">${esc(g.tenGoi)}</option>`).join('')}<option value="-">(Bỏ GV — loại)</option>`; };
+  const draw = () => {
+    const q = noAcc($('#iQ', el).value), only = $('#iOnly', el).value, near = $('#iNear', el).checked;
+    let vis = rows.filter(r => (!only || (only === 'none' && !r.gvId) || (only === 'has' && r.gvId) || (only === 'dup' && r.dup?.length) || (only === 'warn' && r.warn?.length)) && (!q || noAcc(`${r.hoTen} ${r.cccd} ${r.diaChi} ${r.noiCuTru} ${r.maNguon}`).includes(q)));
+    if (near) vis = vis.slice().sort((a, b) => isNear(b) - isNear(a));
+    $('#iT', el).innerHTML = `<table><thead><tr><th><input type="checkbox" id="iAll"></th><th>#</th><th>Họ và tên</th><th>Ngày sinh</th><th>CCCD</th><th>Nơi cư trú</th><th>Ghi chú</th><th>Giáo viên</th></tr></thead><tbody>
+    ${vis.map(r => `<tr data-r="${r._id}" class="${r.gvId ? '' : 'out'} ${near && isNear(r) ? 'near' : ''}"><td><input type="checkbox" class="ck" data-r="${r._id}"></td><td class="muted">${rows.indexOf(r) + 1}</td><td><b>${esc(r.hoTen)}</b></td><td>${esc(r.ngaySinh)}</td><td class="mono">${esc(r.cccd)}</td><td class="small">${esc(r.noiCuTru || r.diaChi)}</td>
+    <td class="small">${r.already ? '<span class="badge b-info">đã có trong khóa</span> ' : ''}${r.dup?.length ? `<span class="badge b-miss" title="Cùng hạng, khóa chưa kết thúc — có thể trùng hồ sơ">đang ở ${esc(r.dup.join(', '))}</span> ` : (r.other.length ? `<span class="badge b-end" title="Từng học khóa khác">từng ở ${esc(r.other.join(', '))}</span> ` : '')}${(r.warn || []).map(w => `<span class="badge b-new">${esc(w)}</span>`).join(' ')}</td>
+    <td>${gvSel(r)}</td></tr>`).join('')}</tbody></table>`;
+    $('#iT', el).classList.toggle('paint', !!paintGv);
+    $$('select.gv', el).forEach(s => s.onchange = () => { const r = rows.find(x => x._id === s.dataset.r); r.gvId = s.value; s.classList.toggle('empty', !s.value); s.closest('tr').classList.toggle('out', !s.value); sum(); chips(); saveDraft(); });
+    $$('#iT tbody tr', el).forEach(tr => tr.addEventListener('click', e => {
+      if (!paintGv || e.target.closest('select,input')) return;
+      const r = rows.find(x => x._id === tr.dataset.r); r.gvId = r.gvId === paintGv ? '' : paintGv;
+      const s = $('select', tr); s.value = r.gvId; s.classList.toggle('empty', !r.gvId); tr.classList.toggle('out', !r.gvId); sum(); chips(); saveDraft();
+    }));
+    $$('.ck', el).forEach(c => c.onchange = bulk);
+    $('#iAll', el).onchange = e => { $$('.ck', el).forEach(c => c.checked = e.target.checked); bulk(); };
+    sum(); bulk();
+  };
+  chips(); draw();
+  $('#iQ', el).oninput = draw; $('#iOnly', el).onchange = e => { impOnly = e.target.value; draw(); };
+  $('#iNear', el).onchange = e => { DB.settings.nearFirst = e.target.checked; commit(); draw(); };
+  $('#iBulk', el).onchange = e => { const v = e.target.value; if (!v) return; const ids = $$('.ck:checked', el).map(c => c.dataset.r); rows.forEach(r => { if (ids.includes(r._id)) r.gvId = v === '-' ? '' : v; }); saveDraft(); chips(); draw(); };
+  $('#iAddGv', el).onclick = async () => { const g = await addGvDialog(); if (g) { paintGv = g.id; render(); } };
+  $('#iCancel', el).onclick = async () => { if (await confirmBox('Hủy nháp?', 'Bỏ toàn bộ lựa chọn GV của danh sách này.', 'Hủy nháp', true)) { delete DB.drafts[k.id]; commit(); go('khoaDetail', { id: k.id }); } };
+  $('#iRe', el).onclick = () => { const p = $('#filePick'); p.value = ''; p.onchange = () => p.files[0] && startImportFile(k, p.files[0]); p.click(); };
+  $('#iOk', el).onclick = () => finalizeImport(k);
+  bindCommon(el);
+}
+async function finalizeImport(k) {
+  if (lockGuard(k)) return;
+  const dr = DB.drafts[k.id];
+  dr.rows.forEach(r => { if (r.gvId && !gvById(r.gvId)) r.gvId = ''; });
+  const take = dr.rows.filter(r => r.gvId); const drop = dr.rows.filter(r => !r.gvId);
+  if (!take.length) { toast('Chưa chọn GV cho học viên nào.', 'err'); return; }
+  const dupIn = take.filter(r => r.already); const dupAct = take.filter(r => r.dup?.length); const warn = take.filter(r => r.warn?.length);
+  const byGv = {}; take.forEach(r => { const t = gvById(r.gvId).tenGoi; byGv[t] = (byGv[t] || 0) + 1; });
+  const body = `<p>Đưa <b>${take.length}</b> học viên vào <b>${kCode(k)}</b>: ${Object.entries(byGv).map(([t, n]) => `${esc(t)} (${n})`).join(', ')}.</p>
+   ${dupIn.length ? `<p class="note blue small">${dupIn.length} người đã có sẵn trong khóa → chỉ cập nhật GV/thông tin, không thêm trùng.</p>` : ''}
+   ${dupAct.length ? `<div class="note red small"><b>${dupAct.length} người đang ở khóa ${esc(k.hang)} khác chưa kết thúc:</b> ${dupAct.map(r => esc(r.hoTen) + ' (' + esc(r.dup.join(', ')) + ')').join('; ')}.
+      <label class="f" style="margin-top:8px">Xử lý<select class="in" id="fDup"><option value="">— chọn cách xử lý —</option><option value="move">Chuyển sang ${kCode(k)} (rút khỏi khóa cũ)</option><option value="both">Giữ ở cả hai khóa</option></select></label></div>` : ''}
+   ${warn.length ? `<p class="note small">Cảnh báo hồ sơ (${warn.length}): ${warn.map(r => esc(r.hoTen) + ': ' + esc(r.warn.join(', '))).join('; ')}. Vẫn thêm — kiểm lại sau.</p>` : ''}
+   <details><summary><b style="color:var(--red)">Loại ${drop.length} người không chọn GV</b> (bấm để xem)</summary><div class="small" style="max-height:200px;overflow:auto;margin-top:6px">${drop.map(r => esc(r.hoTen)).join(', ') || '—'}</div></details>
+   <label class="small" style="display:block;margin-top:12px"><input type="checkbox" id="fSort" checked> Sắp xếp danh sách khóa theo tên (tên riêng → họ → đệm)</label>`;
+  const ok = await modal('Chốt danh sách học viên', body, [{ t: 'Quay lại', v: null }, { t: `Chốt ${take.length} học viên`, cls: 'pri', v: bg => { const d = $('#fDup', bg); if (d && !d.value) { toast('Chọn cách xử lý người đang ở khóa khác.', 'err'); d.focus(); return false; } return { sort: $('#fSort', bg).checked, dup: d?.value || 'both' }; } }]);
+  if (!ok) return;
+  let add = 0, upd = 0, moved = 0;
+  for (const r of take) {
+    if (r.dup?.length && ok.dup === 'move') {
+      const olds = DB.hv.filter(h => h.cccd === r.cccd && h.khoaId !== k.id && activeDup(r.cccd, k).some(x => x.id === h.khoaId));
+      olds.forEach(h => logAct(`Rút ${h.hoTen} khỏi ${kCode(khoaById(h.khoaId))} (chuyển sang ${kCode(k)})`));
+      olds.forEach(h => trashHv(h, `Chuyển sang ${k.hang}-${pad2(k.so)} khi chốt danh sách`)); moved += olds.length;
+    }
+    const ex = r.cccd && hvOf(k.id).find(h => h.cccd === r.cccd);
+    const data = { hoTen: r.hoTen, ngaySinh: r.ngaySinh, cccd: r.cccd, maNguon: r.maNguon, soHS: r.soHS, gioiTinh: r.gioiTinh, quocTich: r.quocTich, diaChi: r.diaChi, noiCuTru: r.noiCuTru, ngayNhanHS: r.ngayNhanHS, gvId: r.gvId, gvText: '' };
+    if (ex) { for (const [f, v] of Object.entries(data)) if (v) ex[f] = v; ex.gvGoc = ''; if (r.sdt) ex.sdt = r.sdt; upd++; }
+    else { DB.hv.push({ id: uid(), khoaId: k.id, sdt: r.sdt || '', ghiChu: '', maDK: '', tt: 'hoc', thu: [], hocPhi: DB.settings.hocPhi[k.hang] || 0, ...data }); add++; }
+    const g = gvById(r.gvId); g.uses = (g.uses || 0) + 1;
+  }
+  const list = hvOf(k.id);
+  if (ok.sort) list.sort((a, b) => vnCompare(a.hoTen, b.hoTen)).forEach((h, i) => h.order = i); else { let mx = Math.max(-1, ...list.filter(h => h.order != null).map(h => h.order)); list.forEach(h => { if (h.order == null) h.order = ++mx; }); }
+  const filled = fillFromKho(list);
+  delete DB.drafts[k.id]; paintGv = ''; impOnly = '';
+  commit(`Chốt ${add} HV mới (+${upd} cập nhật) vào ${kCode(k)}, loại ${drop.length}` + (moved ? `, rút ${moved} khỏi khóa cũ` : ''));
+  toast(`Đã chốt: +${add} học viên${upd ? `, cập nhật ${upd}` : ''}, loại ${drop.length}.` + (moved ? ` Đã rút ${moved} người khỏi khóa cũ.` : '') + (filled ? ` Tự điền ${filled} mã ĐKI.` : ' Mã ĐKI sẽ tự điền khi nạp file data mã ĐKI.'), 'ok', 7000);
+  go('khoaDetail', { id: k.id });
+}
+
+/* ---------- HỌC VIÊN (tra cứu toàn bộ) ---------- */
+let hvQ = '', hvMissOnly = false;
+function vHv(el) {
+  el.innerHTML = `<h1>Học viên</h1><p class="sub">Tra cứu toàn bộ học viên của mọi khóa.</p>
+  <div class="card"><div class="row"><input class="in" id="hQ" placeholder="Tên (không dấu cũng được), CCCD, mã ĐKI, SĐT, GV…" style="width:380px" value="${esc(hvQ)}"><label class="small"><input type="checkbox" id="hM" ${hvMissOnly ? 'checked' : ''}> Chỉ HV thiếu mã ĐKI</label><button class="btn sm" id="hSdt">📞 Nạp SĐT từ file (mọi khóa đang mở)</button><span class="sp"></span><span class="muted small" id="hN"></span></div><div class="tbl" style="margin-top:12px;max-height:70vh" id="hT"></div></div>`;
+  const draw = () => {
+    const q = noAcc(hvQ);
+    const all = DB.hv.filter(h => (!hvMissOnly || !h.maDK) && (!q || noAcc(`${h.hoTen} ${h.cccd} ${h.maDK} ${h.sdt} ${gvLabel(h)} ${h.soHS}`).includes(q)));
+    const show = all.slice(0, 500);
+    $('#hN', el).textContent = `${all.length} học viên` + (all.length > 500 ? ' (hiện 500 đầu — lọc thêm để thu hẹp)' : '');
+    $('#hT', el).innerHTML = `<table><thead><tr><th>Họ và tên</th><th>Ngày sinh</th><th>CCCD</th><th>SĐT</th><th>Khóa</th><th>GV</th><th>Mã ĐKI</th><th>Trạng thái</th></tr></thead><tbody>${show.map(h => { const k = khoaById(h.khoaId); return `<tr><td><b>${esc(h.hoTen)}</b></td><td>${esc(h.ngaySinh)}</td><td class="mono">${esc(h.cccd)}</td><td class="mono">${esc(h.sdt || '')}</td><td><a href="#" data-hv="${h.id}" class="hang">${k ? kCode(k) : '?'}</a></td><td>${esc(gvLabel(h))}</td><td>${h.maDK ? `<span class="mono small">${esc(h.maDK)}</span>` : '<span class="badge b-miss">thiếu</span>'}</td><td class="small">${HV_TT[h.tt] || ''}</td></tr>`; }).join('')}</tbody></table>`;
+    $$('[data-hv]', el).forEach(a => a.onclick = e => { e.preventDefault(); openHv(a.dataset.hv); });
+  };
+  $('#hQ', el).oninput = e => { hvQ = e.target.value; draw(); };
+  $('#hSdt', el).onclick = () => pickFile(f => importSdt(f, null)); $('#hM', el).onchange = e => { hvMissOnly = e.target.checked; draw(); };
+  draw(); $('#hQ', el).focus();
+}
+function openHv(id) { const h = DB.hv.find(x => x.id === id); if (!h) return; hlHv = id; go('khoaDetail', { id: h.khoaId }); }
+
+/* ---------- GIÁO VIÊN ---------- */
+async function addGvDialog(g) {
+  const isNew = !g || !g.id; g = g || { hoTen: '', sdt: '', chucVu: 'Giáo viên CSHN', active: true };
+  const r = await modal(isNew ? 'Thêm giáo viên' : 'Sửa giáo viên', `<div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+   <label class="f" style="grid-column:1/-1">Họ và tên<input class="in" id="gN" value="${esc(g.hoTen)}"></label>
+   <label class="f">Tên gọi tắt (dùng khi chọn & xuất)<input class="in" id="gS" value="${esc(g.tenGoi || '')}" placeholder="tự gợi ý"></label>
+   <label class="f">Số điện thoại<input class="in" id="gP" value="${esc(g.sdt || '')}"></label>
+   <label class="f">Chức vụ<input class="in" id="gC" value="${esc(g.chucVu || '')}"></label>
+   <label class="f">Tên khác hay viết (cách nhau dấu phẩy)<input class="in" id="gA" value="${esc((g.alias || []).join(', '))}" placeholder="vd: PHAN LONG, P LONG"></label>
+   <label class="small" style="grid-column:1/-1"><input type="checkbox" id="gAct" ${g.active !== false ? 'checked' : ''}> Đang dạy (hiện trong danh sách chọn)</label></div>`,
+    [{ t: 'Hủy', v: null }, { t: 'Lưu', cls: 'pri', v: bg => { const n = normName($('#gN', bg).value); if (!n) { toast('Nhập họ tên.', 'err'); return false; } return { hoTen: n, tenGoi: normName($('#gS', bg).value), sdt: phoneText($('#gP', bg).value), chucVu: $('#gC', bg).value.trim(), alias: $('#gA', bg).value.split(',').map(normName).filter(Boolean), active: $('#gAct', bg).checked }; } }]);
+  if (!r) return null;
+  if (!isNew && !r.tenGoi) r.tenGoi = g.tenGoi;
+  if (r.tenGoi && DB.gv.some(x => x !== g && x.tenGoi === r.tenGoi)) { toast(`Tên gọi tắt "${r.tenGoi}" đã có GV khác dùng — chọn tên khác.`, 'err', 6000); return addGvDialog(isNew ? Object.assign({}, r, { tenGoi: '' }) : g); }
+  if (isNew) { g = { id: uid(), uses: 0, ...r }; DB.gv.push(g); } else Object.assign(g, r);
+  recomputeShorts();
+  // nối HV đang ghi tên GV dạng chữ
+  let linked = 0; DB.hv.forEach(h => { if (!h.gvId && h.gvText) { const m = findGvByText(h.gvText); if (m) { h.gvId = m.id; h.gvText = ''; linked++; } } });
+  commit((isNew ? 'Thêm GV ' : 'Sửa GV ') + g.hoTen); if (linked) toast(`Đã nối ${linked} học viên với GV theo tên.`);
+  render(); return g;
+}
+function vGv(el) {
+  const cnt = {}; DB.hv.forEach(h => { if (h.gvId) cnt[h.gvId] = (cnt[h.gvId] || 0) + 1; });
+  const inDraft = new Set(); Object.values(DB.drafts || {}).forEach(d => d.rows.forEach(r => r.gvId && inDraft.add(r.gvId)));
+  const run = {}; DB.hv.forEach(h => { const k = khoaById(h.khoaId); if (h.gvId && k && kStatus(k).o === 1) run[h.gvId] = (run[h.gvId] || 0) + 1; });
+  const unl = {}; DB.hv.forEach(h => { if (!h.gvId && h.gvText) unl[h.gvText] = (unl[h.gvText] || 0) + 1; });
+  el.innerHTML = `<div class="row"><div><h1>Giáo viên</h1><p class="sub">Tên gọi tắt dùng khi chọn GV và in vào cột "GIÁO VIÊN KHAI THÁC". Danh sách chọn xếp cố định A→Z theo tên. Tên gọi tắt đã đặt thì không tự đổi.</p></div><span class="sp"></span><button class="btn pri" id="gNew">＋ Thêm giáo viên</button></div>
+  ${Object.keys(unl).length ? `<div class="card" style="border-color:#f3dc8a"><div class="row"><h2 style="margin:0">Ghép tên GV từ dữ liệu cũ <span class="badge b-new">${Object.keys(unl).length} tên</span></h2><span class="sp"></span>
+      <span class="small muted" id="mSel">0 dòng đã tick</span>
+      <select class="in" id="mBulk" style="min-width:230px"><option value="">Gán 1 GV cho các dòng đã tick…</option>${gvSorted().map(g => `<option value="${g.id}">${esc(g.tenGoi)} – ${esc(g.hoTen)}</option>`).join('')}<option value="__src">Không phải GV (nguồn tuyển sinh)</option></select>
+      <button class="btn pri" id="mAllOk">✔ Ghép tất cả dòng đã chọn GV</button></div>
+    <p class="small muted" style="margin:8px 0 10px">Tool đã <b>gợi ý sẵn</b> những tên đoán được (nền xanh) — kiểm lại rồi bấm <b>Ghép tất cả</b>. Muốn gán cùng 1 GV cho nhiều dòng: tick các dòng → chọn GV ở ô bên trên. Mỗi chữ lưu thành "tên khác hay viết" của GV; file xuất khóa cũ vẫn giữ chữ gốc.</p>
+    <div class="tbl"><table><thead><tr><th><input type="checkbox" id="mAllCk"></th><th>Chữ trong file cũ</th><th class="num">Số HV</th><th>Ở các khóa</th><th>Là giáo viên</th></tr></thead><tbody>
+    ${Object.entries(unl).sort((a, b) => b[1] - a[1]).map(([t, n]) => { const sug = guessGv(t); return `<tr><td><input type="checkbox" class="mck" data-t="${esc(t)}"></td><td><b>${esc(t)}</b></td><td class="num">${n}</td><td class="small">${esc([...new Set(DB.hv.filter(h => !h.gvId && h.gvText === t).map(h => khoaById(h.khoaId)).filter(Boolean).map(k => k.hang + '-' + pad2(k.so)))].slice(0, 6).join(', '))}</td>
+      <td><select class="in" data-map="${esc(t)}" style="min-width:260px;${sug ? 'background:var(--green-l)' : ''}"><option value="">— chọn —</option>${gvSorted().map(g => `<option value="${g.id}" ${sug === g.id ? 'selected' : ''}>${esc(g.tenGoi)} – ${esc(g.hoTen)}</option>`).join('')}<option value="__src" ${sug === '__src' ? 'selected' : ''}>Không phải GV (nguồn tuyển sinh, vd TỰ NỘP)</option></select>${sug ? ' <span class="small" style="color:var(--green)">gợi ý</span>' : ''}</td></tr>`; }).join('')}</tbody></table></div></div>` : ''}
+  <div class="card"><div class="tbl"><table><thead><tr><th>Họ và tên</th><th>Tên gọi tắt</th><th>SĐT</th><th>Chức vụ</th><th class="num">HV đang học</th><th class="num">Tổng HV</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+  ${DB.gv.slice().sort((a, b) => vnCompare(a.hoTen, b.hoTen)).map(g => `<tr><td><b>${esc(g.hoTen)}</b></td><td><span class="badge b-info">${esc(g.tenGoi)}</span>${(g.alias || []).length ? ` <span class="small muted">${esc(g.alias.join(', '))}</span>` : ''}</td><td class="mono">${esc(g.sdt || '')}</td><td class="small">${esc(g.chucVu || '')}</td><td class="num">${run[g.id] || 0}</td><td class="num">${cnt[g.id] || 0}</td><td>${g.active !== false ? '<span class="badge b-run">đang dạy</span>' : '<span class="badge b-end">nghỉ</span>'}</td><td><button class="btn sm" data-e="${g.id}">Sửa</button> ${cnt[g.id] || inDraft.has(g.id) ? '' : `<button class="btn sm dan" data-x="${g.id}">Xóa</button>`}</td></tr>`).join('') || '<tr><td colspan="8" class="empty-st">Chưa có giáo viên.</td></tr>'}
+  </tbody></table></div></div>`;
+  $('#gNew', el).onclick = () => addGvDialog();
+  const mapOne = (t, v) => {
+    const hs = DB.hv.filter(h => !h.gvId && h.gvText === t);
+    if (v === '__src') hs.forEach(h => { h.nguonTS = t; h.gvText = ''; });
+    else { const g = gvById(v); if (!g) return 0; g.alias = [...new Set([...(g.alias || []), normName(t)])]; hs.forEach(h => { h.gvId = g.id; h.gvText = ''; }); }
+    return hs.length;
+  };
+  const selCnt = () => { const n = $$('.mck:checked', el).length; const x = $('#mSel', el); if (x) x.textContent = `${n} dòng đã tick`; };
+  $$('.mck', el).forEach(c => c.onchange = selCnt);
+  $('#mAllCk', el)?.addEventListener('change', e => { $$('.mck', el).forEach(c => c.checked = e.target.checked); selCnt(); });
+  $('#mBulk', el)?.addEventListener('change', e => {
+    const v = e.target.value; if (!v) return; const ts = $$('.mck:checked', el).map(c => c.dataset.t);
+    if (!ts.length) { toast('Tick chọn các dòng trước.', 'err'); e.target.value = ''; return; }
+    $$('select[data-map]', el).forEach(s => { if (ts.includes(s.dataset.map)) { s.value = v; s.style.background = 'var(--blue-l)'; } });
+    e.target.value = ''; toast(`Đã điền GV cho ${ts.length} dòng — bấm "Ghép tất cả" để lưu.`);
+  });
+  $('#mAllOk', el)?.addEventListener('click', async () => {
+    const pairs = $$('select[data-map]', el).filter(s => s.value).map(s => [s.dataset.map, s.value]);
+    if (!pairs.length) { toast('Chưa dòng nào chọn GV.', 'err'); return; }
+    const list = pairs.map(([t, v]) => `<li><b>${esc(t)}</b> → ${v === '__src' ? 'nguồn tuyển sinh' : esc(gvById(v).tenGoi + ' – ' + gvById(v).hoTen)}</li>`).join('');
+    if (!await confirmBox(`Ghép ${pairs.length} tên?`, `<ul class="small" style="max-height:300px;overflow:auto;margin:0;padding-left:18px">${list}</ul>`, 'Ghép tất cả')) return;
+    let n = 0; pairs.forEach(([t, v]) => n += mapOne(t, v));
+    commit(`Ghép hàng loạt ${pairs.length} tên GV (${n} HV)`); toast(`Đã ghép ${pairs.length} tên, ${n} học viên.`, 'ok'); render();
+  });
+  $$('[data-e]', el).forEach(b => b.onclick = () => addGvDialog(gvById(b.dataset.e)));
+  $$('[data-x]', el).forEach(b => b.onclick = async () => { const g = gvById(b.dataset.x); if (await confirmBox('Xóa giáo viên?', `Xóa <b>${esc(g.hoTen)}</b>?`, 'Xóa', true)) { DB.gv = DB.gv.filter(x => x !== g); toTrash('gv', g, g.hoTen, ''); commit('Xóa GV ' + g.hoTen + ' → thùng rác'); render(); } });
+}
+
+/* ---------- KHO MÃ ĐKI ---------- */
+let madkAll = false, LAST_RECON = null;
+async function showRecon() {
+  const R = LAST_RECON; if (!R) return;
+  const r = await modal('Đối chiếu file ' + R.file, `<h2 style="font-size:14px">Có mã trong file, chưa có trong khóa nào (${R.notInKhoa.length})</h2><div class="small" style="max-height:180px;overflow:auto">${R.notInKhoa.map(x => `${esc(x.hoTen)} · ${esc(x.ngaySinh)} · <span class="mono">${esc(x.cccd)}</span> · <span class="mono">${esc(x.maDK)}</span>`).join('<br>') || '—'}</div><h2 style="font-size:14px;margin-top:12px">Học viên khóa đang học chưa có mã, không có trong file (${R.notInFile.length})</h2><div class="small" style="max-height:180px;overflow:auto">${R.notInFile.map(h => `${esc(h.hoTen)} · ${esc(h.ngaySinh)} · <span class="mono">${esc(h.cccd)}</span> · ${kCode(khoaById(h.khoaId))}`).join('<br>') || '—'}</div>`, [{ t: 'Đóng', v: null }, { t: '⬇ Xuất Excel', cls: 'pri', v: 'x' }]);
+  if (r !== 'x') return;
+  const wb = new ExcelJS.Workbook();
+  const a = wb.addWorksheet('Co ma - chua co trong khoa'); a.addRow(['Họ và tên', 'Ngày sinh', 'CCCD', 'Mã ĐKI', 'Số HS']).font = { bold: true }; R.notInKhoa.forEach(x => a.addRow([x.hoTen, x.ngaySinh, x.cccd, x.maDK, x.soHS]));
+  const b = wb.addWorksheet('Trong khoa - chua co ma'); b.addRow(['Khóa', 'Họ và tên', 'Ngày sinh', 'CCCD', 'GV']).font = { bold: true }; R.notInFile.forEach(h => { const k = khoaById(h.khoaId); b.addRow([k.hang + '-' + pad2(k.so), h.hoTen, h.ngaySinh, h.cccd, gvLabel(h)]); });
+  [a, b].forEach(w => w.columns.forEach(c => c.width = 24));
+  downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `DoiChieu_MaDKI_${todayISO()}.xlsx`);
+}
+function vMadk(el) {
+  const miss = missingMa(madkAll); const total = Object.keys(DB.madk).length;
+  el.innerHTML = `<h1>Kho mã ĐKI</h1><p class="sub">Thả file data mã ĐKI vào đây là xong: tool khớp theo CCCD và tự điền cho học viên ở mọi khóa. Chỉ nhận mã chuẩn bắt đầu <b>${esc(DB.settings.maPrefix || '52002')}</b> — mã khác (vd 52003 trong file danh sách) bị bỏ qua.</p>
+  <div class="card"><div class="drop" id="mDrop"><b>Kéo thả file data mã ĐKI vào đây</b><br>(.xls/.xlsx — cùng mẫu file 2: STT, Mã đăng ký, Số Hồ sơ, Họ và tên, Ngày sinh, …, Số CMND/HC)</div>
+  <div class="row" style="margin-top:12px"><span>Kho hiện có <b>${total}</b> mã.</span><span class="sp"></span><span>${miss.length ? `<span class="badge b-miss">${miss.length} HV còn thiếu mã</span>` : '<span class="badge b-run">Mọi HV đã có mã</span>'}</span></div><div id="mRep"></div></div>
+  <div class="card"><div class="row"><h2 style="margin:0">Học viên còn thiếu mã ĐKI</h2><span class="sp"></span><label class="small"><input type="checkbox" id="mAll" ${madkAll ? 'checked' : ''}> Gồm cả khóa đã kết thúc</label></div><div style="height:10px"></div>${miss.length ? `<div class="tbl" style="max-height:50vh"><table><thead><tr><th>Khóa</th><th>Họ và tên</th><th>Ngày sinh</th><th>CCCD</th><th>Gợi ý trong kho (cùng tên + ngày sinh)</th></tr></thead><tbody>
+  ${miss.map(h => { const k = khoaById(h.khoaId); const sug = Object.values(DB.madk).find(r => r.hoTen === h.hoTen && r.ngaySinh === h.ngaySinh); return `<tr><td><a href="#" data-hv="${h.id}" class="hang">${k ? kCode(k) : '?'}</a></td><td>${esc(h.hoTen)}</td><td>${esc(h.ngaySinh)}</td><td class="mono">${esc(h.cccd)}</td><td>${sug ? `<span class="mono small">${esc(sug.maDK)}</span> · CCCD kho <span class="mono">${esc(sug.cccd)}</span> <button class="btn sm" data-use="${h.id}|${esc(sug.cccd)}">Dùng mã này</button>` : '<span class="muted small">—</span>'}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="muted">Không có.</div>'}</div>`;
+  setupDrop($('#mDrop', el), async f => {
+    try {
+      const s = await sniffFile(f); if (s.kind !== 'list') { toast('Không thấy bảng có cột Mã đăng ký + CCCD.', 'err'); return; }
+      if (s.map.maDK == null) { toast('File không có cột "Mã đăng ký".', 'err'); return; }
+      if (!s.rows.some(r => maOK(r.maDK))) { toast(`File không có mã nào bắt đầu bằng ${DB.settings.maPrefix || '52002'} — không phải file data mã ĐKI chuẩn.`, 'err', 7000); return; }
+      const before = new Map(DB.hv.map(h => [h.id, h.maDK]));
+      const conflicts = DB.hv.filter(h => h.maDK && !h.maTuNguon && s.rows.some(r => r.cccd === h.cccd && r.maDK && r.maDK !== h.maDK));
+      const u = upsertKho(s.rows, f.name); const n = fillFromKho();
+      commit(`Nạp mã ĐKI từ ${f.name}: +${u.add} mới, ${u.upd} đổi, điền ${n} HV`);
+      render();
+      $('#mRep').innerHTML = `<div class="note ${conflicts.length ? '' : 'blue'}" style="margin-top:12px">Đã đọc <b>${s.rows.length}</b> dòng: thêm <b>${u.add}</b> mã mới, cập nhật ${u.upd}${u.skip ? `, bỏ qua <b>${u.skip}</b> mã không bắt đầu ${esc(DB.settings.maPrefix || '52002')}` : ''}. Đã tự điền mã cho <b>${n}</b> học viên.${conflicts.length ? `<br>⚠ ${conflicts.length} HV đã có mã khác với file mới (giữ mã cũ): ${conflicts.map(h => esc(h.hoTen)).join(', ')} <button class="btn sm" id="mOver">Ghi đè theo file mới</button>` : ''}</div>`;
+      $('#mOver')?.addEventListener('click', () => { conflicts.forEach(h => { h.maDK = DB.madk[h.cccd].maDK; }); commit('Ghi đè mã ĐKI ' + conflicts.length + ' HV'); toast('Đã ghi đè.', 'ok'); render(); });
+      // Đối chiếu: file ↔ học viên trong các khóa đang mở
+      const fileOK = s.rows.filter(r => maOK(r.maDK));
+      const allCc = new Set(DB.hv.map(h => h.cccd).filter(Boolean)); const fileCc = new Set(fileOK.map(r => r.cccd));
+      const notInKhoa = fileOK.filter(r => !allCc.has(r.cccd));
+      const notInFile = DB.hv.filter(h => { const k = khoaById(h.khoaId); return k && kStatus(k).o < 2 && h.tt === 'hoc' && !h.maDK && !fileCc.has(h.cccd); });
+      LAST_RECON = { file: f.name, notInKhoa, notInFile };
+      $('#mRep').insertAdjacentHTML('beforeend', `<div class="note small" style="margin-top:8px"><b>Đối chiếu:</b> ${notInKhoa.length} người có mã trong file nhưng <b>chưa có trong khóa nào</b>; ${notInFile.length} học viên khóa đang học <b>vẫn chưa có mã</b> (không có trong file). <button class="btn sm" id="mRecon">Xem & xuất Excel đối chiếu</button></div>`);
+      $('#mRecon').onclick = showRecon;
+      void before;
+    } catch (e) { toast('Lỗi đọc file: ' + e.message, 'err'); }
+  });
+  $('#mAll', el).onchange = e => { madkAll = e.target.checked; render(); };
+  $$('[data-hv]', el).forEach(a => a.onclick = e => { e.preventDefault(); openHv(a.dataset.hv); });
+  $$('[data-use]', el).forEach(b => b.onclick = () => { const [id, cc] = b.dataset.use.split('|'); const h = DB.hv.find(x => x.id === id); const r = DB.madk[cc]; h.maDK = r.maDK; h.soHS = r.soHS; commit(`Dùng mã ${r.maDK} cho ${h.hoTen}`); render(); });
+}
+
+/* ---------- KIỂM TRA DỮ LIỆU ---------- */
+let chkTab = 'dup', chkAll = false;
+function dataIssues(all) {
+  const live = DB.hv.filter(h => { const k = khoaById(h.khoaId); return k && (all || kStatus(k).o < 2) && h.tt !== 'bohoc'; });
+  const byC = {}; DB.hv.forEach(h => { if (!h.cccd) return; const k = khoaById(h.khoaId); if (!k || h.tt === 'bohoc') return; (byC[h.cccd] = byC[h.cccd] || []).push(h); });
+  const dup = Object.values(byC).filter(a => a.length > 1 && (all || a.filter(h => kStatus(khoaById(h.khoaId)).o < 2).length > 1));
+  return {
+    dup: { t: 'CCCD ở nhiều khóa', rows: dup },
+    warn: { t: 'Cảnh báo hồ sơ', rows: live.filter(h => hvWarn(h, khoaById(h.khoaId)).length) },
+    ma: { t: 'Thiếu mã ĐKI', rows: live.filter(h => !h.maDK) },
+    sdt: { t: 'Thiếu SĐT', rows: live.filter(h => !h.sdt) },
+    gv: { t: 'Chưa rõ GV', rows: live.filter(h => !h.gvId && !h.gvGoc) },
+    no: { t: 'Còn nợ học phí', rows: live.filter(h => (+h.hocPhi || 0) > paid(h)) },
+  };
+}
+function vCheck(el) {
+  const I = dataIssues(chkAll);
+  el.innerHTML = `<div class="row"><div><h1>Kiểm tra dữ liệu</h1><p class="sub">Soát lỗi trước khi nộp hồ sơ. Mặc định chỉ xét khóa chưa kết thúc, bỏ qua HV bỏ học.</p></div><span class="sp"></span><label class="small"><input type="checkbox" id="cAll" ${chkAll ? 'checked' : ''}> Gồm cả khóa đã kết thúc</label><button class="btn ok" id="cExp">⬇ Xuất Excel tất cả lỗi</button></div>
+  <div class="grid g4" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${Object.entries(I).map(([k, v]) => `<div class="card stat" data-ct="${k}" style="cursor:pointer;border-color:${v.rows.length ? (k === 'dup' || k === 'ma' ? 'var(--red)' : 'var(--amber)') : 'var(--green)'};${chkTab === k ? 'box-shadow:0 0 0 2px var(--blue)' : ''}"><div class="k">${v.t}</div><div class="v">${v.rows.length}</div></div>`).join('')}</div>
+  <div class="card" id="cBox"></div>`;
+  const box = $('#cBox', el), cur = I[chkTab];
+  const link = h => { const k = khoaById(h.khoaId); return `<a href="#" data-hv="${h.id}" class="hang">${k ? kCode(k) : '?'}</a>${isLocked(k) ? ' 🔒' : ''}`; };
+  if (chkTab === 'dup') box.innerHTML = `<h2>${cur.t}</h2>` + (cur.rows.map(g => `<div class="alert-li"><span class="mono">${esc(g[0].cccd)}</span> <b>${esc(g[0].hoTen)}</b><span class="sp"></span>${g.map(h => `${link(h)} <span class="small muted">(${HV_TT[h.tt]}, GV ${esc(gvLabel(h) || '—')})</span>`).join(' · ')}</div>`).join('') || '<div class="muted">Không có. 👍</div>');
+  else box.innerHTML = `<h2>${cur.t}</h2>` + (cur.rows.length ? `<div class="tbl" style="max-height:60vh"><table><thead><tr><th>Khóa</th><th>Họ và tên</th><th>Ngày sinh</th><th>CCCD</th><th>GV</th><th>Chi tiết</th></tr></thead><tbody>${cur.rows.map(h => `<tr><td>${link(h)}</td><td><b>${esc(h.hoTen)}</b></td><td>${esc(h.ngaySinh)}</td><td class="mono">${esc(h.cccd)}</td><td class="small">${esc(gvLabel(h))}</td><td class="small">${chkTab === 'warn' ? esc(hvWarn(h, khoaById(h.khoaId)).join(', ')) : chkTab === 'no' ? 'Còn nợ ' + money((+h.hocPhi || 0) - paid(h)) + ' đ' : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Không có. 👍</div>');
+  $$('[data-ct]', el).forEach(c => c.onclick = () => { chkTab = c.dataset.ct; render(); });
+  $$('[data-hv]', el).forEach(a => a.onclick = e => { e.preventDefault(); openHv(a.dataset.hv); });
+  $('#cAll', el).onchange = e => { chkAll = e.target.checked; render(); };
+  $('#cExp', el).onclick = async () => {
+    const wb = new ExcelJS.Workbook();
+    for (const [key, v] of Object.entries(I)) {
+      const ws = wb.addWorksheet(v.t.slice(0, 30)); ws.addRow(['Khóa', 'Họ và tên', 'Ngày sinh', 'CCCD', 'GV', 'Chi tiết']).font = { bold: true };
+      const rows = key === 'dup' ? v.rows.flat() : v.rows;
+      rows.forEach(h => { const k = khoaById(h.khoaId); ws.addRow([k ? `${k.hang}-${pad2(k.so)}` : '', h.hoTen, h.ngaySinh, h.cccd, gvLabel(h), key === 'warn' ? hvWarn(h, k).join(', ') : key === 'no' ? (+h.hocPhi || 0) - paid(h) : key === 'dup' ? HV_TT[h.tt] : '']); });
+      ws.columns.forEach(c => c.width = 22);
+    }
+    downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `KiemTraDuLieu_${todayISO()}.xlsx`);
+  };
+}
+/* ---------- BÁO CÁO ---------- */
+let rpt = { from: '', to: '', hang: '', year: String(new Date().getFullYear()), incOut: false };
+function vReport(el) {
+  if (!rpt.from) { rpt.from = rpt.year + '-01-01'; rpt.to = rpt.year + '-12-31'; }
+  const ks = DB.khoa.filter(k => k.ngayKG && k.ngayKG >= rpt.from && k.ngayKG <= rpt.to && (!rpt.hang || k.hang === rpt.hang));
+  const kids = new Set(ks.map(k => k.id));
+  const hs = DB.hv.filter(h => kids.has(h.khoaId) && (rpt.incOut || (h.tt !== 'bohoc' && h.tt !== 'baoluu')));
+  const hangs = DB.hang.map(h => h.code).filter(c => !rpt.hang || c === rpt.hang);
+  const tbl = {}; const gvName = h => { const g = gvById(h.gvId); return g ? g.tenGoi + '|' + g.hoTen : '(chưa ghép) ' + (h.gvGoc || h.gvText || 'không rõ') + '|'; };
+  hs.forEach(h => { const k = khoaById(h.khoaId); const key = gvName(h); tbl[key] = tbl[key] || {}; tbl[key][k.hang] = (tbl[key][k.hang] || 0) + 1; });
+  const rows = Object.entries(tbl).map(([k, v]) => ({ k, v, sum: Object.values(v).reduce((a, b) => a + b, 0) })).sort((a, b) => b.sum - a.sum);
+  const yr = rpt.year; const months = Array.from({ length: 12 }, (_, i) => `${yr}-${pad2(i + 1)}`);
+  const mon = months.map(m => { const kk = DB.khoa.filter(k => (k.ngayKG || '').startsWith(m) && (!rpt.hang || k.hang === rpt.hang)); const o = { m, k: kk.length }; hangs.forEach(c => o[c] = DB.hv.filter(h => { const k = khoaById(h.khoaId); return k && k.hang === c && (k.ngayKG || '').startsWith(m) && h.tt !== 'bohoc'; }).length); o.t = hangs.reduce((s, c) => s + o[c], 0); return o; });
+  const maxT = Math.max(1, ...mon.map(x => x.t));
+  const yH = DB.hv.filter(h => { const k = khoaById(h.khoaId); return k && (k.ngayKG || '').startsWith(yr) && h.tt !== 'bohoc' && (!rpt.hang || k.hang === rpt.hang); });
+  const pctMa = yH.length ? Math.round(100 * yH.filter(h => h.maDK).length / yH.length) : 0;
+  const fee = feeSum(yH);
+  const years = [...new Set(DB.khoa.map(k => (k.ngayKG || '').slice(0, 4)).filter(Boolean))].sort().reverse(); if (!years.includes(yr)) years.unshift(yr);
+  el.innerHTML = `<h1>Báo cáo &amp; thống kê</h1><p class="sub">Tính theo ngày khai giảng của khóa.</p>
+  <div class="card"><div class="row"><label class="f">Năm<select class="in" id="rY">${years.map(y => `<option ${y === yr ? 'selected' : ''}>${y}</option>`).join('')}</select></label><label class="f">Từ ngày<input class="in" type="date" id="rF" value="${rpt.from}"></label><label class="f">Đến ngày<input class="in" type="date" id="rT" value="${rpt.to}"></label>
+    <label class="f">Hạng<select class="in" id="rH"><option value="">Tất cả</option>${DB.hang.map(h => `<option value="${h.code}" ${rpt.hang === h.code ? 'selected' : ''}>${esc(h.name)}</option>`).join('')}</select></label><label class="small" style="align-self:end"><input type="checkbox" id="rO" ${rpt.incOut ? 'checked' : ''}> Tính cả bảo lưu/bỏ học</label><span class="sp"></span><button class="btn ok" id="rX" style="align-self:end">⬇ Xuất Excel báo cáo</button></div></div>
+  <div class="grid g4"><div class="card stat"><div class="k">Năm ${yr} — số khóa</div><div class="v">${DB.khoa.filter(k => (k.ngayKG || '').startsWith(yr) && (!rpt.hang || k.hang === rpt.hang)).length}</div></div><div class="card stat"><div class="k">Năm ${yr} — học viên</div><div class="v">${yH.length}</div></div>
+    <div class="card stat" style="border-color:${pctMa >= 95 ? 'var(--green)' : 'var(--amber)'}"><div class="k">Tỉ lệ đủ mã ĐKI</div><div class="v">${pctMa}%</div></div><div class="card stat"><div class="k">Học phí năm ${yr}</div><div class="v" style="font-size:18px">${money(fee.thu)} đ</div><div class="d">Còn nợ ${money(fee.no)} đ</div></div></div>
+  <div class="grid g2">
+  <div class="card"><h2>Học viên theo GV khai thác (${isoToVN(rpt.from)} – ${isoToVN(rpt.to)})</h2><div class="tbl" style="max-height:60vh"><table><thead><tr><th>Giáo viên</th>${hangs.map(c => `<th class="num">${c}</th>`).join('')}<th class="num">Tổng</th></tr></thead><tbody>
+    ${rows.map(r => { const [a, b] = r.k.split('|'); return `<tr><td><b>${esc(a)}</b> <span class="small muted">${esc(b)}</span></td>${hangs.map(c => `<td class="num">${r.v[c] || ''}</td>`).join('')}<td class="num"><b>${r.sum}</b></td></tr>`; }).join('')}
+    <tr style="font-weight:700"><td>TỔNG</td>${hangs.map(c => `<td class="num">${rows.reduce((s, r) => s + (r.v[c] || 0), 0)}</td>`).join('')}<td class="num">${hs.length}</td></tr></tbody></table></div></div>
+  <div class="card"><h2>Theo tháng khai giảng — năm ${yr}</h2><div class="tbl"><table><thead><tr><th>Tháng</th><th class="num">Khóa</th>${hangs.map(c => `<th class="num">${c}</th>`).join('')}<th class="num">HV</th><th style="width:35%"></th></tr></thead><tbody>
+    ${mon.map(x => `<tr><td>${x.m.slice(5)}/${yr}</td><td class="num">${x.k || ''}</td>${hangs.map(c => `<td class="num">${x[c] || ''}</td>`).join('')}<td class="num"><b>${x.t || ''}</b></td><td><div style="height:10px;border-radius:5px;background:var(--blue);width:${Math.round(100 * x.t / maxT)}%"></div></td></tr>`).join('')}</tbody></table></div></div></div>`;
+  const upd = () => { rpt.from = $('#rF', el).value; rpt.to = $('#rT', el).value; rpt.hang = $('#rH', el).value; rpt.incOut = $('#rO', el).checked; render(); };
+  $('#rY', el).onchange = e => { rpt.year = e.target.value; rpt.from = rpt.year + '-01-01'; rpt.to = rpt.year + '-12-31'; render(); };
+  ['#rF', '#rT', '#rH', '#rO'].forEach(x => $(x, el).onchange = upd);
+  $('#rX', el).onclick = async () => {
+    const wb = new ExcelJS.Workbook(); const a = wb.addWorksheet('Theo GV');
+    a.addRow([`HỌC VIÊN THEO GV KHAI THÁC (${isoToVN(rpt.from)} – ${isoToVN(rpt.to)})`]).font = { bold: true, size: 13 }; a.addRow([]);
+    a.addRow(['Tên gọi tắt', 'Họ tên GV', ...hangs, 'Tổng']).font = { bold: true };
+    rows.forEach(r => { const [x, y] = r.k.split('|'); a.addRow([x, y, ...hangs.map(c => r.v[c] || 0), r.sum]); });
+    a.addRow(['TỔNG', '', ...hangs.map(c => rows.reduce((s, r) => s + (r.v[c] || 0), 0)), hs.length]).font = { bold: true };
+    a.columns.forEach((c, i) => c.width = i < 2 ? 28 : 10);
+    const b = wb.addWorksheet('Theo thang ' + yr); b.addRow(['Tháng', 'Số khóa', ...hangs, 'Tổng HV']).font = { bold: true }; mon.forEach(x => b.addRow([x.m, x.k, ...hangs.map(c => x[c]), x.t]));
+    const c2 = wb.addWorksheet('Chi tiet HV'); c2.addRow(['Khóa', 'Hạng', 'Ngày KG', 'Họ và tên', 'Ngày sinh', 'CCCD', 'GV', 'Trạng thái', 'Mã ĐKI']).font = { bold: true };
+    hs.forEach(h => { const k = khoaById(h.khoaId); const g = gvById(h.gvId); c2.addRow([`${k.hang}-${pad2(k.so)}`, k.hang, isoToVN(k.ngayKG), h.hoTen, h.ngaySinh, h.cccd, g ? g.hoTen : (h.gvGoc || h.gvText || ''), HV_TT[h.tt], h.maDK || '']); });
+    c2.columns.forEach(c => c.width = 18);
+    downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `BaoCao_${rpt.from}_${rpt.to}.xlsx`);
+  };
+}
+/* ---------- HƯỚNG DẪN ---------- */
+const CHANGELOG = [
+  ['2.2.0', 'Liên kết kho GitHub HP-wukoong/QUAN_LY_KHOA_OTO_CSHN: kiểm tra & cập nhật phần mềm 1 bấm (tự giữ bản cũ, kiểm mã SHA-256). Truy xuất đường dẫn: hiện đường dẫn đầy đủ của file dữ liệu và từng bản sao lưu, nút chép / mở thư mục, nhận dạng file sao lưu (ID bản cài, rev, số khóa/HV), tên file có mã đơn vị, file _THONG_TIN_SAO_LUU.txt trong mỗi thư mục sao lưu, đổi thư mục sao lưu chính.'],
+  ['2.1.0', 'Chọn 1 hoặc nhiều khóa (tick) để thao tác hàng loạt: dùng mã 52003 cho khóa cũ (chỉ khóa được chọn, hoàn tác được, mã 52002 thật tự thay khi nạp kho), đóng/mở sổ, xuất Excel nhiều khóa, xóa. Lọc khóa theo tình trạng mã.'],
+  ['2.0.0', 'Lưu dữ liệu vào file SQLite qua máy chủ Python (không phụ thuộc trình duyệt), mỗi lần lưu là 1 phiên bản, nhật ký thay đổi từng học viên, sao lưu tự động hằng ngày/đầu ngày/theo tháng + thư mục phụ, tự kiểm tra khôi phục, mã PIN, dùng chung mạng nội bộ có gộp dữ liệu, đóng sổ khóa, thùng rác, trạng thái học viên, học phí, nạp SĐT, kiểm tra dữ liệu, đối chiếu mã ĐKI, báo cáo theo GV/tháng/năm, in danh sách, xuất cho sổ nhật ký/DAT.'],
+  ['1.x', 'Bản 1 file HTML: tạo khóa, nhập file danh sách + chọn GV, kho mã ĐKI 52002, ghép tên GV, xuất Excel A–H.'],
+];
+async function ghRender(el, auto) {
+  let cfg = {}; try { cfg = await api('/api/config'); } catch { }
+  const repo = cfg.github_repo || 'HP-wukoong/QUAN_LY_KHOA_OTO_CSHN';
+  const a = $('#ghLink', el); a.href = 'https://github.com/' + repo; a.textContent = 'github.com/' + repo;
+  $('#ghRepo', el).value = repo; $('#ghBr', el).value = cfg.github_branch || 'main'; $('#ghTok', el).value = cfg.github_token || '';
+  $('#ghSave', el).onclick = async () => { try { await api('/api/config', { body: { github_repo: $('#ghRepo', el).value, github_branch: $('#ghBr', el).value, github_token: $('#ghTok', el).value } }); toast('Đã lưu cài đặt GitHub.', 'ok'); } catch (e) { toast(e.message, 'err'); } };
+  $('#ghCheck', el).onclick = () => ghCheck(el);
+  if (auto) ghCheck(el);
+}
+async function ghCheck(el) {
+  const box = $('#ghBox', el); box.innerHTML = '<span class="muted">Đang kiểm tra GitHub…</span>';
+  let r; try { r = await api('/api/update/check'); } catch (e) { r = { ok: false, msg: e.message, current: TOOL_VERSION }; }
+  UPD = r;
+  if (!r.ok) { box.innerHTML = `<div class="note small">${esc(r.msg)}</div><button class="btn sm" id="ghCheck">Thử lại</button>`; $('#ghCheck', el).onclick = () => ghCheck(el); return; }
+  if (!r.newer) { box.innerHTML = `<span class="badge b-run">✓ Đang dùng bản mới nhất (${esc(r.current)})</span> <button class="btn sm" id="ghCheck">Kiểm tra lại</button>`; $('#ghCheck', el).onclick = () => ghCheck(el); return; }
+  box.innerHTML = `<div class="note blue"><b>Có bản mới ${esc(r.latest)}</b>${r.date ? ' (' + esc(r.date) + ')' : ''} — đang dùng ${esc(r.current)}.<br><span class="small">${esc(r.notes || '')}</span></div><button class="btn pri" id="ghApply" style="margin-top:8px">⬇ Cập nhật lên ${esc(r.latest)}</button>`;
+  $('#ghApply', el).onclick = async () => {
+    if (!await confirmBox('Cập nhật phần mềm?', `<p>Tải bản <b>${esc(r.latest)}</b> từ GitHub và thay ${esc((r.files || []).join(', '))}.</p><p class="small muted">Tool tự sao lưu dữ liệu trước, giữ bản chương trình cũ để quay lại được. Dữ liệu không bị thay đổi.</p>`, 'Cập nhật')) return;
+    await flushSave();
+    try {
+      const u = await api('/api/update/apply', { body: {} });
+      box.innerHTML = `<div class="note blue">✓ Đã cập nhật ${esc(u.from)} → <b>${esc(u.to)}</b>. Bản cũ: <span class="mono">${esc(u.old)}</span></div><button class="btn pri" id="ghRestart" style="margin-top:8px">Khởi động lại tool</button>`;
+      $('#ghRestart', el).onclick = restartTool;
+    } catch (e) { box.innerHTML = `<div class="note red">${esc(e.message)}</div>`; }
+  };
+}
+async function restartTool() {
+  await flushSave();
+  try { await api('/api/restart', { body: {} }); } catch (e) { toast(e.message + ' — hãy đóng cửa sổ đen và mở lại CHAY_TOOL.bat.', 'err', 9000); return; }
+  $('#view').innerHTML = '<div class="empty-st">Đang khởi động lại máy chủ…</div>';
+  for (let i = 0; i < 40; i++) { await new Promise(r => setTimeout(r, 750)); try { const r = await fetch('/api/ping'); if (r.ok) { location.reload(); return; } } catch { } }
+  $('#view').innerHTML = '<div class="card note red">Chưa khởi động lại được — đóng cửa sổ đen và mở lại CHAY_TOOL.bat.</div>';
+}
+let UPD = null;
+async function dailyUpdateCheck() {
+  try { const k = 'qlk_upd_' + todayISO(); const c = localStorage.getItem(k); if (c) { UPD = JSON.parse(c); return; } UPD = await api('/api/update/check'); if (UPD.ok) localStorage.setItem(k, JSON.stringify(UPD)); if (UPD.newer && ROUTE.v === 'home') render(); } catch { }
+}
+function vHelp(el) {
+  el.innerHTML = `<h1>Hướng dẫn sử dụng</h1><p class="sub">Phiên bản ${TOOL_VERSION} · ${esc(DB.settings.coSo)}</p>
+  <div class="grid g2"><div class="card"><h2>Quy trình 1 khóa</h2><ol>
+    <li><b>Tạo khóa</b> (Khóa học → ＋ Tạo khóa mới): chọn hạng, ngày KG, thả luôn file danh sách học viên.</li>
+    <li><b>Chọn GV</b>: bấm chip GV rồi bấm từng dòng; ai không có GV bị loại. Bấm <b>Chốt danh sách</b>.</li>
+    <li><b>Mã ĐKI</b>: vào Kho mã ĐKI, thả file data (mã 52002…) — tự điền theo CCCD, có bảng đối chiếu.</li>
+    <li><b>SĐT</b>: gõ trực tiếp hoặc "Nạp SĐT từ file" (cột CCCD + SĐT).</li>
+    <li><b>Học phí</b>: tab Học phí trong khóa → ＋ Thu.</li>
+    <li>Trước khi nộp: <b>Kiểm tra dữ liệu</b> → sửa hết mục đỏ.</li>
+    <li><b>Xuất Excel / In danh sách / Xuất cho sổ nhật ký</b> trong trang khóa.</li>
+    <li>Kết thúc: <b>Đóng sổ</b> (tự đóng sau ${DB.settings.autoCloseDays} ngày kể từ bế giảng).</li></ol></div>
+  <div class="card"><h2>Giữ dữ liệu an toàn</h2><ul>
+    <li>Mở tool bằng <b>CHAY_TOOL.bat</b>; giữ cửa sổ đen (thu nhỏ được).</li>
+    <li>Dữ liệu: <span class="mono">data\\qlkhoa.db</span>. Sao lưu: <span class="mono">backups\\</span> — tự động mỗi 10 phút khi có thay đổi.</li>
+    <li>Thêm <b>thư mục sao lưu phụ</b> (Google Drive/USB) trong mục Sao lưu — quy tắc 3-2-1: 3 bản, 2 nơi lưu, 1 bản ở xa.</li>
+    <li>Mỗi tháng tool tự <b>thử khôi phục</b> bản sao lưu; bấm "Kiểm tra khôi phục ngay" bất cứ lúc nào.</li>
+    <li>Sai gì cũng quay lại được: <b>Thùng rác</b> (xóa nhầm), <b>Lịch sử phiên bản</b> (quay về bất kỳ lần lưu nào), nút 🕘 xem lịch sử từng học viên.</li>
+    <li>Đặt <b>mã PIN</b> để bảo vệ CCCD/địa chỉ học viên. Quên PIN: tắt tool, xóa dòng <span class="mono">pin</span> trong bảng meta của data\\qlkhoa.db (hoặc nhờ người phụ trách IT).</li>
+    <li><b>Không</b> đặt thư mục data\\ trực tiếp trong Google Drive (file đang mở dễ hỏng khi đồng bộ) — dùng thư mục sao lưu phụ.</li></ul></div></div>
+  <div class="card"><h2>Phím tắt</h2><p><span class="kbd">Ctrl</span>+<span class="kbd">K</span> tìm nhanh khóa/học viên · <span class="kbd">Enter</span>/<span class="kbd">↑</span><span class="kbd">↓</span> chuyển dòng khi sửa trong bảng · <span class="kbd">Ctrl</span>+<span class="kbd">V</span> dán bảng từ Excel ở trang khóa · kéo thả file vào bất kỳ đâu.</p></div>
+  <div class="card"><h2>Liên thông</h2><p class="small">Tool khác (sổ nhật ký giảng dạy, lọc DAT…) đọc danh sách 1 khóa qua địa chỉ <span class="mono">http://127.0.0.1:${SERVER.port || 8686}/api/khoa/BSS-22.json</span> (khi có PIN cần đăng nhập), hoặc dùng nút "Xuất DS cho sổ nhật ký / DAT" trong trang khóa.</p></div>
+  <div class="card" id="ghCard"><div class="row"><h2 style="margin:0">🔄 Cập nhật phần mềm từ GitHub</h2><span class="sp"></span><a href="#" id="ghLink" target="_blank" rel="noopener"></a></div>
+    <p class="small muted">Chỉ tải <b>mã chương trình</b> (app.html, server.py…) từ kho GitHub. <b>Dữ liệu học viên không bao giờ được gửi lên GitHub.</b> Trước khi thay, tool tự sao lưu dữ liệu và giữ bản chương trình cũ trong thư mục sao lưu\ban-cu.</p>
+    <div id="ghBox"><button class="btn pri" id="ghCheck">Kiểm tra cập nhật</button> <span class="small muted">Phiên bản đang dùng: <b>${TOOL_VERSION}</b></span></div>
+    <details style="margin-top:10px"><summary class="small">Cài đặt kho GitHub</summary><div class="grid" style="grid-template-columns:2fr 1fr 2fr auto;gap:10px;margin-top:8px;align-items:end">
+      <label class="f">Kho (chủ/tên)<input class="in" id="ghRepo"></label><label class="f">Nhánh<input class="in" id="ghBr"></label><label class="f">Token (chỉ khi kho riêng tư)<input class="in" type="password" id="ghTok" placeholder="để trống nếu kho công khai"></label><button class="btn" id="ghSave">Lưu</button></div></details></div>
+  <div class="card"><h2>Nhật ký cập nhật</h2>${CHANGELOG.map(([v, t]) => `<p><b>${v}</b> — ${esc(t)}</p>`).join('')}</div>`;
+  ghRender(el, !!ROUTE.check);
+}
+
+/* ---------- SAO LƯU & CÀI ĐẶT ---------- */
+function homeBackupNote() {
+  const up = UPD && UPD.newer ? `<div class="card note blue"><b>Có bản cập nhật ${esc(UPD.latest)}</b> trên GitHub (đang dùng ${esc(TOOL_VERSION)}). <a href="#" data-upd="1">Xem &amp; cập nhật</a></div>` : '';
+  return up + homeBackupNote0();
+}
+function homeBackupNote0() {
+  const v = META.last_verify, lb = META.last_backup;
+  if (netErr) return `<div class="card note red"><b>Mất kết nối máy chủ.</b> Thay đổi đang được giữ tạm trong trình duyệt và tự gửi lại. Kiểm tra cửa sổ CHAY_TOOL.bat còn mở.</div>`;
+  if (v && v.ok === false) return `<div class="card note red"><b>Kiểm tra bản sao lưu gần nhất bị LỖI:</b> ${esc(v.msg || '')}. <a href="#" data-go="backup">Xem mục Sao lưu</a></div>`;
+  if (!SERVER.extraDirs) return `<div class="card note"><b>Nên thêm 1 thư mục sao lưu phụ</b> (Google Drive / OneDrive / USB) để có bản ở nơi khác máy này. <a href="#" data-go="backup">Cài đặt trong mục Sao lưu</a></div>`;
+  return '';
+}
+const fmtT = t => t ? new Date(t).toLocaleString('vi-VN') : '—';
+const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+/* Nút chép / mở đường dẫn */
+function pathBtns(p) { return p ? `<button class="btn sm" data-cp="${esc(p)}" title="Chép đường dẫn">📋</button> <button class="btn sm" data-op="${esc(p)}" title="Mở trong File Explorer">📂</button>` : ''; }
+async function copyText(t) { try { await navigator.clipboard.writeText(t); } catch { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); } toast('Đã chép: ' + t, 'ok', 4000); }
+function bindPathBtns(root) {
+  $$('[data-cp]', root).forEach(b => { if (b.dataset.bd) return; b.dataset.bd = 1; b.onclick = () => copyText(b.dataset.cp); });
+  $$('[data-op]', root).forEach(b => { if (b.dataset.bd) return; b.dataset.bd = 1; b.onclick = async () => { try { await api('/api/open', { body: { path: b.dataset.op } }); } catch (e) { toast(e.message + ' — đã chép đường dẫn để bạn dán vào File Explorer.', 'err', 7000); copyText(b.dataset.op); } }; });
+}
+async function vBackup(el) {
+  el.innerHTML = '<div class="empty-st">Đang tải…</div>';
+  let info = {}, cfg = {}, revs = [];
+  try { [info, cfg, revs] = await Promise.all([api('/api/backups'), api('/api/config'), api('/api/revs')]); META.last_backup = info.last; META.last_verify = info.verify; SERVER.extraDirs = (cfg.thu_muc_sao_luu_phu || []).length; } catch (e) { el.innerHTML = `<div class="card note red">${esc(e.message)}</div>`; return; }
+  const S = DB.settings, v = info.verify || {}, lb = info.last || {};
+  const P = info.paths || {};
+  const extraT = d => ((P.extra || []).find(x => x.dir === d) || {}).target || d;
+  const pathRows = [['Thư mục tool', P.tool], ['File dữ liệu (đang dùng)', P.db], ['Thư mục sao lưu chính', P.backupRoot], ['• Hằng ngày', P.daily], ['• Theo tháng', P.monthly], ['• Excel tổng hợp', P.excel], ['• Trước khi khôi phục', P.preRestore],
+    ...(P.extra || []).map(x => ['Sao lưu phụ', x.target, x.ok]), ['File cài đặt', P.config], ['Nhật ký máy chủ', P.log]];
+  const files = info.files || [];
+  const kindName = { 'hang-ngay': 'Hằng ngày', 'theo-thang': 'Theo tháng', 'truoc-khi-khoi-phuc': 'Trước khi khôi phục', excel: 'Excel tổng hợp' };
+  el.innerHTML = `<h1>Sao lưu &amp; Cài đặt</h1><p class="sub">Dữ liệu chính: <span class="mono">${esc(info.db)}</span></p>
+  <div class="grid g4">
+    <div class="card stat" style="border-color:${netErr ? 'var(--red)' : 'var(--green)'}"><div class="k">Lưu dữ liệu</div><div class="v" style="font-size:18px">${netErr ? 'Mất kết nối' : 'Bản #' + serverRev}</div><div class="d">${netErr ? esc(netErr) : 'Mỗi thay đổi = 1 phiên bản, giữ ' + (cfg.giu_so_phien_ban || 400) + ' bản gần nhất'}</div></div>
+    <div class="card stat"><div class="k">Sao lưu gần nhất</div><div class="v" style="font-size:18px">${fmtT(lb.t)}</div><div class="d">${(lb.paths || []).length ? (lb.paths || []).map(x => `<span class="mono" title="${esc(x)}">${esc(x.split(/[\\/]/).pop())}</span>`).join('<br>') + '<br><span class="small">(xem đường dẫn đầy đủ ở bảng bên dưới)</span>' : 'Tự động mỗi 10 phút khi có thay đổi + 1 bản đầu ngày + 1 bản mỗi tháng'}</div></div>
+    <div class="card stat" style="border-color:${v.ok ? 'var(--green)' : v.ok === false ? 'var(--red)' : 'var(--amber)'}"><div class="k">Kiểm tra khôi phục</div><div class="v" style="font-size:18px">${v.ok ? '✓ Khôi phục được' : v.ok === false ? '✗ LỖI' : 'Chưa kiểm tra'}</div><div class="d">${v.t ? `${fmtT(v.t)} · ${v.nk ?? '?'} khóa, ${v.nh ?? '?'} HV<br><span class="mono" title="${esc(v.path || '')}">${esc(v.file || '')}</span>` : 'Tự kiểm tra mỗi 30 ngày'}</div></div>
+    <div class="card stat" style="border-color:${(info.extraStatus || []).some(x => x.ok) ? 'var(--green)' : 'var(--amber)'}"><div class="k">Thư mục sao lưu phụ</div><div class="v" style="font-size:18px">${(info.extraStatus || []).filter(x => x.ok).length}/${(info.extra || []).length}</div><div class="d">${(info.extra || []).length ? 'đang kết nối được' : 'Chưa cài — nên thêm Drive/USB'}</div></div>
+  </div>
+  <div class="card"><div class="row"><h2 style="margin:0">Thao tác</h2></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="bNow">💾 Sao lưu ngay</button><button class="btn" id="bVerify">🔍 Kiểm tra khôi phục ngay</button><button class="btn" id="bDl">⬇ Tải bản sao lưu (.json)</button><button class="btn" id="bUp">⬆ Khôi phục từ file .json…</button><button class="btn ok" id="bXl">⬇ Xuất Excel tổng hợp</button></div>
+    <div class="drop small" id="bDrop" style="padding:14px;margin-top:12px">Kéo thả file Excel cũ <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> hoặc file <b>.json</b> sao lưu từ bản HTML cũ vào đây để chuyển dữ liệu sang</div>
+    <div id="bRes"></div></div>
+  <div class="card"><div class="row"><h2 style="margin:0">📁 Đường dẫn dữ liệu &amp; sao lưu</h2><span class="sp"></span><span class="small muted">Máy <b>${esc(P.host)}</b> · Mã đơn vị <b>${esc(P.maDonVi)}</b> · ID bản cài <b class="mono">${esc(P.instance)}</b></span></div>
+    <div class="tbl" style="margin-top:10px"><table><tbody>${pathRows.map(([lb, pth, ok]) => `<tr><td style="width:210px"><b>${lb}</b></td><td class="mono small" style="white-space:normal;word-break:break-all">${esc(pth)}${ok === false ? ' <span class="badge b-miss">không thấy</span>' : ''}</td><td style="white-space:nowrap;width:150px">${pathBtns(pth)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="grid" style="grid-template-columns:1fr 2fr auto;gap:10px;margin-top:12px;align-items:end"><label class="f">Mã đơn vị (trong tên file)<input class="in" id="cMa" value="${esc(cfg.ma_don_vi || 'CSHN')}"></label><label class="f">Thư mục sao lưu chính (để trống = <span class="mono">${esc(P.tool)}\backups</span>)<input class="in" id="cRoot" value="${esc(cfg.thu_muc_sao_luu || '')}" placeholder="vd D:\SaoLuu_QLKhoaOto"></label><button class="btn pri" id="cPathSave">Lưu</button></div>
+    <p class="small muted">Mỗi thư mục sao lưu có file <b>_THONG_TIN_SAO_LUU.txt</b> ghi rõ: tool nào, mã đơn vị, ID bản cài, máy tính, file dữ liệu gốc → nhìn vào là biết, không nhầm với file khác.</p></div>
+  <div class="grid g2">
+  <div class="card"><h2>Thư mục sao lưu phụ</h2><p class="small muted">Mỗi bản sao lưu được chép thêm vào các thư mục này (thư mục con <b>QLKhoaOto_SaoLuu</b>). Gõ đường dẫn, mỗi dòng 1 thư mục — vd <span class="mono">G:\\My Drive\\SaoLuu</span> hoặc ổ USB <span class="mono">E:\\</span>.</p>
+    <textarea class="in" id="cExtra" rows="3" style="width:100%">${esc((cfg.thu_muc_sao_luu_phu || []).join('\n'))}</textarea>
+    <div class="small" style="margin:6px 0">${(info.extraStatus || []).map(x => `<div>${x.ok ? '✅' : '⚠️'} <span class="mono">${esc(x.dir)}</span> ${x.ok ? `→ <span class="mono">${esc(extraT(x.dir))}</span> ${pathBtns(extraT(x.dir))}` : '— không thấy (chưa cắm USB/Drive?)'}</div>`).join('')}</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px"><label class="f">Giữ bản hằng ngày (ngày)<input class="in" type="number" id="cDay" value="${cfg.giu_ban_hang_ngay}"></label><label class="f">Giữ bản theo tháng (tháng)<input class="in" type="number" id="cMon" value="${cfg.giu_ban_theo_thang}"></label></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="cSave">Lưu cài đặt sao lưu</button></div></div>
+  <div class="card"><h2>Bảo mật</h2>
+    <p class="small">${cfg._needPin ? '🔒 Đang bật mã PIN.' : '🔓 Chưa đặt mã PIN — ai mở máy cũng xem được CCCD, địa chỉ học viên.'}</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">${cfg._needPin ? '<label class="f">PIN hiện tại<input class="in" type="password" id="pOld"></label>' : ''}<label class="f">PIN mới (để trống = bỏ PIN)<input class="in" type="password" id="pNew"></label>
+    <label class="f">Tự khóa sau (phút không dùng)<input class="in" type="number" id="cIdle" value="${cfg.khoa_man_hinh_sau_phut}"></label></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="pSave">Lưu mã PIN</button><button class="btn" id="cIdleSave">Lưu thời gian tự khóa</button></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+    <label class="small"><input type="checkbox" id="cLan" ${cfg.cho_phep_mang_noi_bo ? 'checked' : ''}> Cho máy khác trong mạng nội bộ dùng chung (bắt buộc có PIN, cần mở lại tool)</label>
+    ${cfg.cho_phep_mang_noi_bo ? `<p class="small">Máy khác mở: ${(cfg._ips || []).map(ip => `<span class="mono">http://${esc(ip)}:${cfg.port}/</span>`).join(', ')}</p>` : ''}
+  </div></div>
+  <div class="card"><div class="row"><h2 style="margin:0">Các bản sao lưu</h2><span class="sp"></span><select class="in" id="fKind"><option value="">Mọi loại</option>${Object.entries(kindName).map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select><input class="in" id="fName" placeholder="Lọc tên / ngày (vd 2026-10)…" style="width:200px"></div>
+    <div class="tbl" style="max-height:420px;margin-top:10px" id="bkT"></div>
+    <p class="small muted">Tên file luôn có mã đơn vị <b>${esc(P.maDonVi)}</b> (vd <span class="mono">QLKhoaOto-${esc(P.maDonVi)}_${todayISO()}.db</span>). Bấm 🔍 để nhận dạng file: của bản cài nào (ID <b>${esc(P.instance)}</b>), lưu lúc nào, bao nhiêu khóa/học viên.</p></div>
+  <div class="card"><h2>Lịch sử phiên bản (mỗi lần lưu)</h2><div class="tbl" style="max-height:300px"><table><thead><tr><th class="num">Bản</th><th>Thời điểm</th><th>Máy</th><th>Nội dung</th><th class="num">Khóa</th><th class="num">HV</th><th></th></tr></thead><tbody>
+    ${revs.map(r => `<tr><td class="num">#${r.rev}</td><td>${fmtT(r.saved_at)}</td><td class="small">${esc(r.device === DEVICE ? 'máy này' : r.device)}</td><td class="small">${esc(r.reason || '')}</td><td class="num">${r.nk}</td><td class="num">${r.nh}</td><td>${r.rev !== serverRev ? `<button class="btn sm" data-rev="${r.rev}">Quay về</button>` : '<span class="badge b-run">hiện tại</span>'}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><h2>Cài đặt chung</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+    <label class="f">Tên cơ sở (hiện trên tool)<input class="in" id="sCo" value="${esc(S.coSo)}"></label>
+    <label class="f">Mã ĐKI chuẩn phải bắt đầu bằng<input class="in" id="sPre" value="${esc(S.maPrefix || '52002')}"></label>
+    <label class="f">Cột GV khai thác khi xuất Excel<select class="in" id="sGv"><option value="short">Tên gọi tắt (VD: L HOÀNG)</option><option value="full">Họ tên đầy đủ</option></select></label>
+    <label class="f">Tên đơn vị (dòng đầu khi in)<input class="in" id="sDv" value="${esc(S.tenDonViIn)}"></label>
+    <label class="f">Tên cơ sở (dòng 2 khi in)<input class="in" id="sCs" value="${esc(S.tenCoSoIn)}"></label>
+    <label class="f">Địa danh (… ngày … tháng … năm)<input class="in" id="sDd" value="${esc(S.diaDanh)}"></label>
+    <label class="f">Người lập (ký khi in)<input class="in" id="sNl" value="${esc(S.nguoiLap)}"></label>
+    <label class="f">Phụ trách cơ sở (ký khi in)<input class="in" id="sPt" value="${esc(S.phuTrach)}"></label>
+    <label class="f">Tự đóng sổ khóa sau bế giảng (ngày)<input class="in" type="number" id="sAc" value="${S.autoCloseDays}"></label>
+    <label class="f">Giữ trong thùng rác (ngày)<input class="in" type="number" id="sTd" value="${S.trashDays}"></label>
+    ${DB.hang.map((h, i) => `<label class="f">Số ngày học mặc định – ${esc(h.name)}<input class="in" type="number" data-hd="${i}" value="${h.days}"></label>`).join('')}
+    ${DB.hang.map(h => `<label class="f">Học phí mặc định – ${esc(h.name)} (đồng)<input class="in money" data-hp="${esc(h.code)}" value="${S.hocPhi[h.code] ? money(S.hocPhi[h.code]) : ''}"></label>`).join('')}
+    <label class="f" style="grid-column:1/-1">Từ khóa địa bàn gần cơ sở (khi chọn GV), cách nhau dấu phẩy<input class="in" id="sNear" value="${esc((S.nearKeys || []).join(', '))}"></label>
+  </div><div class="row" style="margin-top:12px"><button class="btn pri" id="sSave">Lưu cài đặt</button></div></div>`;
+  $('#sGv', el).value = S.gvExport;
+  bindMoney(el);
+  const res = (html, cls = 'blue') => { $('#bRes', el).innerHTML = `<div class="note ${cls}" style="margin-top:12px">${html}</div>`; };
+  $('#bNow', el).onclick = async () => { await flushSave(); const r = await api('/api/backup/now', { body: {} }); toast('Đã sao lưu: ' + (r.files || []).join(', '), 'ok', 6000); render(); };
+  $('#bVerify', el).onclick = async () => { await api('/api/backup/now', { body: {} }); const r = await api('/api/backup/verify', { body: {} }); META.last_verify = r; toast(r.ok ? `Khôi phục được: ${r.nk} khóa, ${r.nh} học viên (${r.file})` : 'LỖI: ' + r.msg, r.ok ? 'ok' : 'err', 8000); render(); };
+  $('#bDl', el).onclick = downloadBackup; $('#bXl', el).onclick = exportAll;
+  $('#bUp', el).onclick = () => { const p = $('#filePick'); p.value = ''; p.onchange = () => p.files[0] && handleAnyFile(p.files[0]); p.click(); };
+  setupDrop($('#bDrop', el), handleAnyFile);
+  const drawFiles = () => {
+    const fk = $('#fKind', el).value, fn = noAcc($('#fName', el).value);
+    const list = files.filter(f => (!fk || f.kind === fk) && (!fn || noAcc(f.name).includes(fn)));
+    $('#bkT', el).innerHTML = `<table><thead><tr><th>Loại</th><th>Tên file</th><th>Đường dẫn đầy đủ</th><th>Thời điểm</th><th class="num">Dung lượng</th><th></th></tr></thead><tbody>
+      ${list.map(f => `<tr><td class="small">${esc(kindName[f.kind] || f.kind)}</td><td class="mono small">${esc(f.name)}${f.own ? '' : ' <span class="badge b-new" title="Tên không có mã đơn vị này — có thể là file của bản cài/đơn vị khác">file khác?</span>'}</td>
+        <td class="mono small" style="white-space:normal;word-break:break-all;max-width:420px;color:var(--muted)">${esc(f.path)}</td><td class="small" style="white-space:nowrap">${fmtT(f.mtime)}</td><td class="num small">${fmtSize(f.size)}</td>
+        <td style="white-space:nowrap">${pathBtns(f.path)}${f.kind !== 'excel' ? ` <button class="btn sm" data-bi="${esc(f.kind)}|${esc(f.name)}" title="Nhận dạng file">🔍</button> <button class="btn sm" data-bk="${esc(f.kind)}|${esc(f.name)}">Khôi phục</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Không có.</td></tr>'}</tbody></table>`;
+    bindPathBtns($('#bkT', el));
+    $$('[data-bk]', el).forEach(b => b.onclick = async () => { const [kind, name] = b.dataset.bk.split('|'); try { const r = await api('/api/restore/preview', { body: { kind, name } }); restoreFrom(r.data, 'bản sao lưu ' + name); } catch (e) { toast(e.message, 'err'); } });
+    $$('[data-bi]', el).forEach(b => b.onclick = async () => { const [kind, name] = b.dataset.bi.split('|'); try { const r = await api('/api/backup/info', { body: { kind, name } });
+      modal('Nhận dạng file sao lưu', `<table style="width:100%;font-size:13px">
+        <tr><td style="width:150px">Đường dẫn</td><td class="mono" style="word-break:break-all">${esc(r.path)}</td></tr>
+        <tr><td>Của bản cài</td><td><b class="mono">${esc(r.instance)}</b> ${r.sameInstance === true ? '<span class="badge b-run">✓ đúng bản cài này</span>' : r.sameInstance === false ? `<span class="badge b-miss">✗ KHÁC bản cài này (${esc(r.myInstance)})</span>` : '<span class="badge b-new">không xác định</span>'}</td></tr>
+        <tr><td>Phần mềm</td><td>${r.app === 'QLKhoaOtoCSHN' ? '✓ Quản lý khóa ô tô' : '<span class="badge b-miss">không phải file của tool</span>'}</td></tr>
+        <tr><td>Toàn vẹn</td><td>${r.integrity === 'ok' ? '<span class="badge b-run">tốt</span>' : '<span class="badge b-miss">' + esc(r.integrity) + '</span>'}</td></tr>
+        <tr><td>Lưu lúc</td><td>${fmtT(r.savedAt)} · bản #${r.rev}</td></tr><tr><td>Nội dung</td><td>${r.nk} khóa · ${r.nh} học viên</td></tr></table>`, [{ t: 'Đóng', cls: 'pri', v: true }]); } catch (e) { toast(e.message, 'err'); } });
+  };
+  $('#fKind', el).onchange = drawFiles; $('#fName', el).oninput = drawFiles; drawFiles();
+  bindPathBtns(el);
+  $('#cPathSave', el).onclick = async () => { try { await api('/api/config', { body: { ma_don_vi: $('#cMa', el).value, thu_muc_sao_luu: $('#cRoot', el).value } }); await api('/api/backup/now', { body: {} }); toast('Đã lưu. Bản sao lưu mới ghi vào thư mục/tên mới; các bản cũ vẫn ở chỗ cũ.', 'ok', 7000); render(); } catch (e) { toast(e.message, 'err', 8000); } };
+  $$('[data-rev]', el).forEach(b => b.onclick = async () => { try { const r = await api('/api/restore/preview', { body: { rev: +b.dataset.rev } }); restoreFrom(r.data, 'phiên bản #' + b.dataset.rev); } catch (e) { toast(e.message, 'err'); } });
+  $('#cSave', el).onclick = async () => { try { const r = await api('/api/config', { body: { thu_muc_sao_luu_phu: $('#cExtra', el).value.split('\n'), giu_ban_hang_ngay: +$('#cDay', el).value || 90, giu_ban_theo_thang: +$('#cMon', el).value || 36 } }); await api('/api/backup/now', { body: {} }); toast('Đã lưu và sao lưu thử ra thư mục phụ.', 'ok'); render(); } catch (e) { toast(e.message, 'err'); } };
+  $('#cIdleSave', el).onclick = async () => { try { await api('/api/config', { body: { khoa_man_hinh_sau_phut: +$('#cIdle', el).value || 30 } }); SERVER.idleMin = +$('#cIdle', el).value || 30; toast('Đã lưu.', 'ok'); } catch (e) { toast(e.message, 'err'); } };
+  $('#pSave', el).onclick = async () => { const nw = $('#pNew', el).value; if (nw && nw.length < 4) { toast('PIN tối thiểu 4 ký tự.', 'err'); return; } if (!nw && !await confirmBox('Bỏ mã PIN?', 'Ai mở máy cũng xem được dữ liệu học viên.', 'Bỏ PIN', true)) return; try { await api('/api/pin', { body: { old: $('#pOld', el)?.value || '', new: nw } }); SERVER.needPin = !!nw; toast(nw ? 'Đã đặt mã PIN. Nhớ kỹ — quên PIN phải xóa trong file dữ liệu.' : 'Đã bỏ mã PIN.', 'ok', 7000); render(); } catch (e) { toast(e.message, 'err'); } };
+  $('#cLan', el).onchange = async e => { try { const r = await api('/api/config', { body: { cho_phep_mang_noi_bo: e.target.checked } }); toast(r.note || 'Đã lưu', 'ok', 7000); render(); } catch (er) { e.target.checked = !e.target.checked; toast(er.message, 'err', 7000); } };
+  $('#sSave', el).onclick = () => {
+    S.coSo = $('#sCo', el).value.trim() || S.coSo; { const np = $('#sPre', el).value.trim() || '52002'; if (np !== S.maPrefix) { const bad = DB.hv.filter(h => h.maDK && !h.maDK.startsWith(np)).length; if (bad && !confirm(`Đổi tiền tố thành ${np}: ${bad} mã ĐKI hiện có không khớp sẽ bị coi là sai khi nhập mới (dữ liệu cũ giữ nguyên). Tiếp tục?`)) return; S.maPrefix = np; } } S.gvExport = $('#sGv', el).value;
+    S.tenDonViIn = $('#sDv', el).value.trim(); S.tenCoSoIn = $('#sCs', el).value.trim(); S.diaDanh = $('#sDd', el).value.trim(); S.nguoiLap = $('#sNl', el).value.trim(); S.phuTrach = $('#sPt', el).value.trim();
+    S.autoCloseDays = Math.max(1, +$('#sAc', el).value || 30); S.trashDays = Math.max(1, +$('#sTd', el).value || 30);
+    S.nearKeys = $('#sNear', el).value.split(',').map(x => x.trim()).filter(Boolean);
+    $$('[data-hd]', el).forEach(i => DB.hang[+i.dataset.hd].days = parseInt(i.value) || 70);
+    $$('[data-hp]', el).forEach(i => S.hocPhi[i.dataset.hp] = parseMoney(i.value));
+    commit('Lưu cài đặt'); toast('Đã lưu cài đặt.', 'ok'); render();
+  };
+}
+/* ---------- THÙNG RÁC ---------- */
+function vTrash(el) {
+  const T = DB.trash;
+  el.innerHTML = `<h1>Thùng rác</h1><p class="sub">Học viên, khóa, giáo viên bị xóa nằm ở đây ${DB.settings.trashDays} ngày rồi mới tự xóa hẳn. Khôi phục được bất cứ lúc nào trong thời gian đó.</p>
+  <div class="card"><div class="tbl"><table><thead><tr><th>Loại</th><th>Nội dung</th><th>Xóa lúc</th><th>Lý do</th><th>Còn</th><th></th></tr></thead><tbody>
+  ${T.map(t => { const left = (DB.settings.trashDays || 30) - Math.floor((Date.now() - new Date(t.at).getTime()) / 864e5); return `<tr><td>${{ hv: 'Học viên', khoa: 'Khóa', gv: 'Giáo viên' }[t.type] || t.type}</td><td><b>${esc(t.label)}</b></td><td>${fmtT(t.at)}</td><td class="small">${esc(t.reason)}</td><td class="small">${left} ngày</td><td style="white-space:nowrap"><button class="btn sm pri" data-rs="${t.id}">Khôi phục</button> <button class="btn sm dan" data-pg="${t.id}">Xóa hẳn</button></td></tr>`; }).join('') || '<tr><td colspan="6" class="empty-st">Thùng rác trống.</td></tr>'}
+  </tbody></table></div></div>`;
+  $$('[data-rs]', el).forEach(b => b.onclick = () => {
+    const t = T.find(x => x.id === b.dataset.rs);
+    if ([...DB.hv, ...DB.khoa, ...DB.gv].some(x => x.id === t.data.id)) { DB.trash = T.filter(x => x !== t); commit('Bỏ mục thùng rác đã tồn tại: ' + t.label); toast('Bản ghi này đã có lại trong dữ liệu (máy khác khôi phục) — đã bỏ khỏi thùng rác.'); render(); return; }
+    if (t.type === 'hv') { if (!khoaById(t.data.khoaId)) { toast('Khóa của học viên này không còn — khôi phục khóa trước.', 'err'); return; } if (t.data.cccd && DB.hv.some(h => h.khoaId === t.data.khoaId && h.cccd === t.data.cccd)) { toast('Khóa đã có lại CCCD này.', 'err'); return; } DB.hv.push(t.data); }
+    else if (t.type === 'khoa') { if (DB.khoa.some(k => k.hang === t.data.hang && k.so === t.data.so)) { toast('Đã có khóa trùng hạng + số.', 'err'); return; } DB.khoa.push(t.data); DB.hv.push(...t.hvs); }
+    else if (t.type === 'gv') DB.gv.push(t.data);
+    DB.trash = T.filter(x => x !== t); commit('Khôi phục từ thùng rác: ' + t.label); toast('Đã khôi phục ' + t.label, 'ok'); render();
+  });
+  $$('[data-pg]', el).forEach(b => b.onclick = async () => { const t = T.find(x => x.id === b.dataset.pg); if (await confirmBox('Xóa hẳn?', `Xóa vĩnh viễn <b>${esc(t.label)}</b>? (vẫn còn trong các bản sao lưu cũ)`, 'Xóa hẳn', true)) { DB.trash = T.filter(x => x !== t); commit('Xóa hẳn: ' + t.label); render(); } });
+}
+/* ---------- NHẬT KÝ THAY ĐỔI (từ máy chủ) ---------- */
+const FIELD_VN = { hoTen: 'Họ tên', ngaySinh: 'Ngày sinh', cccd: 'CCCD', sdt: 'SĐT', diaChi: 'Địa chỉ', noiCuTru: 'Nơi cư trú', gvId: 'Giáo viên', gvText: 'GV (chữ)', gvGoc: 'GV (chữ gốc)', maDK: 'Mã ĐKI', maNguon: 'Mã nguồn', soHS: 'Số HS', khoaId: 'Khóa', tt: 'Trạng thái', ttNote: 'Lý do trạng thái', thu: 'Thu học phí', hocPhi: 'Học phí phải đóng', ghiChu: 'Ghi chú', ngayKG: 'Khai giảng', ngayBG: 'Bế giảng', so: 'Số khóa', dong: 'Đóng sổ', moLai: 'Mở lại', tenGoi: 'Tên gọi tắt', alias: 'Tên khác', active: 'Đang dạy', nguonTS: 'Nguồn tuyển sinh' };
+function auditVal(f, v) {
+  if (v === '' || v == null) return '<span class="muted">(trống)</span>';
+  if (f === 'gvId') { const g = gvById(v); return esc(g ? g.tenGoi : v); }
+  if (f === 'khoaId') { const k = khoaById(v); return k ? kCode(k) : esc(v); }
+  if (f === 'tt') return esc(HV_TT[v] || v);
+  if (f === 'thu') { try { const a = JSON.parse(v); return esc(a.map(x => money(x.st)).join(' + ') || '0'); } catch { return esc(v); } }
+  return esc(v);
+}
+function auditRows(rows, showLabel) {
+  return `<div class="tbl" style="max-height:60vh"><table><thead><tr><th>Thời điểm</th>${showLabel ? '<th>Đối tượng</th>' : ''}<th>Thao tác</th><th>Trường</th><th>Cũ</th><th>Mới</th><th>Máy</th></tr></thead><tbody>
+  ${rows.map(r => `<tr><td class="small" style="white-space:nowrap">${fmtT(r.t)}</td>${showLabel ? `<td><b>${esc(r.label)}</b> <span class="small muted">${{ hv: 'HV', khoa: 'Khóa', gv: 'GV', madk: '' }[r.entity] || ''}</span></td>` : ''}<td>${{ them: '<span class="badge b-run">thêm</span>', sua: '<span class="badge b-info">sửa</span>', xoa: '<span class="badge b-miss">xóa</span>', 'xung-dot': '<span class="badge b-new">2 máy cùng sửa</span>' }[r.action] || esc(r.action)}</td><td>${esc(FIELD_VN[r.field] || r.field)}</td><td class="small">${auditVal(r.field, r.old)}</td><td class="small">${r.action === 'xung-dot' ? esc({ 'giu-lai-vi-may-khac-vua-sua': 'Một máy xóa nhưng máy khác vừa sửa → giữ lại', 'sua-ban-ghi-da-xoa': 'Máy khác đã xóa (trong thùng rác) → bỏ phần sửa' }[r.new] || r.new) : auditVal(r.field, r.new)}</td><td class="small muted">${esc(r.device === DEVICE ? 'máy này' : r.device)}</td></tr>`).join('') || '<tr><td colspan="7" class="empty-st">Chưa có thay đổi nào được ghi.</td></tr>'}</tbody></table></div>`;
+}
+async function showHvHistory(h) {
+  try { const rows = await api('/api/audit?eid=' + encodeURIComponent(h.id) + '&limit=200'); await modal('Lịch sử: ' + h.hoTen, auditRows(rows, false), [{ t: 'Đóng', cls: 'pri', v: true }]); }
+  catch (e) { toast(e.message, 'err'); }
+}
+let auditQ = '';
+async function vAudit(el) {
+  el.innerHTML = `<h1>Nhật ký thay đổi</h1><p class="sub">Máy chủ tự ghi mọi thay đổi: ai (máy nào), lúc nào, trường nào, giá trị cũ → mới.</p>
+  <div class="card"><div class="row"><input class="in" id="aQ" placeholder="Lọc theo tên học viên / khóa / giá trị…" style="width:340px" value="${esc(auditQ)}"><select class="in" id="aE"><option value="">Mọi loại</option><option value="hv">Học viên</option><option value="khoa">Khóa</option><option value="gv">Giáo viên</option><option value="madk">Kho mã ĐKI</option></select><button class="btn" id="aGo">Lọc</button></div><div id="aT" style="margin-top:12px"></div></div>`;
+  const load = async () => { auditQ = $('#aQ', el).value.trim(); const p = new URLSearchParams({ limit: 500 }); if (auditQ) p.set('q', auditQ); if ($('#aE', el).value) p.set('entity', $('#aE', el).value); try { $('#aT', el).innerHTML = auditRows(await api('/api/audit?' + p), true); } catch (e) { $('#aT', el).innerHTML = `<div class="note red">${esc(e.message)}</div>`; } };
+  $('#aGo', el).onclick = load; $('#aQ', el).onkeydown = e => { if (e.key === 'Enter') load(); }; $('#aE', el).onchange = load; load();
+}
+/* ---- Tiền ---- */
+const money = n => (Math.round(+n || 0)).toLocaleString('vi-VN');
+const parseMoney = s => Math.round(+String(s ?? '').replace(/[^\d-]/g, '') || 0);
+function bindMoney(root) { $$('input.money', root).forEach(i => { i.addEventListener('input', () => { const p = parseMoney(i.value); i.value = p ? money(p) : ''; }); }); }
+
+/* =========================================================
+   KÉO THẢ TOÀN CỤC + DÁN + TÌM NHANH
+   ========================================================= */
+async function handleAnyFile(file) {
+  try {
+    const s = await sniffFile(file);
+    if (s.kind === 'json') return restoreFrom(s.data, file.name);
+    if (s.kind === 'file1') {
+      const nK = s.wb.SheetNames.filter(n => KSHEET.test(n) && !/-0+$/.test(n)).length;
+      if (!await confirmBox('Chuyển dữ liệu từ file Excel cũ?', `<p>File <b>${esc(file.name)}</b> có khoảng <b>${nK}</b> sheet khóa, danh sách GV và data mã ĐKI.</p><p>Tool sẽ thêm các khóa chưa có (khóa trùng hạng + số sẽ bỏ qua), giáo viên và kho mã ĐKI.</p>`, 'Chuyển dữ liệu')) return;
+      await snapNow('Trước khi nhập file cũ');
+      const rep = importFile1(s.wb); const ac = autoCloseKhoa(); if (ac) rep.dong = ac; commit(`Nhập file cũ ${file.name}: ${rep.khoa} khóa, ${rep.hv} HV, ${rep.gv} GV, ${rep.kho} mã`);
+      toast(`Đã chuyển: ${rep.khoa} khóa, ${rep.hv} học viên, ${rep.gv} giáo viên, ${rep.kho} mã ĐKI${rep.skip ? ` (bỏ qua ${rep.skip} khóa đã có)` : ''}.${rep.dong ? ` Tự đóng sổ ${rep.dong} khóa đã kết thúc.` : ''}`, 'ok', 9000);
+      return go('home');
+    }
+    if (s.kind === 'list') {
+      const hasMa = s.map.maDK != null;
+      const open = sortedKhoa().filter(k => kStatus(k).o < 2 && !isLocked(k));
+      const cur = ROUTE.v === 'khoaDetail' || ROUTE.v === 'import' ? ROUTE.id : (open.find(k => kStatus(k).o === 0) || open[0])?.id;
+      const r = await modal('Dùng file này để làm gì?', `<p><b>${esc(file.name)}</b>: ${s.rows.length} người${hasMa ? ', có cột Mã đăng ký' : ''}.</p>
+        <label class="f"><span><input type="radio" name="act" value="hv" ${looksLikeKho(s.rows) ? '' : 'checked'}> Nhập học viên vào khóa → chọn GV</span><select class="in" id="aK">${open.map(k => `<option value="${k.id}" ${k.id === cur ? 'selected' : ''}>${kCode(k)} – ${kStatus(k).t}</option>`).join('')}<option value="__new">＋ Tạo khóa mới…</option></select></label>
+        ${hasMa && looksLikeKho(s.rows) ? `<label class="small" style="display:block;margin-top:12px"><input type="radio" name="act" value="ma" ${looksLikeKho(s.rows) ? 'checked' : ''}> Chỉ nạp vào kho mã ĐKI (điền mã cho HV đã có)</label>` : ''}`,
+        [{ t: 'Hủy', v: null }, { t: 'Tiếp tục', cls: 'pri', v: bg => ({ act: $('input[name=act]:checked', bg).value, k: $('#aK', bg).value }) }]);
+      if (!r) return;
+      if (r.act === 'ma') { const u = upsertKho(s.rows, file.name); const n = fillFromKho(); commit(`Nạp mã ĐKI ${file.name}`); toast(`Kho +${u.add} mã mới, điền ${n} HV.` + (u.skip ? ` Bỏ qua ${u.skip} mã không chuẩn.` : ''), u.add + n ? 'ok' : 'err', 6000); return render(); }
+      if (r.k === '__new') return newKhoaDialog({ rows: s.rows, src: file.name, hasMa });
+      return startDraft(khoaById(r.k), s.rows, file.name, hasMa);
+    }
+    toast('Không nhận ra nội dung file (cần bảng có cột Họ và tên + CCCD).', 'err', 6000);
+  } catch (e) { console.error(e); toast('Không đọc được file: ' + e.message, 'err', 6000); }
+}
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { if (e.dataTransfer?.types?.includes('Files')) { dragDepth++; $('#gdrop').classList.add('show'); } });
+window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; $('#gdrop').classList.remove('show'); } });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('#gdrop').classList.remove('show'); const f = e.dataTransfer.files[0]; if (f) handleAnyFile(f); });
+document.addEventListener('paste', e => {
+  if (e.target.closest('input,textarea')) return;
+  const t = e.clipboardData.getData('text'); if (!t || !t.includes('\t')) return;
+  const res = parsePasted(t); if (!res || !res.rows.length) { toast('Dữ liệu dán không có dòng tiêu đề (Họ và tên, CCCD…). Hãy copy cả dòng tiêu đề.', 'err', 6000); return; }
+  if ((ROUTE.v === 'import' || ROUTE.v === 'khoaDetail') && ROUTE.id) startDraft(khoaById(ROUTE.id), res.rows, 'Dán từ Excel', res.map.maDK != null);
+  else toast('Mở 1 khóa rồi dán để nhập học viên.', 'err');
+});
+/* Tìm nhanh */
+let sIdx = 0, sItems = [];
+function doSearch() {
+  const raw = $('#q').value.trim(); const q = noAcc(raw); const box = $('#sres');
+  if (!q) { box.classList.remove('show'); return; }
+  const qk = q.replace(/[\s_]/g, '-');
+  const ks = DB.khoa.filter(k => noAcc(kCode(k)).includes(qk) || noAcc(kCode(k)).replace('-', '').includes(q.replace(/[\s-]/g, '')) || String(k.so) === q || pad2(k.so) === q).slice(0, 8);
+  const hs = DB.hv.filter(h => noAcc(`${h.hoTen} ${h.cccd} ${h.maDK} ${h.sdt} ${h.soHS}`).includes(q)).slice(0, 25);
+  sItems = [...ks.map(k => ({ t: 'k', id: k.id })), ...hs.map(h => ({ t: 'h', id: h.id }))]; sIdx = 0;
+  box.innerHTML = (ks.length ? `<div class="grp">Khóa</div>` + ks.map((k, i) => `<div class="it" data-i="${i}"><b class="hang">${kCode(k)}</b><small>${isoToVN(k.ngayKG)} → ${isoToVN(k.ngayBG)} · ${hvOf(k.id).length} HV · ${kStatus(k).t}</small></div>`).join('') : '')
+    + (hs.length ? `<div class="grp">Học viên</div>` + hs.map((h, j) => { const k = khoaById(h.khoaId); return `<div class="it" data-i="${ks.length + j}"><b>${esc(h.hoTen)}</b><small>${esc(h.ngaySinh)} · ${esc(h.cccd)} · ${k ? kCode(k) : ''} · GV ${esc(gvLabel(h) || '—')}${h.maDK ? '' : ' · <span style="color:var(--red)">thiếu mã</span>'}</small></div>`; }).join('') : '')
+    || '<div class="it muted">Không tìm thấy.</div>';
+  box.classList.add('show'); hiS();
+  $$('.it[data-i]', box).forEach(d => d.onmousedown = e => { e.preventDefault(); pickS(+d.dataset.i); });
+}
+function hiS() { $$('#sres .it[data-i]').forEach(d => d.classList.toggle('act', +d.dataset.i === sIdx)); }
+function pickS(i) { const it = sItems[i]; if (!it) return; $('#sres').classList.remove('show'); $('#q').blur(); if (it.t === 'k') go('khoaDetail', { id: it.id }); else openHv(it.id); }
+$('#q').addEventListener('input', doSearch);
+$('#q').addEventListener('focus', doSearch);
+$('#q').addEventListener('blur', () => setTimeout(() => $('#sres').classList.remove('show'), 150));
+$('#q').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { sIdx = Math.min(sIdx + 1, sItems.length - 1); hiS(); e.preventDefault(); } else if (e.key === 'ArrowUp') { sIdx = Math.max(sIdx - 1, 0); hiS(); e.preventDefault(); } else if (e.key === 'Enter') pickS(sIdx); else if (e.key === 'Escape') $('#q').blur(); });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#q').focus(); $('#q').select(); } });
+$$('.nav').forEach(b => b.onclick = () => go(b.dataset.v));
+$('#bkStatus').onclick = () => { if (netErr) persist(); go('backup'); };
+window.addEventListener('beforeunload', e => { if (saveTimer || saving || netErr) { kvSet('pending', { baseRev: serverRev, data: JSON.parse(JSON.stringify(DB)), at: new Date().toISOString() }); if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; persist(); } e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && saveTimer) { clearTimeout(saveTimer); saveTimer = null; persist(); } });
+
+/* =========================================================
+   KHỞI ĐỘNG
+   ========================================================= */
+(async function boot() {
+  await idbOpen();
+  try { const r = await fetch('/api/ping', { credentials: 'same-origin' }); SERVER = await r.json(); if (SERVER.app !== 'QLKhoaOtoCSHN') throw new Error('sai máy chủ'); }
+  catch (e) {
+    $('#view').innerHTML = `<div class="card note red" style="max-width:720px"><h2>Chưa kết nối được máy chủ của tool</h2><p>Tool phiên bản 2 lưu dữ liệu vào file trên ổ đĩa qua một chương trình nhỏ chạy nền.</p><ol><li>Mở thư mục <b>QLKhoaOto</b>, bấm đúp <b>CHAY_TOOL.bat</b>.</li><li>Trình duyệt sẽ tự mở đúng địa chỉ (http://127.0.0.1:8686).</li><li>Giữ cửa sổ đen đó (thu nhỏ được) trong lúc dùng tool.</li></ol><p class="small muted">Không mở trực tiếp file app.html.</p></div>`;
+    return;
+  }
+  if (SERVER.needPin && !SERVER.authed) await loginFlow();
+  try {
+    const st = await api('/api/state');
+    serverRev = st.rev; lastSavedAt = st.savedAt;
+    DB = st.data ? migrate(st.data) : blankDB(); DB.rev = st.rev;
+    try { META = await api('/api/meta'); const c = await api('/api/config'); SERVER.extraDirs = (c.thu_muc_sao_luu_phu || []).length; } catch { }
+    let pend = await kvGet('pending');
+    if (pend) { try { const rv = await api('/api/revs'); if (rv.some(r => r.device === DEVICE && r.rev > pend.baseRev)) { await kvDel('pending'); pend = null; } } catch { } }
+    if (pend && pend.data && pend.data.app === 'QLKhoaOtoCSHN') {
+      const ok = await modal('Có thay đổi chưa lưu', `<p>Lần trước mất kết nối máy chủ lúc <b>${new Date(pend.at).toLocaleString('vi-VN')}</b>, trình duyệt còn giữ bản chưa lưu (${pend.data.khoa.length} khóa, ${pend.data.hv.length} HV).</p><p>Gửi lên máy chủ? Tool sẽ <b>gộp</b> với dữ liệu hiện có, không ghi đè thay đổi của máy khác.</p>`,
+        [{ t: 'Bỏ bản chờ', cls: 'dan', v: 'drop' }, { t: 'Gửi lên & gộp', cls: 'pri', v: 'push' }]);
+      if (ok === 'push') { try { await api('/api/state', { body: { baseRev: pend.baseRev, data: pend.data, reason: 'Gửi lại bản chờ khi mất kết nối' } }); toast('Đã gửi và gộp bản chờ.', 'ok'); } catch (e) { downloadBlob(new Blob([JSON.stringify(pend.data)]), `QLKhoaOto_BAN_CHO_${DEVICE}.json`); toast('Không gộp được bản chờ (quá cũ) — đã tải về file để đối chiếu.', 'err', 9000); } const st2 = await api('/api/state'); DB = migrate(st2.data); serverRev = st2.rev; }
+      await kvDel('pending');
+    }
+    LOADED = true;
+    let ch = autoCloseKhoa(); const pt = purgeTrash(); if (pt) logAct(`Dọn ${pt} mục quá hạn trong thùng rác`);
+    if (ch || pt) commit();
+  } catch (e) {
+    $('#view').innerHTML = `<div class="card note red" style="max-width:720px"><h2>Không tải được dữ liệu</h2><p>${esc(e.message)}</p><p>Để an toàn, tool <b>không cho thao tác</b> khi chưa tải được dữ liệu (tránh ghi đè bằng bản trống).</p><button class="btn pri" onclick="location.reload()">Tải lại</button></div>`;
+    return;
+  }
+  const [v, id] = location.hash.replace('#', '').split('/');
+  if (v && v !== 'import') ROUTE = { v, id }; render();
+  setTimeout(dailyUpdateCheck, 3000);
+})();
+</script>
+</body>
+</html>

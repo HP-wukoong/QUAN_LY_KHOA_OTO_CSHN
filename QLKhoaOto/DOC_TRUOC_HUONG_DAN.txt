@@ -1,0 +1,35 @@
+﻿QUẢN LÝ KHÓA Ô TÔ CSHN — phiên bản 2.2.0
+==========================================
+
+CÀI ĐẶT (1 lần)
+1. Chép cả thư mục QLKhoaOto vào ổ máy, ví dụ D:\QLKhoaOto  (KHÔNG để trong Google Drive/OneDrive).
+2. Bấm đúp TAO_LOI_TAT_DESKTOP.bat để có biểu tượng "Quan ly khoa o to" ngoài màn hình.
+
+MỞ TOOL
+- Bấm đúp CHAY_TOOL.bat (hoặc lối tắt ngoài Desktop). Cửa sổ đen hiện ra và trình duyệt tự mở.
+- Giữ cửa sổ đen trong lúc dùng (thu nhỏ được). Tắt cửa sổ đen = tắt tool.
+
+CHUYỂN DỮ LIỆU TỪ BẢN CŨ (1 file HTML)
+- Mở bản HTML cũ → Sao lưu & Cài đặt → "Tải bản sao lưu (.json)".
+- Mở bản mới → Sao lưu & Cài đặt → kéo thả file .json đó vào ô "Kéo thả file…".
+  (hoặc kéo thả lại file QUAN_LY_KHOA_DAO_TAO.xlsm gốc)
+
+DỮ LIỆU NẰM Ở ĐÂU
+- data\qlkhoa.db        : toàn bộ dữ liệu (1 file)
+- backups\hang-ngay      : bản đầu ngày + bản mới nhất mỗi ngày (giữ 90 ngày)
+- backups\theo-thang     : 1 bản mỗi tháng (giữ 36 tháng)
+- backups\excel          : 1 file Excel tổng hợp mỗi ngày (mở bằng Excel)
+- backups\truoc-khi-khoi-phuc : bản tự chụp trước mỗi lần khôi phục
+- config.json            : cổng, thư mục sao lưu phụ, chế độ mạng nội bộ
+
+NÊN LÀM NGAY
+- Sao lưu & Cài đặt → "Thư mục sao lưu phụ": thêm thư mục Google Drive hoặc ổ USB.
+- Sao lưu & Cài đặt → đặt mã PIN.
+
+DÙNG CHUNG NHIỀU MÁY (mạng nội bộ)
+- Đặt PIN → tick "Cho máy khác trong mạng nội bộ dùng chung" → tắt và mở lại tool.
+- Máy khác mở trình duyệt theo địa chỉ hiện trong cửa sổ đen (http://192.168.x.x:8686/).
+- Windows có thể hỏi cho phép Python qua tường lửa → chọn "Private networks".
+
+CHUYỂN SANG MÁY KHÁC
+- Tắt tool, chép cả thư mục QLKhoaOto sang máy mới (có Python 3.11) là xong.

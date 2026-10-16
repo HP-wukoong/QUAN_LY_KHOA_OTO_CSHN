@@ -1,0 +1,12 @@
+{
+  "version": "2.2.0",
+  "date": "2026-10-16",
+  "notes": "Liên kết GitHub: kiểm tra & cập nhật 1 bấm. Truy xuất đường dẫn sao lưu: đường dẫn đầy đủ, nút chép/mở thư mục, nhận dạng file, tên file có mã đơn vị.",
+  "files": {
+    "app.html": "0aaa1d9c632910ecce0bf854173aafc36659c451b1997194aea86d3ff58c88e7",
+    "server.py": "d446d14d4cc028ccd644842905a0d779679ccecb22adf378c90b6c4f276280c2",
+    "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
+    "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
+    "DOC_TRUOC_HUONG_DAN.txt": "18279e6fa2c1f8234a3a23bdcfe0d817a4b193e37e68769b189e8988afa741c6"
+  }
+}
