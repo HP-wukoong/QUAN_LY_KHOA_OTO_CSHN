@@ -1,12 +1,12 @@
 {
-  "version": "2.2.0",
-  "date": "2026-10-16",
-  "notes": "Liên kết GitHub: kiểm tra & cập nhật 1 bấm. Truy xuất đường dẫn sao lưu: đường dẫn đầy đủ, nút chép/mở thư mục, nhận dạng file, tên file có mã đơn vị.",
+  "version": "2.3.0",
+  "date": "2026-10-17",
+  "notes": "Có bộ cài Windows (không cần Python, không cần Admin) + tự khởi động lại đúng với bản .exe.",
   "files": {
-    "app.html": "ad8396a875d96f38f9d5ac132799a440bdf5cfa24175ff7d5b16d67baaa4f48e",
-    "server.py": "d446d14d4cc028ccd644842905a0d779679ccecb22adf378c90b6c4f276280c2",
+    "app.html": "6f7207d307e696a2fb8cfa019b4eb3f93d3c737ace239ef1ded57caf89a62e59",
+    "server.py": "99bf8bcf7b44305d376f13ca41062a603beb57d45d40c9a5087acc342863c6f5",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
-    "DOC_TRUOC_HUONG_DAN.txt": "18279e6fa2c1f8234a3a23bdcfe0d817a4b193e37e68769b189e8988afa741c6"
+    "DOC_TRUOC_HUONG_DAN.txt": "7d76807d267798b1fc8128c9d805930d8e80d94c0982beea795e6f7698c59d9f"
   }
 }

@@ -227,7 +227,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.2.0';
+const APP_VER = 2, TOOL_VERSION = '2.3.0';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -1492,6 +1492,7 @@ function vReport(el) {
 }
 /* ---------- HƯỚNG DẪN ---------- */
 const CHANGELOG = [
+  ['2.3.0', 'Có bộ cài Windows QLKhoaOto_Setup.exe (không cần cài Python, không cần quyền Admin, biểu tượng Desktop/Start Menu, gỡ trong Settings) và bản portable — tải ở trang Releases của kho GitHub. Bản cài vẫn tự cập nhật từ GitHub như cũ.'],
   ['2.2.0', 'Liên kết kho GitHub HP-wukoong/QUAN_LY_KHOA_OTO_CSHN: kiểm tra & cập nhật phần mềm 1 bấm (tự giữ bản cũ, kiểm mã SHA-256). Truy xuất đường dẫn: hiện đường dẫn đầy đủ của file dữ liệu và từng bản sao lưu, nút chép / mở thư mục, nhận dạng file sao lưu (ID bản cài, rev, số khóa/HV), tên file có mã đơn vị, file _THONG_TIN_SAO_LUU.txt trong mỗi thư mục sao lưu, đổi thư mục sao lưu chính.'],
   ['2.1.0', 'Chọn 1 hoặc nhiều khóa (tick) để thao tác hàng loạt: dùng mã 52003 cho khóa cũ (chỉ khóa được chọn, hoàn tác được, mã 52002 thật tự thay khi nạp kho), đóng/mở sổ, xuất Excel nhiều khóa, xóa. Lọc khóa theo tình trạng mã.'],
   ['2.0.0', 'Lưu dữ liệu vào file SQLite qua máy chủ Python (không phụ thuộc trình duyệt), mỗi lần lưu là 1 phiên bản, nhật ký thay đổi từng học viên, sao lưu tự động hằng ngày/đầu ngày/theo tháng + thư mục phụ, tự kiểm tra khôi phục, mã PIN, dùng chung mạng nội bộ có gộp dữ liệu, đóng sổ khóa, thùng rác, trạng thái học viên, học phí, nạp SĐT, kiểm tra dữ liệu, đối chiếu mã ĐKI, báo cáo theo GV/tháng/năm, in danh sách, xuất cho sổ nhật ký/DAT.'],
@@ -1558,6 +1559,7 @@ function vHelp(el) {
   <div class="card"><h2>Liên thông</h2><p class="small">Tool khác (sổ nhật ký giảng dạy, lọc DAT…) đọc danh sách 1 khóa qua địa chỉ <span class="mono">http://127.0.0.1:${SERVER.port || 8686}/api/khoa/BSS-22.json</span> (khi có PIN cần đăng nhập), hoặc dùng nút "Xuất DS cho sổ nhật ký / DAT" trong trang khóa.</p></div>
   <div class="card" id="ghCard"><div class="row"><h2 style="margin:0">🔄 Cập nhật phần mềm từ GitHub</h2><span class="sp"></span><a href="#" id="ghLink" target="_blank" rel="noopener"></a></div>
     <p class="small muted">Chỉ tải <b>mã chương trình</b> (app.html, server.py…) từ kho GitHub. <b>Dữ liệu học viên không bao giờ được gửi lên GitHub.</b> Trước khi thay, tool tự sao lưu dữ liệu và giữ bản chương trình cũ trong thư mục sao lưu\ban-cu.</p>
+    <p class="small">Bộ cài cho máy mới: <a href="https://github.com/HP-wukoong/QUAN_LY_KHOA_OTO_CSHN/releases/latest" target="_blank" rel="noopener"><b>QLKhoaOto_Setup.exe</b> (trang Releases)</a></p>
     <div id="ghBox"><button class="btn pri" id="ghCheck">Kiểm tra cập nhật</button> <span class="small muted">Phiên bản đang dùng: <b>${TOOL_VERSION}</b></span></div>
     <details style="margin-top:10px"><summary class="small">Cài đặt kho GitHub</summary><div class="grid" style="grid-template-columns:2fr 1fr 2fr auto;gap:10px;margin-top:8px;align-items:end">
       <label class="f">Kho (chủ/tên)<input class="in" id="ghRepo"></label><label class="f">Nhánh<input class="in" id="ghBr"></label><label class="f">Token (chỉ khi kho riêng tư)<input class="in" type="password" id="ghTok" placeholder="để trống nếu kho công khai"></label><button class="btn" id="ghSave">Lưu</button></div></details></div>

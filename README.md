@@ -5,7 +5,12 @@ Chạy **offline trên máy Windows** bằng Python 3.11 (chỉ thư viện chu�
 
 > ⚠️ **Kho này chỉ chứa mã chương trình.** Dữ liệu học viên (CCCD, ngày sinh, địa chỉ…) nằm ở `QLKhoaOto/data/` và `QLKhoaOto/backups/` trên máy dùng — đã chặn trong `.gitignore`, **không bao giờ commit lên GitHub.**
 
-## Cài đặt (máy mới)
+## ⬇ Tải bộ cài
+**[QLKhoaOto_Setup.exe — bản mới nhất](https://github.com/HP-wukoong/QUAN_LY_KHOA_OTO_CSHN/releases/latest)** → chạy → Next → xong.
+Không cần cài Python, không cần quyền Admin. Có biểu tượng Desktop/Start Menu, gỡ trong *Settings → Apps*. Gỡ cài đặt **không xóa** dữ liệu.
+Đã dùng bản cũ ở thư mục khác (vd `D:\QLKhoaOto`)? Khi cài, chọn đúng thư mục đó để giữ nguyên dữ liệu.
+
+## Cài đặt thủ công (máy đã có Python 3.11)
 1. Cài Python 3.11 (python.org, tick *Add python.exe to PATH*).
 2. Tải thư mục `QLKhoaOto/` (nút **Code → Download ZIP**, lấy riêng thư mục này) và đặt vào ổ máy, vd `D:\QLKhoaOto` — **không** đặt trong Google Drive/OneDrive.
 3. Bấm đúp `TAO_LOI_TAT_DESKTOP.bat` (1 lần), sau đó mở tool bằng `CHAY_TOOL.bat` hoặc lối tắt ngoài Desktop.

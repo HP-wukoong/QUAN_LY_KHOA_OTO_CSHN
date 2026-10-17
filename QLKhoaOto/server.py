@@ -26,7 +26,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -677,7 +677,10 @@ def update_apply():
 def restart_self():
     """Mở lại máy chủ (sau cập nhật): tiến trình mới chờ cổng trống rồi chạy."""
     import subprocess
-    args = [sys.executable, os.path.join(BASE, "server.py"), "--wait-port", "--no-browser"]
+    if getattr(sys, "frozen", False):          # bản cài (QLKhoaOto.exe)
+        args = [sys.executable, "--wait-port", "--no-browser"]
+    else:
+        args = [sys.executable, os.path.join(BASE, "server.py"), "--wait-port", "--no-browser"]
     kw = {"cwd": BASE}
     if os.name == "nt":
         kw["creationflags"] = 0x00000010  # CREATE_NEW_CONSOLE

@@ -1,0 +1,85 @@
+name: Dựng bộ cài Windows
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lấy phiên bản
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.json -Raw | ConvertFrom-Json).version
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Phiên bản: $v"
+
+      - name: Đóng gói QLKhoaOto.exe (PyInstaller)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller==6.11.1
+          pyinstaller --onefile --console --name QLKhoaOto --icon assets/icon.ico --distpath dist --workpath build tools/launcher.py
+          Get-Item dist/QLKhoaOto.exe | Format-List Name,Length
+
+      - name: Thử chạy exe (máy chủ phải trả lời /api/ping)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force smoke | Out-Null
+          Copy-Item dist/QLKhoaOto.exe, QLKhoaOto/server.py, QLKhoaOto/app.html smoke/
+          $p = Start-Process -FilePath smoke/QLKhoaOto.exe -ArgumentList "--no-browser" -WorkingDirectory smoke -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 40; $i++) {
+            Start-Sleep -Milliseconds 500
+            try { $r = Invoke-RestMethod http://127.0.0.1:8686/api/ping; if ($r.app -eq "QLKhoaOtoCSHN") { $ok = $true; Write-Host "OK v$($r.version)"; break } } catch {}
+          }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { Get-Content smoke/data/server.log -ErrorAction SilentlyContinue; throw "exe không chạy được máy chủ" }
+
+      - name: Dựng bộ cài (Inno Setup)
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyVersion=${{ steps.ver.outputs.version }}" installer/QLKhoaOto.iss
+
+      - name: Bản không cần cài (portable zip)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force portable/QLKhoaOto | Out-Null
+          Copy-Item dist/QLKhoaOto.exe, QLKhoaOto/server.py, QLKhoaOto/app.html, QLKhoaOto/DOC_TRUOC_HUONG_DAN.txt, assets/icon.ico portable/QLKhoaOto/
+          Compress-Archive -Path portable/QLKhoaOto -DestinationPath "dist/QLKhoaOto_Portable_${{ steps.ver.outputs.version }}.zip" -Force
+
+      - name: Đăng bản phát hành
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $tag = "v$v"
+          $notes = (Get-Content version.json -Raw | ConvertFrom-Json).notes
+          $body = "$notes`n`n**Cài đặt:** tải ``QLKhoaOto_Setup_$v.exe`` → chạy → Next. Không cần cài Python, không cần quyền Admin.`nĐang dùng bản cũ ở thư mục khác (vd D:\QLKhoaOto) thì chọn đúng thư mục đó khi cài để giữ dữ liệu."
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag "dist/QLKhoaOto_Setup_$v.exe" "dist/QLKhoaOto_Portable_$v.zip" --clobber
+          } else {
+            gh release create $tag "dist/QLKhoaOto_Setup_$v.exe" "dist/QLKhoaOto_Portable_$v.zip" --title "Quản lý khóa ô tô CSHN $v" --notes "$body" --target $env:GITHUB_SHA
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QLKhoaOto-${{ steps.ver.outputs.version }}
+          path: |
+            dist/QLKhoaOto_Setup_*.exe
+            dist/QLKhoaOto_Portable_*.zip
