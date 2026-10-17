@@ -130,6 +130,23 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
 .small{font-size:12.5px}
 .warn-t{color:#a15c00}
 .stick{position:sticky;top:-20px;z-index:6}
+.hs-steps{display:flex;align-items:center;gap:0;margin-top:12px;flex-wrap:wrap}
+.hs-step{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:230px}
+.hs-step.cur{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-l)}
+.hs-step.done{border-color:#bfe0b0;background:var(--green-l)}
+.hs-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--gray-l);color:var(--muted);flex:none}
+.hs-step.cur .hs-dot{background:var(--blue);color:#fff}.hs-step.done .hs-dot{background:var(--green);color:#fff}
+.hs-ck{margin-left:auto;padding-left:14px;font-size:13px;white-space:nowrap;cursor:pointer}
+.hs-ck input{width:18px;height:18px;vertical-align:-4px}
+.hs-line{width:28px;height:3px;background:var(--line);flex:none}.hs-line.done{background:var(--green)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-h{font-size:12px;font-weight:600;color:var(--muted);text-align:center;padding:4px}
+.cal-c{min-height:92px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:#fff;display:flex;flex-direction:column;gap:3px}
+.cal-c.off{background:transparent;border:0}.cal-c.today{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-l)}
+.cal-d{font-size:12px;color:var(--muted);font-weight:600}
+.cal-e{display:block;font-size:11.5px;padding:1px 6px;border-radius:5px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-e.kg{background:var(--amber-l);color:#7a5800}.cal-e.bg{background:var(--blue-l);color:var(--blue-d)}
+.hs-chip{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 10px;border-radius:20px;cursor:pointer;border:1px solid #f0c5c0;background:var(--red-l);color:var(--red);font-weight:600;white-space:nowrap}
 .sticky-bar{position:sticky;bottom:-60px;background:#fff;border-top:1px solid var(--line);padding:12px 16px;margin:0 -24px -60px;display:flex;gap:10px;align-items:center;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
 @media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}}
 </style>
@@ -140,6 +157,7 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
     <div class="brand"><b>QUẢN LÝ KHÓA Ô TÔ</b><small id="brandSub">Cơ sở Hoài Nhơn</small></div>
     <button class="nav" data-v="home">🏠 Tổng quan</button>
     <button class="nav" data-v="khoa">📚 Khóa học <span class="cnt" id="cntKhoa">0</span></button>
+    <button class="nav" data-v="lich">📅 Lịch KG–BG <span class="cnt" id="cntHs" title="Khóa sắp khai giảng chưa chốt hồ sơ">0</span></button>
     <button class="nav" data-v="hv">🧑‍🎓 Học viên <span class="cnt" id="cntHv">0</span></button>
     <button class="nav" data-v="gv">👨‍🏫 Giáo viên <span class="cnt" id="cntGv">0</span></button>
     <button class="nav" data-v="madk">🔑 Kho mã ĐKI <span class="cnt" id="cntMiss" title="HV còn thiếu mã">0</span></button>
@@ -160,6 +178,7 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
         <div class="sres" id="sres"></div>
       </div>
       <div class="sp"></div>
+      <div class="hs-chip" id="hsChip" style="display:none" title="Khóa sắp khai giảng chưa chốt hồ sơ"></div>
       <div class="bk" id="bkStatus" title="Trạng thái sao lưu"><span class="dot"></span><span>Sao lưu</span></div>
     </div>
     <div class="view" id="view"></div>
@@ -295,14 +314,14 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.3.0';
+const APP_VER = 2, TOOL_VERSION = '2.4.0';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
     app: 'QLKhoaOtoCSHN', ver: APP_VER, savedAt: '', rev: 0,
     settings: { maPrefix: '52002', coSo: 'Cơ sở Hoài Nhơn (CSHN)', donVi: 'Công ty CP ĐT và DV GTVT Bình Định', gvExport: 'short',
       tenDonViIn: 'CÔNG TY CP ĐT VÀ DV GTVT BÌNH ĐỊNH', tenCoSoIn: 'CƠ SỞ ĐÀO TẠO LÁI XE HOÀI NHƠN', diaDanh: 'Hoài Nhơn', nguoiLap: '', phuTrach: '',
-      hocPhi: { BSS: 0, BSTD: 0, C1: 0 }, autoCloseDays: 30, trashDays: 30,
+      hocPhi: { BSS: 0, BSTD: 0, C1: 0 }, hsNgay: 5, hsTuNgay: todayISO(), autoCloseDays: 30, trashDays: 30,
       nearKeys: ['Hoài Nhơn', 'Bồng Sơn', 'Tam Quan', 'Hoài Ân', 'Hoài Hương', 'Hoài Thanh', 'Hoài Mỹ', 'Hoài Hảo', 'Hoài Đức', 'Hoài Sơn', 'Hoài Châu', 'Ân Hảo', 'Ân Tường', 'Đức Phổ', 'Quảng Ngãi'] },
     hang: [ { code: 'BSS', name: 'B số sàn', days: 70, minAge: 18 }, { code: 'BSTD', name: 'B số tự động', days: 58, minAge: 18 }, { code: 'C1', name: 'C1 – Xe tải', days: 88, minAge: 18 } ],
     gv: [], khoa: [], hv: [], madk: {}, drafts: {}, trash: [], log: []
@@ -451,6 +470,7 @@ function migrate(o) {
     for (const [c, r] of Object.entries(o.madk)) if (!ok(r.maDK)) delete o.madk[c];
   }
   for (const h of o.hv) { if (!h.tt) h.tt = 'hoc'; if (!Array.isArray(h.thu)) h.thu = []; h.thu.forEach(x => { if (!x.id) x.id = uid(); }); }
+  if (!o.settings.hsTuNgay) o.settings.hsTuNgay = todayISO(); // chỉ nhắc khóa khai giảng từ ngày bật tính năng (không dồn nhắc khóa cũ)
   o.app = 'QLKhoaOtoCSHN'; o.ver = APP_VER; return o;
 }
 /* ---- Thùng rác: không xóa thật, giữ N ngày ---- */
@@ -613,6 +633,7 @@ async function sniffFile(file) {
   if (/\.json$/i.test(file.name)) return { kind: 'json', data: JSON.parse(await file.text()) };
   const wb = await readWorkbook(file);
   if (wb.SheetNames.includes('KHOA') && wb.SheetNames.some(n => KSHEET.test(n))) return { kind: 'file1', wb };
+  for (const n of wb.SheetNames) { const aoa = sheetAoa(wb.Sheets[n]); const h = findLichHeader(aoa); if (h && !(aoa[h.r] || []).some(c => normKey(c) === 'hovaten')) return { kind: 'lich', wb }; }
   for (const n of wb.SheetNames) { const res = rowsFromAoa(sheetAoa(wb.Sheets[n])); if (res && res.rows.length) return { kind: 'list', wb, sheet: n, ...res }; }
   return { kind: 'unknown', wb };
 }
@@ -790,13 +811,15 @@ let ROUTE = { v: 'home' };
 function go(v, p = {}) { $$('#toast div').forEach(d => { if (Date.now() - d.dataset.t > 400) d.remove(); }); ROUTE = { v, ...p }; location.hash = v + (p.id ? '/' + p.id : ''); render(); $('#view').scrollTop = 0; }
 function render() {
   $$('.nav').forEach(b => b.classList.toggle('on', b.dataset.v === ROUTE.v || (ROUTE.v === 'khoaDetail' && b.dataset.v === 'khoa') || (ROUTE.v === 'import' && b.dataset.v === 'khoa')));
-  const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp }[ROUTE.v] || vHome;
+  const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, lich: vLich, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp }[ROUTE.v] || vHome;
   $('#view').innerHTML = ''; V($('#view')); refreshCounts(); renderBk();
 }
 function refreshCounts() {
   $('#cntKhoa').textContent = DB.khoa.length; $('#cntHv').textContent = DB.hv.length; $('#cntGv').textContent = DB.gv.length;
   $('#cntTrash').textContent = DB.trash.length; const m = missingMa().length; $('#cntMiss').textContent = m; $('#cntMiss').style.background = m ? '#c0392b' : '';
   $('#brandSub').textContent = DB.settings.coSo;
+  const al = hsAlerts(); const c = $('#cntHs'); c.textContent = al.length; c.style.background = al.length ? '#c0392b' : '';
+  const chip = $('#hsChip'); if (al.length) { const g = al.filter(x => x.lv === 'gap' || x.lv === 'quahan').length; chip.style.display = ''; chip.innerHTML = `⏰ ${al.length} khóa cần nhập hồ sơ${g ? ` · <b>${g} gấp</b>` : ''}`; chip.onclick = () => { lichTab = 'sap'; go('lich'); }; } else chip.style.display = 'none';
 }
 function sortedKhoa() { return DB.khoa.slice().sort((a, b) => (b.ngayKG || '').localeCompare(a.ngayKG || '') || a.hang.localeCompare(b.hang) || b.so - a.so); }
 const stBadge = k => { const s = kStatus(k); return `<span class="badge ${s.c}">${s.t}</span>`; };
@@ -827,6 +850,7 @@ function vHome(el) {
   <h1>Tổng quan</h1><p class="sub">${esc(DB.settings.coSo)} · Hôm nay ${isoToVN(t)}</p>
   ${!DB.khoa.length ? `<div class="card note blue"><b>Bắt đầu nhanh:</b> kéo thả file <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> cũ vào đây để chuyển toàn bộ khóa, học viên, giáo viên và mã ĐKI sang tool — hoặc vào <a href="#" data-go="khoa">Khóa học</a> để tạo khóa mới.</div>` : ''}
   ${homeBackupNote()}
+  ${hsAlertHtml(hsAlerts(), true)}
   <div class="grid g4">
     ${stats.map(s => `<div class="card stat"><div class="k">${esc(s.h.name)}</div><div class="v">${s.n} <span class="small muted">khóa</span></div>
       <div class="d">Gần nhất: ${s.last ? `<a href="#" data-k="${s.last.id}">${kCode(s.last)}</a> (KG ${isoToVN(s.last.ngayKG)})` : '—'}<br>Đang học: <b>${s.run.length}</b> khóa · <b>${s.hv}</b> HV</div></div>`).join('')}
@@ -852,8 +876,8 @@ function vHome(el) {
 }
 function khoaTable(list, selectable) {
   if (!list.length) return '<div class="empty-st">Không có khóa nào.</div>';
-  return `<div class="tbl"><table><thead><tr>${selectable ? '<th style="width:34px"><input type="checkbox" id="kCkAll" title="Chọn tất cả khóa đang hiện"></th>' : ''}<th>Mã khóa</th><th>Hạng</th><th>Khai giảng</th><th>Bế giảng</th><th>Giáo viên</th><th class="num">Số HV</th><th class="num">Thiếu mã</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-  ${list.map(k => { const l = hvOf(k.id).filter(h => h.tt !== "bohoc"); const m = l.filter(h => !h.maDK).length; const cv = l.filter(h => !h.maDK && MA_RE.test(h.maNguon || '')).length, dn = l.filter(h => h.maTuNguon).length; const sel = selectable && kSel.has(k.id); return `<tr class="${sel ? 'hl' : ''}">${selectable ? `<td><input type="checkbox" class="kck" data-id="${k.id}" ${sel ? 'checked' : ''}></td>` : ''}<td><a href="#" data-k="${k.id}" class="hang">${kCode(k)}</a>${isLocked(k) ? ' 🔒' : ''}${DB.drafts?.[k.id] ? ' <span class="badge b-new" title="Đang chọn GV dở">nháp</span>' : ''}</td><td>${esc(hangOf(k.hang).name)}</td><td>${isoToVN(k.ngayKG)}</td><td>${isoToVN(k.ngayBG)}</td><td class="small">${esc(khoaGvText(k))}</td><td class="num">${l.length}</td><td class="num">${m ? `<span class="badge b-miss">${m}</span>` : '<span class="muted">0</span>'}${cv ? ` <span class="badge b-new" title="${cv} HV có mã 52003 chưa chuyển — tick khóa rồi bấm 'Dùng mã 52003'">52003: ${cv}</span>` : ''}${dn ? ` <span class="badge b-info" title="Đang dùng mã 52003 cho ${dn} HV">dùng 52003</span>` : ''}</td><td>${stBadge(k)}</td><td><button class="btn sm" data-k="${k.id}">Mở</button></td></tr>`; }).join('')}</tbody></table></div>`;
+  return `<div class="tbl"><table><thead><tr>${selectable ? '<th style="width:34px"><input type="checkbox" id="kCkAll" title="Chọn tất cả khóa đang hiện"></th>' : ''}<th>Mã khóa</th><th>Hạng</th><th>Khai giảng</th><th>Bế giảng</th><th>Giáo viên</th><th class="num">Số HV</th><th class="num">Thiếu mã</th><th title="① thông tin HV · ② ảnh">Hồ sơ</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+  ${list.map(k => { const l = hvOf(k.id).filter(h => h.tt !== "bohoc"); const m = l.filter(h => !h.maDK).length; const cv = l.filter(h => !h.maDK && MA_RE.test(h.maNguon || '')).length, dn = l.filter(h => h.maTuNguon).length; const sel = selectable && kSel.has(k.id); return `<tr class="${sel ? 'hl' : ''}">${selectable ? `<td><input type="checkbox" class="kck" data-id="${k.id}" ${sel ? 'checked' : ''}></td>` : ''}<td><a href="#" data-k="${k.id}" class="hang">${kCode(k)}</a>${isLocked(k) ? ' 🔒' : ''}${DB.drafts?.[k.id] ? ' <span class="badge b-new" title="Đang chọn GV dở">nháp</span>' : ''}</td><td>${esc(hangOf(k.hang).name)}</td><td>${isoToVN(k.ngayKG)}</td><td>${isoToVN(k.ngayBG)}</td><td class="small">${esc(khoaGvText(k))}</td><td class="num">${l.length}</td><td class="num">${m ? `<span class="badge b-miss">${m}</span>` : '<span class="muted">0</span>'}${cv ? ` <span class="badge b-new" title="${cv} HV có mã 52003 chưa chuyển — tick khóa rồi bấm 'Dùng mã 52003'">52003: ${cv}</span>` : ''}${dn ? ` <span class="badge b-info" title="Đang dùng mã 52003 cho ${dn} HV">dùng 52003</span>` : ''}</td><td style="white-space:nowrap" title="${{ xong: 'Đã chốt hồ sơ', choanh: 'Đã nhập thông tin, chờ ảnh', chua: 'Chưa xác nhận' }[hsState(k)]}">${(k.hoSo || {}).tt ? '<span style="color:var(--green)">①✓</span>' : '<span class="muted">①</span>'} ${(k.hoSo || {}).anh ? '<span style="color:var(--green)">②✓</span>' : '<span class="muted">②</span>'}</td><td>${stBadge(k)}</td><td><button class="btn sm" data-k="${k.id}">Mở</button></td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function bindCommon(el) {
   $$('[data-upd]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('help', { check: true }); }));
@@ -1026,6 +1050,7 @@ function vKhoaDetail(el) {
     <div class="card stat" style="border-color:var(--amber)"><div class="k">Chưa có SĐT</div><div class="v">${noPhone}</div><div class="d">${L ? '' : '<a href="#" id="dSdtLink">Nạp SĐT từ file</a> hoặc gõ vào ô'}</div></div>
     <div class="card stat" style="border-color:${fee.no > 0 ? 'var(--red)' : 'var(--green)'}"><div class="k">Học phí còn nợ</div><div class="v" style="font-size:20px">${money(fee.no)} đ</div><div class="d">Đã thu ${money(fee.thu)} / ${money(fee.phai)} đ</div></div>
   </div>
+  ${hsStepper(k)}
   <div class="tabs"><button class="tab ${dTab === 'ds' ? 'on' : ''}" data-tab="ds">Danh sách học viên</button><button class="tab ${dTab === 'hp' ? 'on' : ''}" data-tab="hp">Học phí</button></div>
   <div id="dBody"></div>
   <div class="row" style="margin-top:12px"><button class="btn sm" id="dDat">⬇ Xuất DS cho sổ nhật ký / DAT</button><span class="small muted">Tool khác đọc trực tiếp: <span class="mono">/api/khoa/${kCode(k)}.json</span></span><span class="sp"></span><button class="btn dan" id="dDel" ${dis}>🗑 Xóa khóa</button></div>`;
@@ -1033,6 +1058,7 @@ function vKhoaDetail(el) {
   if (dTab === 'hp') feeTab($('#dBody', el), k, list, L); else listTab($('#dBody', el), k, list, L);
   $('#back', el).onclick = e => { e.preventDefault(); go('khoa'); };
   $('#dLock', el).onclick = () => toggleLock(k);
+  bindHs(el, k);
   $('#dNguon', el)?.addEventListener('click', () => useNguon([k], true).then(render));
   $('#dUnNguon', el)?.addEventListener('click', e => { e.preventDefault(); useNguon([k], false).then(render); });
   $('#dExp', el).onclick = () => exportKhoaDialog(k);
@@ -1474,6 +1500,254 @@ function vMadk(el) {
   $$('[data-use]', el).forEach(b => b.onclick = () => { const [id, cc] = b.dataset.use.split('|'); const h = DB.hv.find(x => x.id === id); const r = DB.madk[cc]; h.maDK = r.maDK; h.soHS = r.soHS; commit(`Dùng mã ${r.maDK} cho ${h.hoTen}`); render(); });
 }
 
+/* =========================================================
+   LỊCH KHAI GIẢNG – BẾ GIẢNG + TIẾN ĐỘ HỒ SƠ (① thông tin HV → ② ảnh → đã chốt)
+   ========================================================= */
+const HS_LEVEL = { quahan: { t: 'QUÁ HẠN', c: 'b-miss', bg: 'var(--red-l)', bd: 'var(--red)' }, gap: { t: 'GẤP', c: 'b-miss', bg: 'var(--red-l)', bd: 'var(--red)' }, sap: { t: 'Sắp đến', c: 'b-new', bg: 'var(--amber-l)', bd: 'var(--amber)' }, som: { t: 'Chuẩn bị', c: 'b-info', bg: 'var(--blue-l)', bd: 'var(--blue)' } };
+function hsState(k) { const h = k.hoSo || {}; return h.tt && h.anh ? 'xong' : h.tt ? 'choanh' : 'chua'; }
+function hsBadge(k) {
+  const s = hsState(k);
+  return s === 'xong' ? '<span class="badge b-run">✓ Đã chốt hồ sơ</span>' : s === 'choanh' ? '<span class="badge b-new">① ✓ · chờ ② ảnh</span>' : '<span class="badge b-end">Chưa nhập</span>';
+}
+/* Khóa cần nhắc: chưa chốt hồ sơ, chưa đóng sổ, KG trong khoảng [hôm nay − 30, hôm nay + N] */
+function hsAlerts() {
+  const t = todayISO(), N = Math.min(5, Math.max(1, +DB.settings.hsNgay || 5));
+  const from = DB.settings.hsTuNgay || '';
+  return DB.khoa.filter(k => !isLocked(k) && k.ngayKG && k.ngayKG >= from && hsState(k) !== 'xong')
+    .map(k => ({ k, d: daysBetween(t, k.ngayKG) })).filter(x => x.d <= N && x.d >= -30)
+    .map(x => ({ ...x, lv: x.d < 0 ? 'quahan' : x.d <= 1 ? 'gap' : x.d <= 3 ? 'sap' : 'som' }))
+    .sort((a, b) => a.d - b.d);
+}
+const dayTxt = d => d < 0 ? `đã khai giảng ${-d} ngày` : d === 0 ? 'KHAI GIẢNG HÔM NAY' : d === 1 ? 'khai giảng NGÀY MAI' : `còn ${d} ngày`;
+function hsAlertHtml(list, compact) {
+  if (!list.length) return '';
+  return `<div class="card" style="border-left:5px solid ${HS_LEVEL[list[0].lv].bd};background:${HS_LEVEL[list[0].lv].bg}"><div class="row"><h2 style="margin:0">⏰ Nhắc nhập hồ sơ khóa sắp khai giảng</h2><span class="sp"></span><a href="#" data-go="lich" class="small">Mở Lịch KG–BG →</a></div>
+  <p class="small muted" style="margin:4px 0 8px">Báo trước ${DB.settings.hsNgay || 5} ngày. Mỗi khóa cần tick ① <b>Đã nhập đủ thông tin học viên</b> rồi ② <b>Đã nhập ảnh</b> để chốt.</p>
+  ${list.slice(0, compact ? 6 : 99).map(x => `<div class="alert-li"><span class="badge ${HS_LEVEL[x.lv].c}" style="min-width:74px;text-align:center">${HS_LEVEL[x.lv].t}</span><a href="#" data-k="${x.k.id}" class="hang">${kCode(x.k)}</a><span class="small">KG <b>${isoToVN(x.k.ngayKG)}</b> · ${dayTxt(x.d)} · ${hvOf(x.k.id).length} HV</span><span class="sp"></span>${hsBadge(x.k)}${hvOf(x.k.id).length ? '' : ` <button class="btn sm pri" data-imp="${x.k.id}">Nhập HV</button>`}</div>`).join('')}
+  ${compact && list.length > 6 ? `<div class="small muted" style="margin-top:6px">… và ${list.length - 6} khóa nữa</div>` : ''}</div>`;
+}
+/* Tick / bỏ tick từng bước */
+async function hsTick(k, step, on) {
+  k.hoSo = k.hoSo || {};
+  const list = hvOf(k.id).filter(h => h.tt !== 'bohoc');
+  if (on) {
+    if (step === 'anh' && !k.hoSo.tt) { toast('Tick ① "Đã nhập đủ thông tin học viên" trước.', 'err'); return false; }
+    if (step === 'tt') {
+      if (!list.length) { toast('Khóa chưa có học viên nào — nhập danh sách trước.', 'err'); return false; }
+      const noGv = list.filter(h => !h.gvId && !h.gvGoc).length, warn = list.filter(h => hvWarn(h, k).length).length, noSdt = list.filter(h => !h.sdt).length;
+      const ok = await modal('① Xác nhận đã nhập đủ thông tin học viên', `<p>Khóa <b>${kCode(k)}</b> · <b>${list.length}</b> học viên.</p>
+        <table style="width:100%;font-size:13px"><tr><td>Chưa có GV</td><td>${noGv ? `<span class="badge b-miss">${noGv}</span>` : '<span class="badge b-run">0</span>'}</td></tr><tr><td>Cảnh báo hồ sơ (CCCD, tuổi…)</td><td>${warn ? `<span class="badge b-new">${warn}</span>` : '<span class="badge b-run">0</span>'}</td></tr><tr><td>Chưa có SĐT</td><td>${noSdt ? `<span class="badge b-new">${noSdt}</span>` : '<span class="badge b-run">0</span>'}</td></tr></table>
+        <label class="f" style="margin-top:10px">Ghi chú (không bắt buộc)<input class="in" id="hsN"></label>`, [{ t: 'Hủy', v: null }, { t: '✓ Xác nhận ①', cls: 'pri', v: bg => ({ note: $('#hsN', bg).value.trim() }) }]);
+      if (!ok) return false;
+      k.hoSo.tt = { at: new Date().toISOString(), by: DEVICE, n: list.length, note: ok.note };
+      commit(`① Đã nhập đủ thông tin HV: ${kCode(k)} (${list.length} HV)`);
+    } else {
+      const ok = await modal('② Xác nhận đã nhập ảnh', `<p>Khóa <b>${kCode(k)}</b> · ${list.length} học viên. Sau bước này khóa được tính là <b>đã chốt hồ sơ</b> và không còn bị nhắc.</p><label class="f">Ghi chú (vd: đã xuất ảnh sang phần mềm FPT)<input class="in" id="hsN"></label>`, [{ t: 'Hủy', v: null }, { t: '✓ Xác nhận ②', cls: 'pri', v: bg => ({ note: $('#hsN', bg).value.trim() }) }]);
+      if (!ok) return false;
+      k.hoSo.anh = { at: new Date().toISOString(), by: DEVICE, n: list.length, note: ok.note };
+      commit(`② Đã nhập ảnh, chốt hồ sơ: ${kCode(k)}`);
+      toast(`Đã chốt hồ sơ ${k.hang}-${pad2(k.so)}.`, 'ok');
+    }
+  } else {
+    const what = step === 'tt' ? '① thông tin học viên' + (k.hoSo.anh ? ' (② ảnh cũng bị bỏ)' : '') : '② ảnh';
+    const r = await modal('Bỏ xác nhận?', `<p>Bỏ xác nhận ${what} của <b>${kCode(k)}</b>.</p><label class="f">Lý do<input class="in" id="hsR"></label>`, [{ t: 'Hủy', v: null }, { t: 'Bỏ xác nhận', cls: 'dan', v: bg => { const x = $('#hsR', bg).value.trim(); if (!x) { toast('Nhập lý do.', 'err'); return false; } return x; } }]);
+    if (!r) return false;
+    if (step === 'tt') { delete k.hoSo.tt; delete k.hoSo.anh; } else delete k.hoSo.anh;
+    commit(`Bỏ xác nhận ${what}: ${kCode(k)} — ${r}`);
+  }
+  return true;
+}
+function hsStepper(k) {
+  const h = k.hoSo || {}, L = isLocked(k), n = hvOf(k.id).filter(x => x.tt !== 'bohoc').length;
+  const d = k.ngayKG ? daysBetween(todayISO(), k.ngayKG) : null;
+  const step = (key, no, title, info, can) => { const x = h[key]; return `<div class="hs-step ${x ? 'done' : can ? 'cur' : ''}"><div class="hs-dot">${x ? '✓' : no}</div><div><b>${title}</b><div class="small muted">${x ? `${fmtT(x.at)}${x.note ? ' · ' + esc(x.note) : ''}` : info}</div></div>
+      ${L ? '' : `<label class="hs-ck"><input type="checkbox" data-hs="${key}" ${x ? 'checked' : ''} ${!x && !can ? 'disabled' : ''}> ${x ? 'Đã xác nhận' : 'Xác nhận'}</label>`}</div>`; };
+  return `<div class="card hs-card"><div class="row"><h2 style="margin:0">📋 Tiến độ hồ sơ khóa</h2><span class="sp"></span>${d != null && hsState(k) !== 'xong' && !L && k.ngayKG >= (DB.settings.hsTuNgay || '') && d <= (DB.settings.hsNgay || 5) && d >= -30 ? `<span class="badge ${HS_LEVEL[d < 0 ? 'quahan' : d <= 1 ? 'gap' : d <= 3 ? 'sap' : 'som'].c}">${dayTxt(d)}</span>` : ''} ${hsBadge(k)}</div>
+    <div class="hs-steps">${step('tt', '1', 'Đã nhập đủ thông tin học viên', n ? `${n} học viên trong khóa — kiểm tra xong thì tick` : 'Chưa có học viên — nhập danh sách trước', !!n)}
+      <div class="hs-line ${h.tt ? 'done' : ''}"></div>${step('anh', '2', 'Đã nhập ảnh', h.tt ? 'Nhập ảnh xong thì tick để chốt hồ sơ' : 'Làm sau bước ①', !!h.tt)}
+      <div class="hs-line ${h.anh ? 'done' : ''}"></div><div class="hs-step ${h.tt && h.anh ? 'done' : ''}"><div class="hs-dot">${h.tt && h.anh ? '✓' : '3'}</div><div><b>Đã chốt hồ sơ</b><div class="small muted">${h.tt && h.anh ? 'Không còn nhắc' : 'Tự động khi xong ① và ②'}</div></div></div></div></div>`;
+}
+function bindHs(el, k) { $$('[data-hs]', el).forEach(c => c.onchange = async () => { const ok = await hsTick(k, c.dataset.hs, c.checked); if (!ok) c.checked = !c.checked; render(); }); }
+
+/* ---- Nạp file lịch KG–BG ---- */
+const LICH_COLS = { ten: ['tenkhoa', 'hang', 'hangdaotao', 'loaikhoa'], so: ['khoa', 'sokhoa', 'makhoa'], kg: ['khaigiang', 'ngaykhaigiang', 'kg'], bg: ['begiang', 'ngaybegiang', 'bg'], gv: ['giaovien', 'gv'] };
+function findLichHeader(aoa) {
+  for (let r = 0; r < Math.min(aoa.length, 20); r++) {
+    const m = {}; (aoa[r] || []).forEach((c, i) => { const k = normKey(c); for (const [f, ks] of Object.entries(LICH_COLS)) if (m[f] == null && ks.includes(k)) m[f] = i; });
+    if (m.kg != null && m.bg != null && m.so != null) return { r, m };
+  }
+  return null;
+}
+function guessHang(ten) {
+  const s = noAcc(ten).replace(/\s+/g, ' ').trim();
+  if (/^nh\b|nang hang/.test(s)) { const tail = s.replace(/^nh\b|nang hang/, '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return { code: ('NH' + tail).slice(0, 6), name: 'Nâng hạng ' + String(ten).replace(/^\s*NH\s*/i, '').trim() }; }
+  if (/std|stđ|tu dong/.test(s)) return { code: 'BSTD', name: 'B số tự động' };
+  if (/\bss\b|so san/.test(s)) return { code: 'BSS', name: 'B số sàn' };
+  const m = s.match(/hang\s+([a-z0-9]+)/); const c = (m ? m[1] : s).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  return { code: c, name: 'Hạng ' + c };
+}
+let LICH = null;   // bản xem trước file lịch
+function parseLich(wb, src) {
+  for (const sn of wb.SheetNames) {
+    const aoa = sheetAoa(wb.Sheets[sn]); const h = findLichHeader(aoa); if (!h) continue;
+    const rows = []; let lastTen = '';
+    for (let i = h.r + 1; i < aoa.length; i++) {
+      const r = aoa[i]; const g = f => h.m[f] == null ? '' : r[h.m[f]];
+      const ten = String(g('ten') || '').trim() || lastTen; const so = parseInt(g('so')); const kg = anyToISO(g('kg')), bg = anyToISO(g('bg'));
+      if (!so || (!kg && !bg)) continue; lastTen = ten;
+      const map = (DB.settings.hangMap || {})[normKey(ten)] || guessHang(ten).code;
+      rows.push({ id: uid(), ten, so, kg, bg, gv: String(g('gv') || '').trim(), hang: map, row: i + 1 });
+    }
+    if (rows.length) return { src, sheet: sn, rows };
+  }
+  return null;
+}
+function lichAnalyze() {
+  const L = LICH; if (!L) return;
+  const byHang = {}; L.rows.forEach(r => { if (r.kg && r.bg && r.bg > r.kg) (byHang[r.hang] = byHang[r.hang] || []).push(daysBetween(r.kg, r.bg)); });
+  const med = {}; for (const [h, a] of Object.entries(byHang)) { a.sort((x, y) => x - y); med[h] = a[Math.floor(a.length / 2)]; }
+  for (const r of L.rows) {
+    r.warn = []; const ex = DB.khoa.find(k => k.hang === r.hang && k.so === r.so); r.ex = ex ? ex.id : '';
+    if (!/^[A-Z][A-Z0-9]{0,5}$/.test(r.hang)) r.warn.push('mã hạng không hợp lệ');
+    if (!r.kg) r.warn.push('thiếu ngày KG'); if (!r.bg) r.warn.push('thiếu ngày BG');
+    if (r.kg && r.bg && r.bg <= r.kg) r.warn.push('BG trước KG');
+    else if (r.kg && r.bg && med[r.hang]) { const d = daysBetween(r.kg, r.bg), m = med[r.hang]; if (d > m * 1.6 || d < m * 0.5) r.warn.push(`dài ${d} ngày (thường ${m})`); }
+    if (ex && r.kg && ex.ngayKG && Math.abs(daysBetween(ex.ngayKG, r.kg)) > 60) r.warn.push('KG lệch >60 ngày so với khóa đang có (khóa năm khác?)');
+    r.same = ex && ex.ngayKG === r.kg && ex.ngayBG === r.bg;
+    r.act = !ex ? 'new' : r.same ? 'same' : isLocked(ex) ? 'locked' : 'upd';
+    if (r.sel == null) r.sel = !r.warn.length && (r.act === 'new' || r.act === 'upd');
+  }
+  L.med = med;
+}
+async function startLichImport(file, wb) {
+  try { wb = wb || await readWorkbook(file); } catch (e) { toast('Không đọc được file: ' + e.message, 'err'); return; }
+  const L = parseLich(wb, file.name);
+  if (!L) { toast('Không thấy bảng lịch (cần cột Khóa, Khai giảng, Bế giảng).', 'err', 6000); return; }
+  LICH = L; lichAnalyze(); lichTab = 'nhap'; go('lich');
+}
+let lichTab = 'sap', lichHang = '', calMonth = '';
+function vLich(el) {
+  const al = hsAlerts();
+  el.innerHTML = `<div class="row"><div><h1>Lịch khai giảng – bế giảng</h1><p class="sub">Nạp lịch KG–BG, theo dõi tiến độ hồ sơ từng khóa: ① thông tin học viên → ② ảnh → đã chốt.</p></div><span class="sp"></span>
+    <label class="small">Báo trước <select class="in" id="lN" style="width:70px">${[1, 2, 3, 4, 5].map(n => `<option ${+DB.settings.hsNgay === n || (!DB.settings.hsNgay && n === 5) ? 'selected' : ''}>${n}</option>`).join('')}</select> ngày</label>
+    <label class="small" title="Khóa khai giảng trước ngày này không bị nhắc">Theo dõi từ <input type="date" class="in" id="lFrom" value="${esc(DB.settings.hsTuNgay || '')}" style="padding:4px 6px"></label>
+    <button class="btn" id="lNoti">🔔 Thông báo trên máy tính</button></div>
+  ${hsAlertHtml(al)}
+  <div class="tabs">${[['sap', `Sắp khai giảng`], ['cal', 'Lịch tháng'], ['all', 'Tất cả khóa'], ['nhap', `Nạp file lịch${LICH ? ' •' : ''}`]].map(([a, b]) => `<button class="tab ${lichTab === a ? 'on' : ''}" data-lt="${a}">${b}</button>`).join('')}</div>
+  <div id="lBody"></div>`;
+  $$('[data-lt]', el).forEach(b => b.onclick = () => { lichTab = b.dataset.lt; render(); });
+  $('#lFrom', el).onchange = e => { DB.settings.hsTuNgay = e.target.value; commit('Theo dõi hồ sơ từ ' + isoToVN(e.target.value)); render(); };
+  $('#lN', el).onchange = e => { DB.settings.hsNgay = +e.target.value; commit('Báo trước ' + e.target.value + ' ngày'); render(); };
+  $('#lNoti', el).onclick = async () => { if (!('Notification' in window)) return toast('Trình duyệt không hỗ trợ thông báo.', 'err'); const p = await Notification.requestPermission(); if (p === 'granted') { try { localStorage.removeItem('qlk_noti_' + todayISO()); } catch { } hsNotify(true); toast('Đã bật thông báo trên máy tính.', 'ok'); } else toast('Chưa được phép thông báo.', 'err'); };
+  const box = $('#lBody', el);
+  if (lichTab === 'nhap') lichImportView(box);
+  else if (lichTab === 'cal') lichCalendar(box);
+  else lichList(box, lichTab === 'sap');
+  bindCommon(el);
+}
+function lichList(box, upcoming) {
+  const t = todayISO();
+  let ks = DB.khoa.filter(k => !lichHang || k.hang === lichHang);
+  if (upcoming) ks = ks.filter(k => k.ngayKG && daysBetween(t, k.ngayKG) >= -30 && (daysBetween(t, k.ngayKG) <= 60) && !(isLocked(k)));
+  ks.sort((a, b) => upcoming ? (a.ngayKG || '').localeCompare(b.ngayKG || '') : (b.ngayKG || '').localeCompare(a.ngayKG || ''));
+  const hangs = [...new Set(DB.khoa.map(k => k.hang))];
+  box.innerHTML = `<div class="card"><div class="row" style="margin-bottom:10px"><select class="in" id="lH"><option value="">Mọi hạng</option>${hangs.map(h => `<option value="${esc(h)}" ${lichHang === h ? 'selected' : ''}>${esc(hangOf(h).name)} (${esc(h)})</option>`).join('')}</select><span class="small muted">${upcoming ? 'Khóa khai giảng từ 30 ngày trước đến 60 ngày tới' : 'Mọi khóa'} · ${ks.length} khóa</span><span class="sp"></span><button class="btn sm" id="lXls">⬇ Xuất Excel lịch</button></div>
+  <div class="tbl" style="max-height:70vh"><table><thead><tr><th>Khóa</th><th>Hạng</th><th>Khai giảng</th><th>Bế giảng</th><th class="num">HV</th><th class="c">① Thông tin</th><th class="c">② Ảnh</th><th>Hồ sơ</th><th></th></tr></thead><tbody>
+  ${ks.map(k => { const d = k.ngayKG ? daysBetween(t, k.ngayKG) : null; const h = k.hoSo || {}; const L = isLocked(k); const lv = d != null && hsState(k) !== 'xong' && !L && k.ngayKG >= (DB.settings.hsTuNgay || '') && d <= (DB.settings.hsNgay || 5) && d >= -30 ? (d < 0 ? 'quahan' : d <= 1 ? 'gap' : d <= 3 ? 'sap' : 'som') : '';
+    return `<tr style="${lv ? `box-shadow:inset 4px 0 0 ${HS_LEVEL[lv].bd}` : ''}"><td><a href="#" data-k="${k.id}" class="hang">${kCode(k)}</a>${L ? ' 🔒' : ''}</td><td class="small">${esc(hangOf(k.hang).name)}</td>
+      <td>${isoToVN(k.ngayKG)}${d != null && d >= -30 && d <= 60 ? `<div class="small ${lv ? '' : 'muted'}" style="${lv === 'gap' || lv === 'quahan' ? 'color:var(--red);font-weight:600' : ''}">${dayTxt(d)}</div>` : ''}</td><td>${isoToVN(k.ngayBG)}</td><td class="num">${hvOf(k.id).filter(x => x.tt !== 'bohoc').length}</td>
+      <td class="c"><input type="checkbox" data-lk="${k.id}|tt" ${h.tt ? 'checked' : ''} ${L ? 'disabled' : ''} title="${h.tt ? fmtT(h.tt.at) : 'Đã nhập đủ thông tin học viên'}"></td>
+      <td class="c"><input type="checkbox" data-lk="${k.id}|anh" ${h.anh ? 'checked' : ''} ${L || (!h.tt && !h.anh) ? 'disabled' : ''} title="${h.anh ? fmtT(h.anh.at) : 'Đã nhập ảnh'}"></td>
+      <td>${hsBadge(k)}${lv ? ` <span class="badge ${HS_LEVEL[lv].c}">${HS_LEVEL[lv].t}</span>` : ''}</td>
+      <td style="white-space:nowrap">${hvOf(k.id).length || L ? '' : `<button class="btn sm pri" data-imp="${k.id}">Nhập HV</button> `}<button class="btn sm" data-k="${k.id}">Mở</button></td></tr>`; }).join('') || '<tr><td colspan="9" class="empty-st">Không có khóa.</td></tr>'}</tbody></table></div></div>`;
+  $('#lH', box).onchange = e => { lichHang = e.target.value; render(); };
+  $$('[data-lk]', box).forEach(c => c.onchange = async () => { const [id, st] = c.dataset.lk.split('|'); const ok = await hsTick(khoaById(id), st, c.checked); if (!ok) c.checked = !c.checked; render(); });
+  $('#lXls', box).onclick = async () => {
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('LỊCH KHAI GIẢNG');
+    ws.columns = [6, 22, 8, 14, 14, 30, 8, 18, 18, 16].map(w => ({ width: w }));
+    const hr = ws.addRow(['STT', 'Tên khóa', 'Khóa', 'KHAI GIẢNG', 'BẾ GIẢNG', 'GIÁO VIÊN', 'Số HV', '① Thông tin HV', '② Ảnh', 'Hồ sơ']);
+    hr.eachCell(c => { c.font = { ...XFONT, bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = fill('FF4472C4'); c.border = BOX; });
+    ks.slice().sort((a, b) => a.hang.localeCompare(b.hang) || a.so - b.so).forEach((k, i) => { const h = k.hoSo || {}; const r = ws.addRow([i + 1, hangOf(k.hang).name, k.so, vnDate(k.ngayKG) || null, vnDate(k.ngayBG) || null, khoaGvText(k), hvOf(k.id).length, h.tt ? isoToVN(h.tt.at.slice(0, 10)) : '', h.anh ? isoToVN(h.anh.at.slice(0, 10)) : '', { xong: 'Đã chốt', choanh: 'Chờ ảnh', chua: 'Chưa nhập' }[hsState(k)]]); r.eachCell(c => { c.font = XFONT; c.border = BOX; }); r.getCell(4).numFmt = r.getCell(5).numFmt = 'dd/mm/yyyy'; });
+    downloadBlob(new Blob([await wb.xlsx.writeBuffer()]), `LichKG-BG_${todayISO()}.xlsx`);
+  };
+}
+function lichCalendar(box) {
+  const t = todayISO(); calMonth = calMonth || t.slice(0, 7);
+  const [y, m] = calMonth.split('-').map(Number); const first = new Date(y, m - 1, 1); const days = new Date(y, m, 0).getDate(); const off = (first.getDay() + 6) % 7;
+  const ev = {}; DB.khoa.forEach(k => { if ((k.ngayKG || '').startsWith(calMonth)) (ev[k.ngayKG] = ev[k.ngayKG] || []).push({ k, t: 'kg' }); if ((k.ngayBG || '').startsWith(calMonth)) (ev[k.ngayBG] = ev[k.ngayBG] || []).push({ k, t: 'bg' }); });
+  const cells = []; for (let i = 0; i < off; i++) cells.push('<div class="cal-c off"></div>');
+  for (let d = 1; d <= days; d++) { const iso = `${calMonth}-${pad2(d)}`; cells.push(`<div class="cal-c ${iso === t ? 'today' : ''}"><div class="cal-d">${d}</div>${(ev[iso] || []).map(e => `<a href="#" data-k="${e.k.id}" class="cal-e ${e.t}" title="${e.t === 'kg' ? 'Khai giảng' : 'Bế giảng'} ${e.k.hang}-${pad2(e.k.so)}">${e.t === 'kg' ? '▶' : '■'} ${kCode(e.k)}${e.t === 'kg' ? ' ' + (hsState(e.k) === 'xong' ? '✓' : hsState(e.k) === 'choanh' ? '½' : '') : ''}</a>`).join('')}</div>`); }
+  const mv = n => { const dt2 = new Date(y, m - 1 + n, 1); calMonth = `${dt2.getFullYear()}-${pad2(dt2.getMonth() + 1)}`; render(); };
+  box.innerHTML = `<div class="card"><div class="row" style="margin-bottom:10px"><button class="btn sm" id="cP">‹</button><h2 style="margin:0;min-width:150px;text-align:center">Tháng ${m}/${y}</h2><button class="btn sm" id="cN">›</button><button class="btn sm" id="cT">Hôm nay</button><span class="sp"></span><span class="small"><span class="cal-e kg">▶ Khai giảng</span> <span class="cal-e bg">■ Bế giảng</span> · ✓ đã chốt hồ sơ · ½ chờ ảnh</span></div>
+    <div class="cal">${['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(x => `<div class="cal-h">${x}</div>`).join('')}${cells.join('')}</div></div>`;
+  $('#cP', box).onclick = () => mv(-1); $('#cN', box).onclick = () => mv(1); $('#cT', box).onclick = () => { calMonth = t.slice(0, 7); render(); };
+}
+function lichImportView(box) {
+  if (!LICH) {
+    box.innerHTML = `<div class="card"><div class="drop" id="lDrop" style="padding:44px"><b>Kéo thả file lịch khai giảng – bế giảng ô tô (vd KG-BG_OTO.xlsx)</b><br>Cột cần có: Tên khóa, Khóa, KHAI GIẢNG, BẾ GIẢNG (GIÁO VIÊN nếu có)</div>
+      <p class="small muted">Tool xem trước từng dòng: khóa mới sẽ được tạo (chưa có học viên), khóa đã có thì cập nhật ngày nếu khác. Dòng ngày bất thường (BG trước KG, độ dài lệch nhiều) <b>không tự chọn</b> — sửa ngày ngay trong bảng rồi tick.</p></div>`;
+    setupDrop($('#lDrop', box), f => startLichImport(f)); return;
+  }
+  const L = LICH; lichAnalyze();
+  const cnt = a => L.rows.filter(r => r.act === a).length, nw = L.rows.filter(r => r.warn.length).length, sel = L.rows.filter(r => r.sel).length;
+  const groups = {}; L.rows.forEach(r => (groups[r.ten] = groups[r.ten] || { ten: r.ten, hang: r.hang, n: 0 }).n++);
+  box.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">Xem trước: ${esc(L.src)}</h2><span class="sp"></span><span class="small">${L.rows.length} dòng · <span class="badge b-run">${cnt('new')} khóa mới</span> <span class="badge b-info">${cnt('upd')} đổi ngày</span> <span class="badge b-end">${cnt('same')} không đổi</span> ${cnt('locked') ? `<span class="badge b-end">${cnt('locked')} đã đóng sổ</span>` : ''} ${nw ? `<span class="badge b-miss">${nw} cần kiểm tra</span>` : ''}</span></div>
+    <h2 style="font-size:14px;margin:14px 0 6px">Ghép tên khóa trong file → hạng trong tool</h2>
+    <div class="tbl"><table><thead><tr><th>Tên trong file</th><th class="num">Dòng</th><th>Mã hạng</th><th>Tên hạng hiển thị</th></tr></thead><tbody>
+    ${Object.values(groups).map(g => `<tr><td><b>${esc(g.ten)}</b></td><td class="num">${g.n}</td><td><input class="in mono" data-hm="${esc(g.ten)}" value="${esc(g.hang)}" style="width:110px" list="hangList"></td><td>${DB.hang.some(h => h.code === g.hang) ? esc(hangOf(g.hang).name) + ' <span class="badge b-run">đã có</span>' : `<input class="in" data-hn="${esc(g.hang)}" value="${esc(guessHang(g.ten).name)}" style="width:220px"> <span class="badge b-new">hạng mới</span>`}</td></tr>`).join('')}
+    </tbody></table><datalist id="hangList">${DB.hang.map(h => `<option value="${esc(h.code)}">${esc(h.name)}</option>`).join('')}</datalist></div>
+    <div class="row" style="margin:14px 0 8px"><select class="in" id="lF"><option value="">Tất cả dòng</option><option value="new">Khóa mới</option><option value="upd">Đổi ngày</option><option value="warn">Cần kiểm tra</option><option value="sel">Đã chọn</option></select>
+      <label class="small"><input type="checkbox" id="lFut" ${L.futOnly ? 'checked' : ''}> Chỉ khóa khai giảng từ hôm nay</label><span class="sp"></span><span class="small" id="lSel">Đã chọn ${sel}</span></div>
+    <div class="tbl" style="max-height:55vh" id="lT"></div>
+    <div class="row" style="margin-top:12px"><button class="btn dan" id="lCancel">Bỏ file này</button><span class="sp"></span><button class="btn pri" id="lOk">Nhập ${sel} dòng đã chọn</button></div></div>`;
+  const draw = () => {
+    const f = $('#lF', box).value, t = todayISO();
+    const rows = L.rows.filter(r => (!f || (f === 'warn' ? r.warn.length : f === 'sel' ? r.sel : r.act === f)) && (!L.futOnly || (r.kg && r.kg >= t)));
+    $('#lT', box).innerHTML = `<table><thead><tr><th><input type="checkbox" id="lAll"></th><th>Dòng</th><th>Tên khóa</th><th>Mã khóa</th><th>Khai giảng</th><th>Bế giảng</th><th class="num">Số ngày</th><th>Xử lý</th><th>Kiểm tra</th></tr></thead><tbody>
+    ${rows.map(r => { const ex = khoaById(r.ex); return `<tr class="${r.sel ? '' : 'out'}"><td><input type="checkbox" class="lck" data-id="${r.id}" ${r.sel ? 'checked' : ''} ${r.act === 'same' || r.act === 'locked' ? 'disabled' : ''}></td><td class="muted">${r.row}</td><td class="small">${esc(r.ten)}</td><td class="hang">${esc(r.hang)}-${pad2(r.so)}</td>
+      <td><input type="date" class="in" data-d="${r.id}|kg" value="${r.kg}" style="padding:3px 6px">${ex && ex.ngayKG !== r.kg ? `<div class="small muted">đang: ${isoToVN(ex.ngayKG)}</div>` : ''}</td>
+      <td><input type="date" class="in" data-d="${r.id}|bg" value="${r.bg}" style="padding:3px 6px">${ex && ex.ngayBG !== r.bg ? `<div class="small muted">đang: ${isoToVN(ex.ngayBG)}</div>` : ''}</td>
+      <td class="num">${r.kg && r.bg ? daysBetween(r.kg, r.bg) : ''}</td>
+      <td>${{ new: '<span class="badge b-run">tạo khóa mới</span>', upd: '<span class="badge b-info">cập nhật ngày</span>', same: '<span class="badge b-end">không đổi</span>', locked: '<span class="badge b-end">đã đóng sổ — bỏ qua</span>' }[r.act]}${ex && hvOf(ex.id).length ? ` <span class="small muted">${hvOf(ex.id).length} HV</span>` : ''}</td>
+      <td class="small">${r.warn.map(w => `<span class="badge b-miss">${esc(w)}</span>`).join(' ')}</td></tr>`; }).join('') || '<tr><td colspan="9" class="empty-st">Không có dòng.</td></tr>'}</tbody></table>`;
+    $$('.lck', box).forEach(c => c.onchange = () => { L.rows.find(r => r.id === c.dataset.id).sel = c.checked; c.closest('tr').classList.toggle('out', !c.checked); upd(); });
+    $('#lAll', box).onchange = e => { rows.forEach(r => { if (r.act === 'new' || r.act === 'upd') r.sel = e.target.checked; }); draw(); upd(); };
+    $$('[data-d]', box).forEach(i => i.onchange = () => { const [id, f2] = i.dataset.d.split('|'); const r = L.rows.find(x => x.id === id); r[f2] = i.value; lichAnalyze(); if (!r.warn.length && (r.act === 'new' || r.act === 'upd')) r.sel = true; draw(); upd(); });
+  };
+  const upd = () => { const n = L.rows.filter(r => r.sel && (r.act === 'new' || r.act === 'upd')).length; $('#lSel', box).textContent = `Đã chọn ${n}`; $('#lOk', box).textContent = `Nhập ${n} dòng đã chọn`; $('#lOk', box).disabled = !n; };
+  draw(); upd();
+  $('#lF', box).onchange = draw; $('#lFut', box).onchange = e => { L.futOnly = e.target.checked; draw(); };
+  $$('[data-hm]', box).forEach(i => i.onchange = () => { const code = i.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); L.rows.forEach(r => { if (r.ten === i.dataset.hm) { r.hang = code; r.sel = null; } }); render(); });
+  $('#lCancel', box).onclick = () => { LICH = null; render(); };
+  $('#lOk', box).onclick = async () => {
+    const take = L.rows.filter(r => r.sel && (r.act === 'new' || r.act === 'upd'));
+    const bad = take.filter(r => !r.kg || !r.bg || r.bg <= r.kg || !/^[A-Z][A-Z0-9]{0,5}$/.test(r.hang));
+    if (bad.length) return toast(`${bad.length} dòng còn lỗi ngày/mã hạng — sửa hoặc bỏ chọn.`, 'err', 6000);
+    const newH = [...new Set(take.map(r => r.hang))].filter(c => !DB.hang.some(h => h.code === c));
+    if (!await confirmBox('Nhập lịch khai giảng?', `<p>Tạo <b>${take.filter(r => r.act === 'new').length}</b> khóa mới, cập nhật ngày <b>${take.filter(r => r.act === 'upd').length}</b> khóa.</p>${newH.length ? `<p>Thêm hạng mới: <b>${newH.map(esc).join(', ')}</b></p>` : ''}<p class="small muted">Khóa mới chưa có học viên; tool sẽ nhắc nhập hồ sơ trước ngày khai giảng.</p>`, 'Nhập')) return;
+    for (const c of newH) { const inp = $(`[data-hn="${c}"]`, box); const rr = take.filter(r => r.hang === c); DB.hang.push({ code: c, name: (inp && inp.value.trim()) || guessHang(rr[0].ten).name, days: L.med[c] || daysBetween(rr[0].kg, rr[0].bg), minAge: /^NH/.test(c) ? 0 : 18 }); DB.settings.hocPhi[c] = DB.settings.hocPhi[c] || 0; }
+    DB.settings.hangMap = DB.settings.hangMap || {}; L.rows.forEach(r => DB.settings.hangMap[normKey(r.ten)] = r.hang);
+    let a = 0, u = 0;
+    for (const r of take) {
+      if (r.act === 'new') { DB.khoa.push({ id: uid(), hang: r.hang, so: r.so, ngayKG: r.kg, ngayBG: r.bg, gvText: r.gv, ghiChu: 'Từ lịch ' + L.src, nguon: 'lich', createdAt: new Date().toISOString() }); a++; }
+      else { const k = khoaById(r.ex); k.ngayKG = r.kg; k.ngayBG = r.bg; if (r.gv && !k.gvText) k.gvText = r.gv; u++; }
+    }
+    commit(`Nạp lịch ${L.src}: tạo ${a} khóa, cập nhật ngày ${u} khóa`);
+    toast(`Đã tạo ${a} khóa, cập nhật ngày ${u} khóa.`, 'ok', 6000); LICH = null; lichTab = 'sap'; render();
+  };
+}
+/* Thông báo trên máy tính: 1 lần/ngày khi mở tool, nếu có khóa cần nhắc */
+function hsNotify(force) {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const key = 'qlk_noti_' + todayISO(); if (!force && localStorage.getItem(key)) return;
+    const al = hsAlerts(); if (!al.length) return;
+    localStorage.setItem(key, '1');
+    const n = new Notification('Nhắc nhập hồ sơ khóa sắp khai giảng', { body: al.slice(0, 4).map(x => `${x.k.hang}-${pad2(x.k.so)}: ${dayTxt(x.d)} — ${{ chua: 'chưa nhập', choanh: 'chờ ảnh' }[hsState(x.k)]}`).join('\n') + (al.length > 4 ? `\n… và ${al.length - 4} khóa nữa` : ''), tag: 'qlk-hoso' });
+    n.onclick = () => { window.focus(); go('lich'); };
+  } catch { }
+}
+
 /* ---------- KIỂM TRA DỮ LIỆU ---------- */
 let chkTab = 'dup', chkAll = false;
 function dataIssues(all) {
@@ -1560,6 +1834,7 @@ function vReport(el) {
 }
 /* ---------- HƯỚNG DẪN ---------- */
 const CHANGELOG = [
+  ['2.4.0', 'Mục Lịch KG–BG: kéo thả file lịch khai giảng – bế giảng để tạo/cập nhật khóa (kể cả nâng hạng), xem trước từng dòng, tự phát hiện ngày nhập sai. Tiến độ hồ sơ mỗi khóa 2 bước: ① đã nhập đủ thông tin HV → ② đã nhập ảnh → đã chốt. Nhắc trước 1–5 ngày (chọn được) ở Tổng quan, thanh trên cùng, menu và thông báo trên máy tính; lịch tháng; xuất Excel lịch.'],
   ['2.3.0', 'Có bộ cài Windows QLKhoaOto_Setup.exe (không cần cài Python, không cần quyền Admin, biểu tượng Desktop/Start Menu, gỡ trong Settings) và bản portable — tải ở trang Releases của kho GitHub. Bản cài vẫn tự cập nhật từ GitHub như cũ.'],
   ['2.2.0', 'Liên kết kho GitHub HP-wukoong/QUAN_LY_KHOA_OTO_CSHN: kiểm tra & cập nhật phần mềm 1 bấm (tự giữ bản cũ, kiểm mã SHA-256). Truy xuất đường dẫn: hiện đường dẫn đầy đủ của file dữ liệu và từng bản sao lưu, nút chép / mở thư mục, nhận dạng file sao lưu (ID bản cài, rev, số khóa/HV), tên file có mã đơn vị, file _THONG_TIN_SAO_LUU.txt trong mỗi thư mục sao lưu, đổi thư mục sao lưu chính.'],
   ['2.1.0', 'Chọn 1 hoặc nhiều khóa (tick) để thao tác hàng loạt: dùng mã 52003 cho khóa cũ (chỉ khóa được chọn, hoàn tác được, mã 52002 thật tự thay khi nạp kho), đóng/mở sổ, xuất Excel nhiều khóa, xóa. Lọc khóa theo tình trạng mã.'],
@@ -1607,13 +1882,15 @@ async function dailyUpdateCheck() {
 function vHelp(el) {
   el.innerHTML = `<h1>Hướng dẫn sử dụng</h1><p class="sub">Phiên bản ${TOOL_VERSION} · ${esc(DB.settings.coSo)}</p>
   <div class="grid g2"><div class="card"><h2>Quy trình 1 khóa</h2><ol>
-    <li><b>Tạo khóa</b> (Khóa học → ＋ Tạo khóa mới): chọn hạng, ngày KG, thả luôn file danh sách học viên.</li>
+    <li><b>Lịch KG–BG</b>: kéo thả file lịch khai giảng – bế giảng → khóa được tạo sẵn; tool nhắc trước ${DB.settings.hsNgay || 5} ngày.</li>
+    <li><b>Tạo khóa</b> (hoặc mở khóa có sẵn từ lịch): thả file danh sách học viên.</li>
     <li><b>Chọn GV</b>: bấm chip GV rồi bấm từng dòng; ai không có GV bị loại. Bấm <b>Chốt danh sách</b>.</li>
     <li><b>Mã ĐKI</b>: vào Kho mã ĐKI, thả file data (mã 52002…) — tự điền theo CCCD, có bảng đối chiếu.</li>
     <li><b>SĐT</b>: gõ trực tiếp hoặc "Nạp SĐT từ file" (cột CCCD + SĐT).</li>
     <li><b>Học phí</b>: tab Học phí trong khóa → ＋ Thu.</li>
     <li>Trước khi nộp: <b>Kiểm tra dữ liệu</b> → sửa hết mục đỏ.</li>
     <li><b>Xuất Excel / In danh sách / Xuất cho sổ nhật ký</b> trong trang khóa.</li>
+    <li>Tick <b>① Đã nhập đủ thông tin HV</b>, nhập ảnh xong tick <b>② Đã nhập ảnh</b> → khóa được chốt hồ sơ, hết nhắc.</li>
     <li>Kết thúc: <b>Đóng sổ</b> (tự đóng sau ${DB.settings.autoCloseDays} ngày kể từ bế giảng).</li></ol></div>
   <div class="card"><h2>Giữ dữ liệu an toàn</h2><ul>
     <li>Mở tool bằng <b>CHAY_TOOL.bat</b>; giữ cửa sổ đen (thu nhỏ được).</li>
@@ -1814,6 +2091,7 @@ async function handleAnyFile(file) {
   try {
     const s = await sniffFile(file);
     if (s.kind === 'json') return restoreFrom(s.data, file.name);
+    if (s.kind === 'lich') return startLichImport(file, s.wb);
     if (s.kind === 'file1') {
       const nK = s.wb.SheetNames.filter(n => KSHEET.test(n) && !/-0+$/.test(n)).length;
       if (!await confirmBox('Chuyển dữ liệu từ file Excel cũ?', `<p>File <b>${esc(file.name)}</b> có khoảng <b>${nK}</b> sheet khóa, danh sách GV và data mã ĐKI.</p><p>Tool sẽ thêm các khóa chưa có (khóa trùng hạng + số sẽ bỏ qua), giáo viên và kho mã ĐKI.</p>`, 'Chuyển dữ liệu')) return;
@@ -1911,6 +2189,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   const [v, id] = location.hash.replace('#', '').split('/');
   if (v && v !== 'import') ROUTE = { v, id }; render();
   setTimeout(dailyUpdateCheck, 3000);
+  setTimeout(hsNotify, 2000); setInterval(() => { hsNotify(); refreshCounts(); }, 60 * 60e3);
 })();
 </script>
 </body>

@@ -1,5 +1,11 @@
 # Nhật ký thay đổi
 
+## 2.4.0 — 2026-10-17
+- Mục **📅 Lịch KG–BG**: kéo thả file lịch khai giảng – bế giảng (vd `KG-BG_OTO.xlsx`) → xem trước từng dòng (khóa mới / đổi ngày / không đổi / đã đóng sổ), ghép tên khóa → mã hạng (tự tạo hạng nâng hạng NH…), tự phát hiện ngày nhập sai (BG trước KG, độ dài lệch nhiều, lệch năm) và không tự chọn các dòng đó; sửa ngày ngay trong bảng.
+- **Tiến độ hồ sơ** mỗi khóa: ① Đã nhập đủ thông tin học viên → ② Đã nhập ảnh → Đã chốt hồ sơ (ghi thời điểm, ghi chú, bỏ xác nhận phải ghi lý do, lưu nhật ký).
+- **Nhắc trước 1–5 ngày** (chọn được) cho khóa sắp khai giảng chưa chốt hồ sơ: Tổng quan, nút đỏ trên thanh trên cùng, số đếm ở menu, thông báo trên máy tính (1 lần/ngày); mức Chuẩn bị / Sắp đến / GẤP / QUÁ HẠN. Chỉ theo dõi khóa khai giảng từ ngày bật tính năng (đổi được).
+- Lịch tháng (khai giảng/bế giảng), cột Hồ sơ ①② trong danh sách khóa, xuất Excel lịch.
+
 ## 2.3.0 — 2026-10-17
 - Bộ cài Windows `QLKhoaOto_Setup_<phiên bản>.exe` (Inno Setup, cài theo người dùng, không cần Admin, không cần Python) + bản portable zip. Dựng tự động bằng GitHub Actions mỗi khi `version.json` đổi trên `main` (hoặc khi đẩy tag `v*`), tự tạo tag + đăng ở Releases.
 - `QLKhoaOto.exe` chạy `server.py` nằm cạnh nên vẫn tự cập nhật từ GitHub; khởi động lại sau cập nhật hoạt động với bản .exe.
