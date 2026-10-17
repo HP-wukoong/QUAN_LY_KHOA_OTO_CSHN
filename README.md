@@ -34,7 +34,7 @@ Kho để **riêng tư** thì cần nhập token (quyền đọc nội dung) tro
 ## Phát hành bản mới
 1. Sửa `src/app.src.html` / `QLKhoaOto/server.py`; tăng `TOOL_VERSION` (app) và `VERSION` (server.py) **giống nhau**; thêm dòng vào `CHANGELOG` trong app và `CHANGELOG.md`.
 2. `python tools/build_release.py "Ghi chú ngắn"` (thêm `--zip` nếu cần file gửi máy mới).
-3. Commit & push lên `main` — các máy đang dùng sẽ thấy thông báo cập nhật trong ngày.
+3. Commit & push lên `main` — GitHub Actions tự dựng `QLKhoaOto_Setup_<phiên bản>.exe` + bản portable và đăng ở Releases (tag `v<phiên bản>`); các máy đang dùng thấy thông báo cập nhật trong ngày.
 
 ## Dữ liệu & sao lưu (trên máy dùng)
 - Dữ liệu: `QLKhoaOto/data/qlkhoa.db` (SQLite). Mỗi lần lưu là 1 phiên bản; nhật ký thay đổi từng học viên.

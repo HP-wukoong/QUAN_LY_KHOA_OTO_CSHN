@@ -2,6 +2,8 @@ name: Dựng bộ cài Windows
 
 on:
   push:
+    branches: [main]
+    paths: ["version.json"]     # mỗi lần phát hành (build_release.py đổi version.json) → tự dựng bộ cài
     tags: ["v*"]
   workflow_dispatch:
 

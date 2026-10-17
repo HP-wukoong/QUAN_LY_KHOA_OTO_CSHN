@@ -1,7 +1,7 @@
 # Nhật ký thay đổi
 
 ## 2.3.0 — 2026-10-17
-- Bộ cài Windows `QLKhoaOto_Setup_<phiên bản>.exe` (Inno Setup, cài theo người dùng, không cần Admin, không cần Python) + bản portable zip. Dựng tự động bằng GitHub Actions khi đẩy tag `v*`, đăng ở Releases.
+- Bộ cài Windows `QLKhoaOto_Setup_<phiên bản>.exe` (Inno Setup, cài theo người dùng, không cần Admin, không cần Python) + bản portable zip. Dựng tự động bằng GitHub Actions mỗi khi `version.json` đổi trên `main` (hoặc khi đẩy tag `v*`), tự tạo tag + đăng ở Releases.
 - `QLKhoaOto.exe` chạy `server.py` nằm cạnh nên vẫn tự cập nhật từ GitHub; khởi động lại sau cập nhật hoạt động với bản .exe.
 
 ## 2.2.0 — 2026-10-16
