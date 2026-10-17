@@ -1,7 +1,7 @@
 {
   "version": "2.3.0",
   "date": "2026-10-17",
-  "notes": "Có bộ cài Windows (không cần Python, không cần Admin) + tự khởi động lại đúng với bản .exe.",
+  "notes": "Có bộ cài Windows QLKhoaOto_Setup.exe (không cần Python, không cần Admin) + bản portable; tự khởi động lại đúng với bản .exe.",
   "files": {
     "app.html": "6f7207d307e696a2fb8cfa019b4eb3f93d3c737ace239ef1ded57caf89a62e59",
     "server.py": "99bf8bcf7b44305d376f13ca41062a603beb57d45d40c9a5087acc342863c6f5",
