@@ -186,7 +186,7 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
 </div>
 <div class="gdrop" id="gdrop">Thả file Excel / file sao lưu vào đây</div>
 <div class="toast" id="toast"></div>
-<input type="file" id="filePick" accept=".xls,.xlsx,.xlsm,.csv,.json" hidden>
+<input type="file" id="filePick" accept=".xls,.xlsx,.xlsm,.csv,.json,.db" hidden>
 
 <!--__LIBS__-->
 <script>
@@ -246,7 +246,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.4.0';
+const APP_VER = 2, TOOL_VERSION = '2.4.1';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -562,7 +562,9 @@ function parsePasted(text) {
 }
 /* Nhận diện file: file 1 cũ (có sheet KHOA), sao lưu JSON, hay danh sách HV */
 async function sniffFile(file) {
-  if (/\.json$/i.test(file.name)) return { kind: 'json', data: JSON.parse(await file.text()) };
+  if (/\.(json|db)$/i.test(file.name)) return { kind: 'backup' };
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (String.fromCharCode(...head).startsWith('SQLite format 3')) return { kind: 'backup' };
   const wb = await readWorkbook(file);
   if (wb.SheetNames.includes('KHOA') && wb.SheetNames.some(n => KSHEET.test(n))) return { kind: 'file1', wb };
   for (const n of wb.SheetNames) { const aoa = sheetAoa(wb.Sheets[n]); const h = findLichHeader(aoa); if (h && !(aoa[h.r] || []).some(c => normKey(c) === 'hovaten')) return { kind: 'lich', wb }; }
@@ -780,6 +782,7 @@ function vHome(el) {
   const drafts = Object.keys(DB.drafts || {}).map(khoaById).filter(Boolean);
   el.innerHTML = `
   <h1>Tổng quan</h1><p class="sub">${esc(DB.settings.coSo)} · Hôm nay ${isoToVN(t)}</p>
+  ${!DB.khoa.length && !DB.hv.length ? `<div class="card note amber"><b>Chưa có dữ liệu.</b> Nếu trước đây đã dùng tool (bản giải nén / thư mục khác), dữ liệu cũ vẫn còn trên máy. <button class="btn sm pri" id="hFind">🔎 Tìm &amp; nạp dữ liệu cũ</button> <span class="small muted">hoặc kéo thả file <span class="mono">qlkhoa.db</span> / file sao lưu <span class="mono">.db</span>, <span class="mono">.json</span> vào cửa sổ này.</span></div>` : ''}
   ${!DB.khoa.length ? `<div class="card note blue"><b>Bắt đầu nhanh:</b> kéo thả file <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> cũ vào đây để chuyển toàn bộ khóa, học viên, giáo viên và mã ĐKI sang tool — hoặc vào <a href="#" data-go="khoa">Khóa học</a> để tạo khóa mới.</div>` : ''}
   ${homeBackupNote()}
   ${hsAlertHtml(hsAlerts(), true)}
@@ -793,6 +796,7 @@ function vHome(el) {
     <div class="card"><h2>Lịch 14 ngày tới</h2><div id="cal"></div></div>
   </div>
   <div class="card"><div class="row"><h2 style="margin:0">Khóa đang học &amp; sắp khai giảng</h2><span class="sp"></span><button class="btn pri" data-go="khoa" data-new="1">＋ Tạo khóa mới</button></div><div id="runT" style="margin-top:10px"></div></div>`;
+  $('#hFind', el)?.addEventListener('click', findOldData);
   const todo = [];
   drafts.forEach(k => todo.push(`<div class="alert-li">📝 <span>Đang chọn GV dở cho <b>${kCode(k)}</b></span><span class="sp"></span><button class="btn sm pri" data-imp="${k.id}">Tiếp tục</button></div>`));
   emptyK.forEach(k => todo.push(`<div class="alert-li">📥 <span><b>${kCode(k)}</b> chưa có học viên</span><span class="sp"></span><button class="btn sm" data-imp="${k.id}">Nhập HV</button></div>`));
@@ -1884,8 +1888,8 @@ async function vBackup(el) {
     <div class="card stat" style="border-color:${(info.extraStatus || []).some(x => x.ok) ? 'var(--green)' : 'var(--amber)'}"><div class="k">Thư mục sao lưu phụ</div><div class="v" style="font-size:18px">${(info.extraStatus || []).filter(x => x.ok).length}/${(info.extra || []).length}</div><div class="d">${(info.extra || []).length ? 'đang kết nối được' : 'Chưa cài — nên thêm Drive/USB'}</div></div>
   </div>
   <div class="card"><div class="row"><h2 style="margin:0">Thao tác</h2></div>
-    <div class="row" style="margin-top:10px"><button class="btn pri" id="bNow">💾 Sao lưu ngay</button><button class="btn" id="bVerify">🔍 Kiểm tra khôi phục ngay</button><button class="btn" id="bDl">⬇ Tải bản sao lưu (.json)</button><button class="btn" id="bUp">⬆ Khôi phục từ file .json…</button><button class="btn ok" id="bXl">⬇ Xuất Excel tổng hợp</button></div>
-    <div class="drop small" id="bDrop" style="padding:14px;margin-top:12px">Kéo thả file Excel cũ <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> hoặc file <b>.json</b> sao lưu từ bản HTML cũ vào đây để chuyển dữ liệu sang</div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="bNow">💾 Sao lưu ngay</button><button class="btn" id="bVerify">🔍 Kiểm tra khôi phục ngay</button><button class="btn" id="bDl">⬇ Tải bản sao lưu (.json)</button><button class="btn" id="bUp">⬆ Khôi phục từ file .db / .json…</button><button class="btn" id="bFind">🔎 Tìm dữ liệu cũ trên máy</button><button class="btn ok" id="bXl">⬇ Xuất Excel tổng hợp</button></div>
+    <div class="drop small" id="bDrop" style="padding:14px;margin-top:12px">Kéo thả file Excel cũ <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> hoặc file sao lưu <b>.db</b> / <b>.json</b> (vd. <span class="mono">data\\qlkhoa.db</span>, <span class="mono">backups\\hang-ngay\\QLKhoaOto-….db</span>) vào đây để chuyển dữ liệu sang</div>
     <div id="bRes"></div></div>
   <div class="card"><div class="row"><h2 style="margin:0">📁 Đường dẫn dữ liệu &amp; sao lưu</h2><span class="sp"></span><span class="small muted">Máy <b>${esc(P.host)}</b> · Mã đơn vị <b>${esc(P.maDonVi)}</b> · ID bản cài <b class="mono">${esc(P.instance)}</b></span></div>
     <div class="tbl" style="margin-top:10px"><table><tbody>${pathRows.map(([lb, pth, ok]) => `<tr><td style="width:210px"><b>${lb}</b></td><td class="mono small" style="white-space:normal;word-break:break-all">${esc(pth)}${ok === false ? ' <span class="badge b-miss">không thấy</span>' : ''}</td><td style="white-space:nowrap;width:150px">${pathBtns(pth)}</td></tr>`).join('')}</tbody></table></div>
@@ -1932,6 +1936,7 @@ async function vBackup(el) {
   $('#bNow', el).onclick = async () => { await flushSave(); const r = await api('/api/backup/now', { body: {} }); toast('Đã sao lưu: ' + (r.files || []).join(', '), 'ok', 6000); render(); };
   $('#bVerify', el).onclick = async () => { await api('/api/backup/now', { body: {} }); const r = await api('/api/backup/verify', { body: {} }); META.last_verify = r; toast(r.ok ? `Khôi phục được: ${r.nk} khóa, ${r.nh} học viên (${r.file})` : 'LỖI: ' + r.msg, r.ok ? 'ok' : 'err', 8000); render(); };
   $('#bDl', el).onclick = downloadBackup; $('#bXl', el).onclick = exportAll;
+  $('#bFind', el).onclick = findOldData;
   $('#bUp', el).onclick = () => { const p = $('#filePick'); p.value = ''; p.onchange = () => p.files[0] && handleAnyFile(p.files[0]); p.click(); };
   setupDrop($('#bDrop', el), handleAnyFile);
   const drawFiles = () => {
@@ -2019,10 +2024,40 @@ function bindMoney(root) { $$('input.money', root).forEach(i => { i.addEventList
 /* =========================================================
    KÉO THẢ TOÀN CỤC + DÁN + TÌM NHANH
    ========================================================= */
+/* ---- Nạp dữ liệu cũ: file .db / .json bất kỳ, hoặc tự tìm trên máy ---- */
+async function importBackupFile(file) {
+  if (/_meta\.json$/i.test(file.name)) { toast('Đây là file meta (chỉ ghi số liệu). Hãy chọn file QLKhoaOto_DULIEU_MOINHAT.json hoặc QLKhoaOto_SAOLUU_….json cùng thư mục.', 'err', 9000); return false; }
+  toast('Đang đọc ' + file.name + '…', 'ok', 2500);
+  let r;
+  try { r = await api('/api/import/upload', { raw: file, headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': encodeURIComponent(file.name) } }); }
+  catch (e) { toast('Không nạp được ' + file.name + ': ' + e.message, 'err', 9000); return false; }
+  if (/\.db$/i.test(file.name) && /^qlkhoa\.db$/i.test(file.name)) toast('Mẹo: nếu tool cũ còn file qlkhoa.db-wal cạnh qlkhoa.db, dùng nút "🔎 Tìm dữ liệu cũ trên máy" để đọc đủ cả phần chưa ghi gộp.', 'ok', 7000);
+  return restoreFrom(r.data, file.name);
+}
+async function importFromPath(path) {
+  try { const r = await api('/api/import/path', { body: { path } }); return restoreFrom(r.data, path.split(/[\\/]/).pop()); }
+  catch (e) { toast(e.message, 'err', 8000); return false; }
+}
+async function findOldData() {
+  const wait = document.createElement('div'); wait.className = 'modal-bg';
+  wait.innerHTML = '<div class="modal"><header>🔎 Đang tìm dữ liệu cũ trên máy…</header><div class="mb"><p class="small muted">Quét thư mục người dùng (Desktop, Documents, Downloads…) và các ổ đĩa D:, E:… tìm file qlkhoa.db và bản sao lưu QLKhoaOto-*.db / *.json. Mất khoảng 5–15 giây.</p></div></div>';
+  document.body.appendChild(wait);
+  let res; try { res = await api('/api/import/scan', { body: {} }); } catch (e) { wait.remove(); toast('Lỗi khi tìm: ' + e.message, 'err', 8000); return; }
+  wait.remove();
+  const fmt = t => t ? new Date(t).toLocaleString('vi-VN') : '?';
+  const fs = res.files || [];
+  const pick = await modal('Dữ liệu cũ tìm thấy trên máy', `${fs.length ? `<p class="small">Tìm thấy <b>${fs.length}</b> file (mới nhất ở trên). Chọn bản có nhiều học viên và lưu gần nhất:</p>
+    <div style="max-height:52vh;overflow:auto"><table style="width:100%;font-size:12.5px"><tr><th></th><th style="text-align:left">File</th><th>Lưu lúc</th><th>Khóa</th><th>HV</th></tr>
+    ${fs.map((f, i) => `<tr><td><input type="radio" name="of" value="${i}" ${i === 0 ? 'checked' : ''}></td><td><b>${esc(f.name)}</b><br><span class="mono small muted">${esc(f.folder)}</span></td><td>${fmt(f.savedAt || f.mtime)}</td><td style="text-align:center">${f.nk}</td><td style="text-align:center"><b>${f.nh}</b></td></tr>`).join('')}</table></div>`
+    : `<p class="note red small">Không tìm thấy file dữ liệu cũ nào (đã quét ${res.secs}s).</p>`}
+    <label class="f" style="margin-top:12px">Hoặc dán đường dẫn file (.db / .json), ví dụ <span class="mono">D:\\QLKhoaOto\\data\\qlkhoa.db</span><input class="in mono" id="ofP" placeholder="D:\\...\\qlkhoa.db"></label>`,
+    [{ t: 'Đóng', v: null }, { t: 'Nạp bản đã chọn', cls: 'pri', v: bg => { const p = $('#ofP', bg).value.trim(); if (p) return p; const r = $('input[name=of]:checked', bg); return r ? fs[+r.value].path : false; } }]);
+  if (pick) return importFromPath(pick);
+}
 async function handleAnyFile(file) {
   try {
     const s = await sniffFile(file);
-    if (s.kind === 'json') return restoreFrom(s.data, file.name);
+    if (s.kind === 'backup') return importBackupFile(file);
     if (s.kind === 'lich') return startLichImport(file, s.wb);
     if (s.kind === 'file1') {
       const nK = s.wb.SheetNames.filter(n => KSHEET.test(n) && !/-0+$/.test(n)).length;

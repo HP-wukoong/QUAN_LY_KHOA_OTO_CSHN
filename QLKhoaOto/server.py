@@ -26,7 +26,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.4.0"
+VERSION = "2.4.1"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -535,6 +535,117 @@ def read_backup_db(fp):
     return ok, r["rev"] if r else 0, r["saved_at"] if r else "", data, iid
 
 
+# ---------- NẠP DỮ LIỆU CŨ (từ bản cài/thư mục khác) ----------
+import re as _re
+import tempfile as _tempfile
+
+_OLD_NAME = _re.compile(r"^(qlkhoa\.db|QLKhoaOto.*\.(db|json))$", _re.I)
+_SKIP_DIRS = {"windows", "program files", "program files (x86)", "programdata", "$recycle.bin", "system volume information",
+              "node_modules", "appdata", "recovery", "perflogs", "msocache", "intel", "amd", "nvidia", "__pycache__", ".git", "ban-cu"}
+
+
+def parse_app_json(raw):
+    """Đọc JSON sao lưu (chịu BOM, bọc {data:..}); trả dict dữ liệu tool hoặc None."""
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8-sig", errors="replace")
+    o = json.loads(raw.lstrip("\ufeff"))
+    if isinstance(o, dict) and isinstance(o.get("data"), dict) and "khoa" not in o:
+        o = o["data"]
+    if isinstance(o, dict) and isinstance(o.get("khoa"), list) and isinstance(o.get("hv"), list):
+        if o.get("app") in (None, "", APP_ID):
+            o["app"] = APP_ID
+            return o
+    return None
+
+
+def read_any_db(fp):
+    """Đọc file .db bất kỳ của tool (kể cả đang có file -wal đi kèm) bằng bản chép tạm — không đụng file gốc."""
+    tmp = _tempfile.mkdtemp(prefix="qlk_imp_")
+    try:
+        dst = os.path.join(tmp, "x.db")
+        shutil.copy2(fp, dst)
+        for ext in ("-wal", "-shm"):
+            if os.path.exists(fp + ext):
+                try:
+                    shutil.copy2(fp + ext, dst + ext)
+                except Exception:
+                    pass
+        con = sqlite3.connect(dst, timeout=30)
+        con.row_factory = sqlite3.Row
+        try:
+            r = con.execute("SELECT rev, saved_at, json FROM state WHERE id=1").fetchone()
+        except sqlite3.DatabaseError:
+            r = None
+        con.close()
+        if not r or not r["json"]:
+            return None
+        data = json.loads(r["json"])
+        if not isinstance(data, dict) or data.get("app") != APP_ID:
+            return None
+        data.setdefault("savedAt", r["saved_at"])
+        return data
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def read_old_file(fp):
+    if fp.lower().endswith(".json"):
+        if os.path.getsize(fp) > 300 * 1024 * 1024:
+            return None
+        with open(fp, "rb") as f:
+            return parse_app_json(f.read())
+    return read_any_db(fp)
+
+
+def _scan_roots():
+    home = os.path.expanduser("~")
+    roots = [home]
+    if os.name == "nt":
+        for c in "CDEFGHIJKLMNOPQRSTUVWXYZ":
+            d = c + ":\\"
+            if os.path.isdir(d):
+                roots.append(d)
+        for env in ("LOCALAPPDATA",):
+            v = os.environ.get(env)
+            if v and os.path.isdir(os.path.join(v, "Programs")):
+                roots.append(os.path.join(v, "Programs"))
+    else:
+        roots.append("/tmp")
+    return roots
+
+
+def find_old_data(budget=15.0, max_depth=6, limit=80):
+    t0 = time.time()
+    own = {os.path.normcase(os.path.abspath(DB_PATH))}
+    seen, out = set(), []
+    for root in _scan_roots():
+        base_depth = root.rstrip("\\/").count(os.sep)
+        for dp, dns, fns in os.walk(root):
+            if time.time() - t0 > budget or len(out) >= limit:
+                break
+            depth = dp.rstrip("\\/").count(os.sep) - base_depth
+            dns[:] = [d for d in dns if d.lower() not in _SKIP_DIRS and not d.startswith((".", "$")) and depth < max_depth]
+            for fn in fns:
+                if not _OLD_NAME.match(fn) or fn.lower().endswith("_meta.json"):
+                    continue
+                fp = os.path.join(dp, fn)
+                key = os.path.normcase(os.path.abspath(fp))
+                if key in seen or key in own:
+                    continue
+                seen.add(key)
+                try:
+                    data = read_old_file(fp)
+                except Exception:
+                    data = None
+                if not data:
+                    continue
+                out.append({"path": fp, "name": fn, "folder": dp, "size": os.path.getsize(fp),
+                            "mtime": dt.datetime.fromtimestamp(os.path.getmtime(fp)).isoformat(timespec="seconds"),
+                            "savedAt": data.get("savedAt") or "", "nk": len(data.get("khoa") or []), "nh": len(data.get("hv") or [])})
+    out.sort(key=lambda x: (x["nh"] > 0, x["savedAt"] or x["mtime"]), reverse=True)
+    return {"files": out, "secs": round(time.time() - t0, 1), "roots": _scan_roots()}
+
+
 def backup_info(fp):
     """Nhận dạng 1 file sao lưu: có phải của bản cài này không, rev, số khóa/HV, toàn vẹn."""
     ok, rev, saved, data, iid = read_backup_db(fp)
@@ -910,6 +1021,41 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, info)
         if path == "/api/paths":
             return self._send(200, all_paths())
+        if path == "/api/import/scan" and method == "POST":
+            return self._send(200, find_old_data())
+        if path == "/api/import/path" and method == "POST":
+            fp = str(self._json().get("path", "")).strip().strip('"')
+            if not fp or not os.path.isfile(fp) or not fp.lower().endswith((".db", ".json")):
+                return self._send(404, {"err": "Không thấy file: " + fp})
+            try:
+                data = read_old_file(fp)
+            except Exception as e:
+                return self._send(400, {"err": "Không đọc được file: " + str(e)})
+            if not data:
+                return self._send(400, {"err": "File không chứa dữ liệu của tool này"})
+            return self._send(200, {"data": data})
+        if path == "/api/import/upload" and method == "POST":
+            raw = self._raw()
+            name = urllib.parse.unquote(self.headers.get("X-Filename") or "file")
+            try:
+                if name.lower().endswith(".json") or raw[:1] in (b"{", b"\xef"):
+                    data = parse_app_json(raw)
+                else:
+                    if not raw.startswith(b"SQLite format 3"):
+                        return self._send(400, {"err": "File không phải cơ sở dữ liệu SQLite (.db) của tool"})
+                    tmp = _tempfile.mkdtemp(prefix="qlk_up_")
+                    try:
+                        fp = os.path.join(tmp, "up.db")
+                        with open(fp, "wb") as f:
+                            f.write(raw)
+                        data = read_any_db(fp)
+                    finally:
+                        shutil.rmtree(tmp, ignore_errors=True)
+            except Exception as e:
+                return self._send(400, {"err": "Không đọc được file: " + str(e)})
+            if not data:
+                return self._send(400, {"err": "File không chứa dữ liệu của tool này (có thể là file meta hoặc file khác)"})
+            return self._send(200, {"data": data})
         if path == "/api/backup/info" and method == "POST":
             b = self._json()
             fp = backup_file_path(b.get("kind"), b.get("name"))

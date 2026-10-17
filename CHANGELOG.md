@@ -1,5 +1,11 @@
 # Nhật ký thay đổi
 
+## 2.4.1 — 2026-10-17
+- Sửa lỗi bản cài mới không nạp được dữ liệu cũ:
+  - Nạp trực tiếp file `.db` (data\qlkhoa.db, backups\…\QLKhoaOto-*.db) và `.json` (chịu BOM, báo rõ khi chọn nhầm file _meta.json).
+  - Nút **🔎 Tìm dữ liệu cũ trên máy**: tự quét Desktop/Documents/Downloads và các ổ D:, E:…, đọc cả phần dữ liệu trong file -wal.
+  - Trang Tổng quan khi dữ liệu trống hiện gợi ý tìm & nạp dữ liệu cũ.
+
 ## 2.4.0 — 2026-10-17
 - Mục **📅 Lịch KG–BG**: kéo thả file lịch khai giảng – bế giảng (vd `KG-BG_OTO.xlsx`) → xem trước từng dòng (khóa mới / đổi ngày / không đổi / đã đóng sổ), ghép tên khóa → mã hạng (tự tạo hạng nâng hạng NH…), tự phát hiện ngày nhập sai (BG trước KG, độ dài lệch nhiều, lệch năm) và không tự chọn các dòng đó; sửa ngày ngay trong bảng.
 - **Tiến độ hồ sơ** mỗi khóa: ① Đã nhập đủ thông tin học viên → ② Đã nhập ảnh → Đã chốt hồ sơ (ghi thời điểm, ghi chú, bỏ xác nhận phải ghi lý do, lưu nhật ký).
