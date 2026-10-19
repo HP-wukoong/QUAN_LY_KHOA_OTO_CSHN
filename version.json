@@ -1,10 +1,10 @@
 {
-  "version": "2.5.2",
+  "version": "2.5.3",
   "date": "2026-10-19",
-  "notes": "Thông báo: Quý thầy + mặt rưng rưng hihi; Thùng rác: chọn hàng loạt (Shift để chọn đoạn), khôi phục/xóa hẳn hàng loạt, dọn sạch",
+  "notes": "Thông báo bế giảng: nhắc GV chuẩn bị bài KT trả nợ môn, sổ nhiên liệu, sổ tay GV, giáo án… (sửa được); bỏ chữ hihi",
   "files": {
-    "app.html": "f7ff0cd514022b2416960ea6ec0a1360aa5a2ffaeba6653da71d9c275ea31def",
-    "server.py": "4517ddc7188c7bcdeff43c6eea327b6b103092fe53b67ef72d5031309bb213b2",
+    "app.html": "580c7320b862dc2c19c6306bf3addc407bc844dd8f22830a253b2b3015246a64",
+    "server.py": "201b140290a4b668ab534dc392f8de7fd789557c1188fa783f2cb2a30e92ebea",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"

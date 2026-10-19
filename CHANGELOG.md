@@ -1,5 +1,9 @@
 # Nhật ký thay đổi
 
+## 2.5.3 — 2026-10-19
+- Thông báo Zalo thêm loại **🎓 Bế giảng**: các khóa sắp bế giảng (mặc định 15 ngày tới), đề nghị Quý thầy chuẩn bị bài kiểm tra trả nợ môn, sổ nhiên liệu, sổ tay giáo viên, giáo án, sổ nhật ký giảng dạy, đủ giờ/km DAT — **danh sách và lời nhắn sửa được**. Có ảnh (tông xanh lá, mũ tốt nghiệp) + chữ Sinh động / Gọn; nút copy nhanh ở Tổng quan.
+- Bỏ chữ "hihi" trong thông báo khai giảng.
+
 ## 2.5.2 — 2026-10-19
 - Thông báo Zalo: xưng "Quý thầy", thêm biểu tượng rưng rưng 🥹 "hihi".
 - Thùng rác: chọn hàng loạt (tick / Chọn tất cả / giữ Shift chọn cả đoạn), lọc theo loại + tìm kiếm, khôi phục hoặc xóa hẳn hàng loạt, nút Dọn sạch thùng rác.

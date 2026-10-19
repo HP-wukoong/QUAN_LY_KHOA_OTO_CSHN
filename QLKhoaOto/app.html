@@ -320,7 +320,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.5.2';
+const APP_VER = 2, TOOL_VERSION = '2.5.3';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -877,7 +877,8 @@ function vHome(el) {
   ${homeBackupNote()}
   ${hsAlertHtml(hsAlerts(), true)}
   ${bgAlertHtml(bgAlerts(), true)}
-  ${(n => n ? `<div class="card note blue"><div class="row"><span>📣 <b>${n}</b> khóa ô tô khai giảng trong ${+DB.settings.zaloNgay || 15} ngày tới chưa chốt hồ sơ — gửi thông báo Zalo nhắc giáo viên nộp hồ sơ.</span><span class="sp"></span><button class="btn sm pri" id="hZi">🖼 Copy ảnh thông báo</button> <button class="btn sm" id="hZc">📋 Copy chữ</button><a href="#" data-go="lich" data-lt="zalo" class="small">Xem / sửa →</a></div></div>` : '')(zaloList(+DB.settings.zaloNgay || 15, true).length)}
+  ${(n => n ? `<div class="card note blue"><div class="row"><span>📣 <b>${n}</b> khóa ô tô khai giảng trong ${+DB.settings.zaloNgay || 15} ngày tới chưa chốt hồ sơ — gửi thông báo Zalo nhắc giáo viên nộp hồ sơ.</span><span class="sp"></span><button class="btn sm pri" id="hZi">🖼 Copy ảnh thông báo</button> <button class="btn sm" id="hZc">📋 Copy chữ</button><a href="#" data-go="lich" data-lt="zalo" data-zm="kg" class="small">Xem / sửa →</a></div></div>` : '')(zaloList(+DB.settings.zaloNgay || 15, true).length)}
+  ${(n => n ? `<div class="card note" style="background:#e9f7f2;border-color:#a8dcc9"><div class="row"><span>🎓 <b>${n}</b> khóa ô tô bế giảng trong ${zDays('bg')} ngày tới — gửi thông báo nhắc giáo viên chuẩn bị bài kiểm tra trả nợ môn, sổ nhiên liệu, sổ tay GV, giáo án…</span><span class="sp"></span><button class="btn sm pri" id="hBi">🖼 Copy ảnh thông báo</button> <button class="btn sm" id="hBc">📋 Copy chữ</button><a href="#" data-go="lich" data-lt="zalo" data-zm="bg" class="small">Xem / sửa →</a></div></div>` : '')(zList('bg', zDays('bg')).length)}
   <div class="grid g4">
     ${stats.map(s => `<div class="card stat"><div class="k">${esc(s.h.name)}</div><div class="v">${s.n} <span class="small muted">khóa</span></div>
       <div class="d">Gần nhất: ${s.last ? `<a href="#" data-k="${s.last.id}">${kCode(s.last)}</a> (KG ${isoToVN(s.last.ngayKG)})` : '—'}<br>Đang học: <b>${s.run.length}</b> khóa · <b>${s.hv}</b> HV</div></div>`).join('')}
@@ -890,6 +891,8 @@ function vHome(el) {
   <div class="card"><div class="row"><h2 style="margin:0">Khóa đang học &amp; sắp khai giảng</h2><span class="sp"></span><button class="btn pri" data-go="khoa" data-new="1">＋ Tạo khóa mới</button></div><div id="runT" style="margin-top:10px"></div></div>`;
   $('#hFind', el)?.addEventListener('click', findOldData);
   $('#hZi', el)?.addEventListener('click', async () => { const r = await copyZaloImage(zaloList(+DB.settings.zaloNgay || 15, true)); DB.settings.zaloLast = new Date().toISOString(); persist(); toast(r === 'copy' ? 'Đã copy ảnh thông báo. Mở Zalo và dán (Ctrl+V).' : 'Đã tải ảnh PNG — gửi file này vào Zalo.', 'ok', 6000); });
+  $('#hBi', el)?.addEventListener('click', async () => { const r = await copyZaloImage(zList('bg', zDays('bg')), 'bg'); DB.settings.zaloLast = new Date().toISOString(); persist(); toast(r === 'copy' ? 'Đã copy ảnh thông báo bế giảng. Mở Zalo và dán (Ctrl+V).' : 'Đã tải ảnh PNG — gửi file này vào Zalo.', 'ok', 6000); });
+  $('#hBc', el)?.addEventListener('click', async () => { const ok = await copyText(zaloText(zList('bg', zDays('bg')), null, 'bg')); if (ok) { DB.settings.zaloLast = new Date().toISOString(); persist(); } toast(ok ? 'Đã copy thông báo bế giảng. Mở Zalo và dán (Ctrl+V).' : 'Không copy được — mở mục Lịch KG–BG › Thông báo Zalo.', ok ? 'ok' : 'err'); });
   $('#hZc', el)?.addEventListener('click', async () => { const ok = await copyText(zaloText(zaloList(+DB.settings.zaloNgay || 15, true))); if (ok) { DB.settings.zaloLast = new Date().toISOString(); persist(); } toast(ok ? 'Đã copy thông báo. Mở Zalo và dán (Ctrl+V).' : 'Không copy được — mở mục Lịch KG–BG › Thông báo Zalo.', ok ? 'ok' : 'err'); });
   const todo = [];
   drafts.forEach(k => todo.push(`<div class="alert-li">📝 <span>Đang chọn GV dở cho <b>${kCode(k)}</b></span><span class="sp"></span><button class="btn sm pri" data-imp="${k.id}">Tiếp tục</button></div>`));
@@ -912,7 +915,7 @@ function khoaTable(list, selectable) {
 function bindCommon(el) {
   $$('[data-upd]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('help', { check: true }); }));
   $$('[data-k]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('khoaDetail', { id: a.dataset.k }); }));
-  $$('[data-go]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); if (a.dataset.lt) lichTab = a.dataset.lt; go(a.dataset.go); if (a.dataset.new) newKhoaDialog(); }));
+  $$('[data-go]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); if (a.dataset.lt) lichTab = a.dataset.lt; if (a.dataset.zm) zaloMode = a.dataset.zm; go(a.dataset.go); if (a.dataset.new) newKhoaDialog(); }));
   $$('[data-imp]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('import', { id: a.dataset.imp }); }));
   $$('[data-tn]', el).forEach(a => a.addEventListener('click', async e => { e.preventDefault(); if (await tnTick(khoaById(a.dataset.tn), true)) render(); }));
 }
@@ -1593,11 +1596,19 @@ async function tnTick(k, on) {
   return true;
 }
 /* ---- Thông báo Zalo cho giáo viên: các khóa khai giảng trong N ngày tới ---- */
-function zaloList(days, skipDone) {
-  const t = todayISO();
-  return DB.khoa.filter(k => k.ngayKG && k.ngayKG >= t && daysBetween(t, k.ngayKG) <= days && !isLocked(k) && (!skipDone || hsState(k) !== 'xong'))
-    .map(k => ({ k, ...dueInfo(k.ngayKG, 5) })).sort((a, b) => a.k.ngayKG.localeCompare(b.k.ngayKG) || a.k.hang.localeCompare(b.k.hang) || a.k.so - b.k.so);
+/* ---- Thông báo Zalo cho giáo viên: 2 loại — KG (nộp hồ sơ) và BG (chuẩn bị tốt nghiệp) ---- */
+const DEFAULT_BG_VIEC = ['Bài kiểm tra trả nợ môn', 'Sổ nhiên liệu', 'Sổ tay giáo viên', 'Giáo án', 'Sổ nhật ký giảng dạy thực hành', 'Đủ giờ, km học trên thiết bị DAT'];
+const DEFAULT_BG_NHAN = 'Kính đề nghị Quý thầy có học viên trong các khóa trên chuẩn bị đầy đủ các nội dung sau trước khi tốt nghiệp:';
+const bgViec = () => Array.isArray(DB.settings.bgViec) && DB.settings.bgViec.length ? DB.settings.bgViec : DEFAULT_BG_VIEC;
+const bgNhan = () => (DB.settings.bgNhan || '').trim() || DEFAULT_BG_NHAN;
+const zDate = (x, mode) => mode === 'bg' ? x.k.ngayBG : x.k.ngayKG;
+const zDays = mode => mode === 'bg' ? (+DB.settings.zaloBgNgay || 15) : (+DB.settings.zaloNgay || 15);
+function zList(mode, days, skipDone) {
+  const t = todayISO(), f = mode === 'bg' ? 'ngayBG' : 'ngayKG';
+  return DB.khoa.filter(k => k[f] && k[f] >= t && daysBetween(t, k[f]) <= days && !isLocked(k) && (mode === 'bg' || !skipDone || hsState(k) !== 'xong'))
+    .map(k => ({ k, ...dueInfo(k[f], 5) })).sort((a, b) => a.k[f].localeCompare(b.k[f]) || a.k.hang.localeCompare(b.k.hang) || a.k.so - b.k.so);
 }
+const zaloList = (days, skipDone) => zList('kg', days, skipDone);
 /* Tên hạng ngắn trong thông báo: BSS→Bss, BSTD→Bstđ, NHCE→CE … (sửa được) */
 function zTen(code) {
   const m = DB.settings.zaloTen || {}; if (m[code]) return m[code];
@@ -1605,113 +1616,154 @@ function zTen(code) {
   return /^NH./.test(code) ? code.slice(2) : code;
 }
 const zCode = k => `${zTen(k.hang)}-${k.so}`;
-const zUrg = x => x.dh <= 2 ? 'r' : x.dh <= 7 ? 'o' : 'g';           // theo số ngày tới hạn nộp (đã tính T7/CN/lễ)
-const zLine = x => `${zCode(x.k)} : KG ${DOWF[dowOf(x.k.ngayKG)]} _ ${isoToVN(x.k.ngayKG)} – ${x.d === 0 ? 'khai giảng hôm nay' : x.d === 1 ? 'còn 1 ngày (ngày mai)' : `còn ${x.d} ngày`}`;
-function zaloText(list, style) {
-  style = style || DB.settings.zaloStyle || 'vui';
-  if (style === 'gon') return `Thông báo các khóa khai giảng ô tô sắp tới :\n${list.length ? list.map(x => '- ' + zLine(x)).join('\n') : '(không có khóa nào)'}\nGiáo viên có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập nhé .`;
+const zUrg = x => x.dh <= 2 ? 'r' : x.dh <= 7 ? 'o' : 'g';           // theo số ngày tới hạn (đã tính T7/CN/lễ)
+const zLine = (x, mode) => { const d = zDate(x, mode), w = mode === 'bg' ? 'bế giảng' : 'khai giảng';
+  return `${zCode(x.k)} : ${mode === 'bg' ? 'BG' : 'KG'} ${DOWF[dowOf(d)]} _ ${isoToVN(d)} – ${x.d === 0 ? w + ' hôm nay' : x.d === 1 ? 'còn 1 ngày (ngày mai)' : `còn ${x.d} ngày`}`; };
+function zaloText(list, style, mode) {
+  style = style || DB.settings.zaloStyle || 'vui'; mode = mode || 'kg';
+  const rows = d => list.length ? list.map(d).join('\n') : '(không có khóa nào)';
   const dot = { r: '🔴', o: '🟠', g: '🟢' };
-  return `📢 THÔNG BÁO CÁC KHÓA KHAI GIẢNG Ô TÔ SẮP TỚI 🚗\n━━━━━━━━━━━━━━━\n${list.length ? list.map(x => `${dot[zUrg(x)]} ${zLine(x)}${zUrg(x) === 'r' ? ' ⏰' : ''}`).join('\n') : '(không có khóa nào)'}\n━━━━━━━━━━━━━━━\n📝 Kính nhờ Quý thầy có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ 🥹 hihi\n🙏 Em cảm ơn Quý thầy!`;
+  if (mode === 'bg') {
+    const v = bgViec();
+    if (style === 'gon') return `Thông báo các khóa bế giảng ô tô sắp tới :\n${rows(x => '- ' + zLine(x, 'bg'))}\n${bgNhan()}\n${v.map(x => '+ ' + x).join('\n')}\nEm cảm ơn Quý thầy .`;
+    return `🎓 THÔNG BÁO CÁC KHÓA Ô TÔ SẮP BẾ GIẢNG 🚗\n━━━━━━━━━━━━━━━\n${rows(x => `${dot[zUrg(x)]} ${zLine(x, 'bg')}${zUrg(x) === 'r' ? ' ⏰' : ''}`)}\n━━━━━━━━━━━━━━━\n📋 ${bgNhan()}\n${v.map(x => '   ✅ ' + x).join('\n')}\n🙏 Em cảm ơn Quý thầy!`;
+  }
+  if (style === 'gon') return `Thông báo các khóa khai giảng ô tô sắp tới :\n${rows(x => '- ' + zLine(x, 'kg'))}\nGiáo viên có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập nhé .`;
+  return `📢 THÔNG BÁO CÁC KHÓA KHAI GIẢNG Ô TÔ SẮP TỚI 🚗\n━━━━━━━━━━━━━━━\n${rows(x => `${dot[zUrg(x)]} ${zLine(x, 'kg')}${zUrg(x) === 'r' ? ' ⏰' : ''}`)}\n━━━━━━━━━━━━━━━\n📝 Kính nhờ Quý thầy có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ 🥹\n🙏 Em cảm ơn Quý thầy!`;
 }
 /* Khung thông báo dạng ẢNH (dán thẳng vào Zalo) */
-function zaloCanvas(list) {
+function zaloCanvas(list, mode) {
+  mode = mode || 'kg'; const BG = mode === 'bg';
   const S = 2, W = 960, P = 40, RH = 92, n = Math.max(1, list.length);
-  const H = 200 + 46 + n * (RH + 14) + 150 + 40;
-  const c = document.createElement('canvas'); c.width = W * S; c.height = H * S; const g = c.getContext('2d'); g.scale(S, S);
   const F = (w, z) => `${w} ${z}px "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+  const TH = BG ? { a: '#0d5e4f', b: '#18a07f', chip: '#e2f4ee', chipT: '#0d5e4f', sub: '#d3f3ea', title: 'THÔNG BÁO BẾ GIẢNG', subT: 'Các khóa ô tô sắp bế giảng · chuẩn bị tốt nghiệp', lab: 'BẾ GIẢNG', w: 'bế giảng' }
+    : { a: '#1d4f9c', b: '#2f86d6', chip: '#eaf1fd', chipT: '#1d4f9c', sub: '#dce9ff', title: 'THÔNG BÁO KHAI GIẢNG', subT: 'Các khóa đào tạo lái xe ô tô sắp tới', lab: 'KHAI GIẢNG', w: 'khai giảng' };
+  // đo trước phần lời nhắn để tính chiều cao ảnh
+  const m = document.createElement('canvas').getContext('2d'); const TX = P + 84, TW = W - 2 * P - 84 - 28;
+  const wrap = (txt, font, maxW) => { m.font = font; const out = []; let cur = ''; String(txt).split(/\s+/).forEach(w => { const t2 = cur ? cur + ' ' + w : w; if (m.measureText(t2).width > maxW && cur) { out.push(cur); cur = w; } else cur = t2; }); if (cur) out.push(cur); return out; };
+  let nhanL = [], items = [], cols = 2, fH = 118;
+  if (BG) {
+    nhanL = wrap(bgNhan(), F(700, 19), TW); items = bgViec();
+    m.font = F(600, 17); const colW = TW / 2 - 10; cols = items.some(t => m.measureText(t).width + 34 > colW) ? 1 : 2;
+    fH = 24 + nhanL.length * 28 + 12 + Math.ceil(items.length / cols) * 32 + 10 + 30 + 16;
+  }
+  const H = 246 + n * (RH + 14) + 6 + fH + 56;
+  const c = document.createElement('canvas'); c.width = W * S; c.height = H * S; const g = c.getContext('2d'); g.scale(S, S);
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   const U = { r: ['#d64541', '#fdecea', 'GẤP'], o: ['#e08a00', '#fff4dc', 'SẮP TỚI'], g: ['#3f9a52', '#e8f5ea', 'CÒN THỜI GIAN'] };
-  // nền
-  g.fillStyle = '#f4f7fc'; g.fillRect(0, 0, W, H);
-  // đầu thẻ
-  const hg = g.createLinearGradient(0, 0, W, 190); hg.addColorStop(0, '#1d4f9c'); hg.addColorStop(1, '#2f86d6'); g.fillStyle = hg; rr(0, 0, W, 190, 0); g.fill();
+  g.fillStyle = BG ? '#f2f8f6' : '#f4f7fc'; g.fillRect(0, 0, W, H);
+  const hg = g.createLinearGradient(0, 0, W, 190); hg.addColorStop(0, TH.a); hg.addColorStop(1, TH.b); g.fillStyle = hg; g.fillRect(0, 0, W, 190);
   g.globalAlpha = .10; g.fillStyle = '#fff'; [[W - 90, 30, 110], [W - 210, 170, 70], [70, 175, 46]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); g.globalAlpha = 1;
-  // biểu tượng loa
   g.fillStyle = '#ffd34d'; rr(P, 44, 76, 76, 20); g.fill();
-  g.fillStyle = '#1d4f9c'; g.beginPath(); g.moveTo(P + 20, 72); g.lineTo(P + 32, 72); g.lineTo(P + 52, 58); g.lineTo(P + 52, 106); g.lineTo(P + 32, 92); g.lineTo(P + 20, 92); g.closePath(); g.fill();
-  g.strokeStyle = '#1d4f9c'; g.lineWidth = 3.5; g.lineCap = 'round'; [8, 15].forEach(r => { g.beginPath(); g.arc(P + 54, 82, r, -0.7, 0.7); g.stroke(); });
-  g.fillStyle = '#fff'; g.font = F(800, 34); g.fillText('THÔNG BÁO KHAI GIẢNG', P + 100, 82);
-  g.font = F(500, 19); g.fillStyle = '#dce9ff'; g.fillText('Các khóa đào tạo lái xe ô tô sắp tới', P + 100, 112);
-  g.font = F(600, 15); g.fillStyle = '#ffffff'; const upd = `Cập nhật ${DOWF[dowOf(todayISO())]}, ${isoToVN(todayISO())}`; rr(P + 100, 130, g.measureText(upd).width + 26, 30, 15); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); g.fillStyle = '#fff'; g.fillText(upd, P + 113, 151);
-  // chú thích màu
+  if (BG) { // mũ tốt nghiệp
+    const cx = P + 38, cy = 76; g.fillStyle = TH.a;
+    g.beginPath(); g.moveTo(cx - 26, cy); g.lineTo(cx, cy - 13); g.lineTo(cx + 26, cy); g.lineTo(cx, cy + 13); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(cx - 15, cy + 6); g.lineTo(cx - 15, cy + 18); g.quadraticCurveTo(cx, cy + 27, cx + 15, cy + 18); g.lineTo(cx + 15, cy + 6); g.lineTo(cx, cy + 13); g.closePath(); g.fill();
+    g.strokeStyle = TH.a; g.lineWidth = 2.5; g.beginPath(); g.moveTo(cx + 20, cy + 3); g.lineTo(cx + 20, cy + 22); g.stroke(); g.beginPath(); g.arc(cx + 20, cy + 24, 3.5, 0, 7); g.fill();
+  } else { // loa
+    g.fillStyle = TH.a; g.beginPath(); g.moveTo(P + 20, 72); g.lineTo(P + 32, 72); g.lineTo(P + 52, 58); g.lineTo(P + 52, 106); g.lineTo(P + 32, 92); g.lineTo(P + 20, 92); g.closePath(); g.fill();
+    g.strokeStyle = TH.a; g.lineWidth = 3.5; g.lineCap = 'round'; [8, 15].forEach(r => { g.beginPath(); g.arc(P + 54, 82, r, -0.7, 0.7); g.stroke(); });
+  }
+  g.fillStyle = '#fff'; g.font = F(800, 34); g.fillText(TH.title, P + 100, 82);
+  g.font = F(500, 19); g.fillStyle = TH.sub; g.fillText(TH.subT, P + 100, 112);
+  g.font = F(600, 15); const upd = `Cập nhật ${DOWF[dowOf(todayISO())]}, ${isoToVN(todayISO())}`; rr(P + 100, 130, g.measureText(upd).width + 26, 30, 15); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); g.fillStyle = '#fff'; g.fillText(upd, P + 113, 151);
   let y = 222; g.font = F(600, 14); let lx = P;
   Object.values(U).forEach(([col, , t]) => { g.fillStyle = col; g.beginPath(); g.arc(lx + 7, y - 5, 7, 0, 7); g.fill(); g.fillStyle = '#4a5872'; g.fillText(t, lx + 20, y); lx += g.measureText(t).width + 48; });
   g.textAlign = 'right'; g.fillStyle = '#7a879c'; g.fillText(`${list.length} khóa`, W - P, y); g.textAlign = 'left';
   y = 246;
-  if (!list.length) { g.font = F(500, 18); g.fillStyle = '#7a879c'; g.fillText('Không có khóa nào khai giảng trong thời gian tới.', P, y + 50); }
+  if (!list.length) { g.font = F(500, 18); g.fillStyle = '#7a879c'; g.fillText(`Không có khóa nào ${TH.w} trong thời gian tới.`, P, y + 50); y += RH + 14; }
+  g.font = F(800, 24); const CW = Math.max(120, ...list.map(x => g.measureText(zCode(x.k)).width + 34));   // cùng 1 độ rộng → ngày thẳng hàng
   list.forEach(x => {
-    const [col, bg] = U[zUrg(x)];
+    const [col, bg] = U[zUrg(x)], d = zDate(x, mode);
     g.save(); g.shadowColor = 'rgba(30,60,120,.10)'; g.shadowBlur = 14; g.shadowOffsetY = 4; g.fillStyle = '#fff'; rr(P, y, W - 2 * P, RH, 16); g.fill(); g.restore();
     g.save(); rr(P, y, W - 2 * P, RH, 16); g.clip(); g.fillStyle = col; g.fillRect(P, y, 8, RH); g.restore();
-    // mã khóa
-    g.font = F(800, 24); const code = zCode(x.k); const cw = Math.max(120, g.measureText(code).width + 34);
-    g.fillStyle = '#eaf1fd'; rr(P + 26, y + 22, cw, 48, 12); g.fill(); g.fillStyle = '#1d4f9c'; g.textAlign = 'center'; g.fillText(code, P + 26 + cw / 2, y + 55); g.textAlign = 'left';
-    // ngày
+    g.font = F(800, 24); const code = zCode(x.k); const cw = CW;
+    g.fillStyle = TH.chip; rr(P + 26, y + 22, cw, 48, 12); g.fill(); g.fillStyle = TH.chipT; g.textAlign = 'center'; g.fillText(code, P + 26 + cw / 2, y + 55); g.textAlign = 'left';
     const dx = P + 26 + cw + 26;
-    g.font = F(600, 14); g.fillStyle = '#7a879c'; g.fillText('KHAI GIẢNG', dx, y + 34);
-    g.font = F(700, 22); g.fillStyle = '#1f2a3d'; g.fillText(`${DOWF[dowOf(x.k.ngayKG)]}, ${isoToVN(x.k.ngayKG)}`, dx, y + 62);
-    if (x.early) { g.font = F(600, 14); g.fillStyle = '#d64541'; g.fillText(`Nộp hồ sơ trước ${DOWF[dowOf(x.han)]} ${isoToVN(x.han).slice(0, 5)} (vướng ngày nghỉ)`, dx, y + 82); }
-    // đếm ngược
-    const t1 = x.d === 0 ? 'HÔM NAY' : x.d === 1 ? 'NGÀY MAI' : String(x.d), t2 = x.d <= 1 ? 'khai giảng' : 'ngày nữa';
+    g.font = F(600, 14); g.fillStyle = '#7a879c'; g.fillText(TH.lab, dx, y + 34);
+    g.font = F(700, 22); g.fillStyle = '#1f2a3d'; g.fillText(`${DOWF[dowOf(d)]}, ${isoToVN(d)}`, dx, y + 62);
+    if (x.early) { g.font = F(600, 14); g.fillStyle = '#d64541'; g.fillText(`${BG ? 'Hoàn thành' : 'Nộp hồ sơ'} trước ${DOWF[dowOf(x.han)]} ${isoToVN(x.han).slice(0, 5)} (vướng ngày nghỉ)`, dx, y + 82); }
+    const t1 = x.d === 0 ? 'HÔM NAY' : x.d === 1 ? 'NGÀY MAI' : String(x.d), t2 = x.d <= 1 ? TH.w : 'ngày nữa';
     const bw = 138, bx = W - P - bw - 20; g.fillStyle = bg; rr(bx, y + 14, bw, RH - 28, 14); g.fill();
     g.textAlign = 'center'; g.fillStyle = col; g.font = F(800, x.d <= 1 ? 22 : 30); g.fillText((x.d > 1 ? 'còn ' : '') + t1, bx + bw / 2, y + (x.d <= 1 ? 48 : 52)); g.font = F(600, 13); g.fillText(t2, bx + bw / 2, y + 70); g.textAlign = 'left';
     y += RH + 14;
   });
   // lời nhắn
-  y += 6; g.fillStyle = '#fff8e1'; rr(P, y, W - 2 * P, 118, 16); g.fill(); g.strokeStyle = '#f3d27a'; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = '#e8a317'; rr(P + 22, y + 24, 44, 44, 12); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(P + 33, y + 33, 22, 27); g.beginPath(); [40, 46, 52].forEach(yy => { g.moveTo(P + 38, y + yy); g.lineTo(P + 50, y + yy); }); g.lineWidth = 2; g.stroke();
-  g.fillStyle = '#5b4300'; g.font = F(700, 19); g.fillText('Kính nhờ Quý thầy có học viên trong các khóa trên', P + 84, y + 44);
-  g.font = F(500, 18); g.fillText('nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.', P + 84, y + 72);
-  g.font = F(700, 17); g.fillStyle = '#1d4f9c'; g.fillText('Em cảm ơn Quý thầy!', P + 84, y + 100);
-  // mặt cười rưng rưng nước mắt + "hihi" (vẽ tay, không phụ thuộc font emoji)
-  { const line2 = 'nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.'; g.font = F(500, 18); const fx = P + 84 + g.measureText(line2).width + 30, fy = y + 66, R = 15;
+  y += 6; g.fillStyle = BG ? '#eefaf5' : '#fff8e1'; rr(P, y, W - 2 * P, fH, 16); g.fill(); g.strokeStyle = BG ? '#9fd9c6' : '#f3d27a'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = BG ? TH.b : '#e8a317'; rr(P + 22, y + 24, 44, 44, 12); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(P + 33, y + 33, 22, 27); g.beginPath(); [40, 46, 52].forEach(yy => { g.moveTo(P + 38, y + yy); g.lineTo(P + 50, y + yy); }); g.lineWidth = 2; g.stroke();
+  if (BG) {
+    let yy = y + 44; g.fillStyle = '#0b4a3e'; g.font = F(700, 19); nhanL.forEach(l => { g.fillText(l, TX, yy); yy += 28; }); yy += 10;
+    const colW = TW / cols; g.font = F(600, 17);
+    items.forEach((t, i) => { const cx = TX + (i % cols) * colW, cy = yy + Math.floor(i / cols) * 32;
+      g.fillStyle = '#18a07f'; g.beginPath(); g.arc(cx + 11, cy - 6, 11, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2.6; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(cx + 6, cy - 6); g.lineTo(cx + 10, cy - 2); g.lineTo(cx + 16.5, cy - 10); g.stroke();
+      g.fillStyle = '#1f3d36'; g.fillText(t, cx + 30, cy); });
+    yy += Math.ceil(items.length / cols) * 32 + 8; g.font = F(700, 17); g.fillStyle = TH.a; g.fillText('Em cảm ơn Quý thầy!', TX, yy);
+  } else {
+    g.fillStyle = '#5b4300'; g.font = F(700, 19); g.fillText('Kính nhờ Quý thầy có học viên trong các khóa trên', TX, y + 44);
+    const line2 = 'nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.'; g.font = F(500, 18); g.fillText(line2, TX, y + 72);
+    g.font = F(700, 17); g.fillStyle = '#1d4f9c'; g.fillText('Em cảm ơn Quý thầy!', TX, y + 100);
+    // mặt rưng rưng nước mắt (vẽ tay, không phụ thuộc font emoji)
+    g.font = F(500, 18); const fx = TX + g.measureText(line2).width + 30, fy = y + 66, R = 15;
     const fg = g.createRadialGradient(fx - 5, fy - 6, 2, fx, fy, R); fg.addColorStop(0, '#ffe066'); fg.addColorStop(1, '#f5b700'); g.fillStyle = fg; g.beginPath(); g.arc(fx, fy, R, 0, 7); g.fill();
-    [[-5.5, -2], [5.5, -2]].forEach(([dx, dy]) => { g.fillStyle = '#4a3200'; g.beginPath(); g.ellipse(fx + dx, fy + dy, 3.6, 4.4, 0, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(fx + dx + 1.2, fy + dy - 1.6, 1.4, 0, 7); g.fill();
-      g.fillStyle = 'rgba(80,170,255,.75)'; g.beginPath(); g.ellipse(fx + dx, fy + dy + 4.2, 3.4, 1.8, 0, 0, 7); g.fill(); });
+    [[-5.5, -2], [5.5, -2]].forEach(([ex, ey]) => { g.fillStyle = '#4a3200'; g.beginPath(); g.ellipse(fx + ex, fy + ey, 3.6, 4.4, 0, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(fx + ex + 1.2, fy + ey - 1.6, 1.4, 0, 7); g.fill();
+      g.fillStyle = 'rgba(80,170,255,.75)'; g.beginPath(); g.ellipse(fx + ex, fy + ey + 4.2, 3.4, 1.8, 0, 0, 7); g.fill(); });
     g.fillStyle = '#5ab4ff'; g.beginPath(); g.moveTo(fx + 9, fy + 2); g.quadraticCurveTo(fx + 13, fy + 9, fx + 9.5, fy + 10.5); g.quadraticCurveTo(fx + 6, fy + 9, fx + 9, fy + 2); g.fill();
     g.strokeStyle = '#4a3200'; g.lineWidth = 1.8; g.lineCap = 'round'; g.beginPath(); g.arc(fx, fy + 4, 5, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
-    g.font = F(700, 17); g.fillStyle = '#e8a317'; g.fillText('hihi', fx + R + 8, fy + 6); }
+  }
   g.font = F(500, 13); g.fillStyle = '#9aa6b8'; g.textAlign = 'center'; g.fillText(DB.settings.coSo || '', W / 2, H - 16); g.textAlign = 'left';
   return c;
 }
-async function copyZaloImage(list) {
-  const c = zaloCanvas(list);
+const zFile = mode => `ThongBao_${mode === 'bg' ? 'BeGiang' : 'KhaiGiang'}_${todayISO()}.png`;
+async function copyZaloImage(list, mode) {
+  const c = zaloCanvas(list, mode);
   try { if (!window.ClipboardItem) throw 0; await navigator.clipboard.write([new ClipboardItem({ 'image/png': new Promise(r => c.toBlob(r, 'image/png')) })]); return 'copy'; }
-  catch { c.toBlob(b => downloadBlob(b, `ThongBao_KhaiGiang_${todayISO()}.png`), 'image/png'); return 'file'; }
+  catch { c.toBlob(b => downloadBlob(b, zFile(mode)), 'image/png'); return 'file'; }
 }
 async function copyText(txt) {
   try { await navigator.clipboard.writeText(txt); return true; } catch { }
   const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
   let ok = false; try { ok = document.execCommand('copy'); } catch { } ta.remove(); return ok;
 }
-let zaloSkip = true;
+let zaloSkip = true, zaloMode = 'kg';
 function zaloView(box) {
-  const N = +DB.settings.zaloNgay || 15; const list = zaloList(N, zaloSkip); const early = list.filter(x => x.early).length; const st = DB.settings.zaloStyle || 'vui';
+  const mode = zaloMode, BG = mode === 'bg';
+  const N = zDays(mode); const list = zList(mode, N, zaloSkip); const early = list.filter(x => x.early).length; const st = DB.settings.zaloStyle || 'vui';
   const hangs = [...new Set(DB.khoa.map(k => k.hang))];
-  box.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">📣 Thông báo Zalo nhắc giáo viên nộp hồ sơ</h2>${tip('Tạo thông báo gửi nhóm Zalo giáo viên: các khóa ô tô khai giảng trong **N ngày tới** tính từ hôm nay.\nCó 2 cách gửi: **ảnh khung thông báo** (bắt mắt, dán thẳng vào Zalo) và **nội dung chữ**. Nên gửi ảnh trước rồi dán chữ bên dưới.')}<span class="sp"></span>
-    <label class="small">Khóa KG trong <input type="number" class="in" id="zN" value="${N}" min="1" max="60" style="width:64px;padding:4px 6px"> ngày tới</label>
-    <label class="small"><input type="checkbox" id="zS" ${zaloSkip ? 'checked' : ''}> Bỏ khóa đã chốt hồ sơ</label>${tip('Khóa đã tick đủ ① thông tin + ② ảnh thì không cần nhắc giáo viên nữa.')}</div>
-    <p class="small muted" style="margin:6px 0 12px">Hôm nay ${dayVN(todayISO())} · <b>${list.length}</b> khóa. Màu: 🔴 gấp · 🟠 sắp tới · 🟢 còn thời gian — tính theo hạn nộp, đã trừ T7, CN, ngày lễ.${early ? ` <b style="color:var(--red)">${early} khóa</b> vướng ngày nghỉ nên được tô màu gấp hơn và ghi hạn nộp sớm trên ảnh.` : ''}</p>
+  const nBg = zList('bg', zDays('bg')).length, nKg = zList('kg', zDays('kg'), zaloSkip).length;
+  box.innerHTML = `<div class="card"><div class="row" style="margin-bottom:12px"><span class="seg" style="font-size:14px"><button data-zm="kg" class="${BG ? '' : 'on'}">📣 Khai giảng — nhắc nộp hồ sơ (${nKg})</button><button data-zm="bg" class="${BG ? 'on' : ''}">🎓 Bế giảng — chuẩn bị tốt nghiệp (${nBg})</button></span>${tip('Hai loại thông báo gửi nhóm Zalo giáo viên:\n**Khai giảng**: nhắc nộp hồ sơ học viên.\n**Bế giảng**: nhắc chuẩn bị bài kiểm tra trả nợ môn, sổ nhiên liệu, sổ tay GV, giáo án… trước khi tốt nghiệp (danh sách sửa được).')}</div>
+    <div class="row"><h2 style="margin:0">${BG ? '🎓 Thông báo các khóa sắp bế giảng' : '📣 Thông báo Zalo nhắc giáo viên nộp hồ sơ'}</h2>${tip(BG ? 'Các khóa ô tô **bế giảng trong N ngày tới**. Gửi sớm để giáo viên thực hành kịp hoàn thiện giấy tờ trước khi tốt nghiệp.' : 'Các khóa ô tô **khai giảng trong N ngày tới** tính từ hôm nay.\nNên gửi ảnh trước rồi dán chữ bên dưới.')}<span class="sp"></span>
+    <label class="small">Khóa ${BG ? 'BG' : 'KG'} trong <input type="number" class="in" id="zN" value="${N}" min="1" max="60" style="width:64px;padding:4px 6px"> ngày tới</label>
+    ${BG ? '' : `<label class="small"><input type="checkbox" id="zS" ${zaloSkip ? 'checked' : ''}> Bỏ khóa đã chốt hồ sơ</label>${tip('Khóa đã tick đủ ① thông tin + ② ảnh thì không cần nhắc giáo viên nữa.')}`}</div>
+    <p class="small muted" style="margin:6px 0 12px">Hôm nay ${dayVN(todayISO())} · <b>${list.length}</b> khóa. Màu: 🔴 gấp · 🟠 sắp tới · 🟢 còn thời gian — tính theo hạn, đã trừ T7, CN, ngày lễ.${early ? ` <b style="color:var(--red)">${early} khóa</b> vướng ngày nghỉ nên ghi hạn sớm hơn trên ảnh.` : ''}</p>
+    ${BG ? `<div class="card" style="background:var(--gray-l);box-shadow:none;margin:0 0 14px"><div class="row" style="margin-bottom:8px"><b>✏ Nội dung giáo viên cần chuẩn bị</b>${tip('Sửa tùy ý: mỗi dòng 1 mục. Bấm ra ngoài ô là lưu và ảnh/chữ bên dưới cập nhật ngay.\n**Lời nhắn** là câu đứng trước danh sách.')}<span class="sp"></span><button class="btn sm" id="zVd">↺ Về mặc định</button></div>
+      <div class="grid" style="grid-template-columns:1fr 1.3fr;gap:12px"><label class="f">Danh sách (mỗi dòng 1 mục)<textarea class="in" id="zV" rows="6" style="width:100%;line-height:1.5">${esc(bgViec().join('\n'))}</textarea></label>
+      <label class="f">Lời nhắn<textarea class="in" id="zNh" rows="6" style="width:100%;line-height:1.5">${esc(bgNhan())}</textarea></label></div></div>` : ''}
     <div class="grid" style="grid-template-columns:1.05fr 1fr;gap:18px;align-items:start">
       <div><div class="row" style="margin-bottom:8px"><b>🖼 Khung thông báo (ảnh)</b>${tip('Bấm **Copy ảnh** rồi vào Zalo bấm **Ctrl+V** là dán được ảnh.\nNếu máy không cho copy ảnh, tool sẽ tải file PNG về để bạn gửi.')}<span class="sp"></span><button class="btn pri" id="zI">🖼 Copy ảnh</button><button class="btn" id="zD">⬇ Tải PNG</button></div>
         <img class="zprev" id="zP" alt="Khung thông báo"></div>
-      <div><div class="row" style="margin-bottom:8px"><b>✍ Nội dung chữ</b>${tip('**Sinh động**: có biểu tượng màu, lời nhắn lịch sự.\n**Gọn**: đúng mẫu ngắn, không biểu tượng.\nSửa trực tiếp trong ô rồi bấm Copy.')}<span class="sp"></span><span class="seg"><button data-zs="vui" class="${st === 'vui' ? 'on' : ''}">Sinh động</button><button data-zs="gon" class="${st === 'gon' ? 'on' : ''}">Gọn</button></span></div>
-        <textarea class="in" id="zT" style="width:100%;min-height:250px;font-size:14px;line-height:1.6">${esc(zaloText(list, st))}</textarea>
+      <div><div class="row" style="margin-bottom:8px"><b>✍ Nội dung chữ</b>${tip('**Sinh động**: có biểu tượng màu, lời nhắn lịch sự.\n**Gọn**: mẫu ngắn, không biểu tượng.\nSửa trực tiếp trong ô rồi bấm Copy.')}<span class="sp"></span><span class="seg"><button data-zs="vui" class="${st === 'vui' ? 'on' : ''}">Sinh động</button><button data-zs="gon" class="${st === 'gon' ? 'on' : ''}">Gọn</button></span></div>
+        <textarea class="in" id="zT" style="width:100%;min-height:250px;font-size:14px;line-height:1.6">${esc(zaloText(list, st, mode))}</textarea>
         <div class="row" style="margin-top:8px"><button class="btn pri" id="zC">📋 Copy chữ</button><button class="btn" id="zR">↺ Tạo lại</button><span class="sp"></span><span class="small muted" id="zM">${DB.settings.zaloLast ? 'Gửi lần cuối: ' + fmtT(DB.settings.zaloLast) : ''}</span></div>
         <details style="margin-top:12px"><summary class="small" style="cursor:pointer">Tên hạng hiển thị trong thông báo</summary>${tip('Tên ngắn đứng trước số khóa, vd **Bss**-23, **Bstđ**-29, **CE**-40. Sửa xong bấm ra ngoài là lưu.')}
           <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px">${hangs.map(h => `<label class="f small">${esc(h)}<input class="in" data-zt="${esc(h)}" value="${esc(zTen(h))}"></label>`).join('')}</div></details></div></div>
-    <div class="tbl" style="margin-top:16px"><table><thead><tr><th>Khóa</th><th>Khai giảng</th><th class="num">Còn</th><th>Hạn nhập HS</th><th>Hồ sơ</th></tr></thead><tbody>
-      ${list.map(x => `<tr style="box-shadow:inset 4px 0 0 ${{ r: 'var(--red)', o: 'var(--amber)', g: 'var(--green)' }[zUrg(x)]}"><td><a href="#" data-k="${x.k.id}" class="hang">${kCode(x.k)}</a> <span class="small muted">${esc(zCode(x.k))}</span></td><td>${dayVN(x.k.ngayKG)}${isOff(x.k.ngayKG) ? `<div class="small" style="color:var(--red)">${esc(offWhy(x.k.ngayKG))}</div>` : ''}</td><td class="num">${x.d}</td><td>${x.early ? `<b style="color:var(--red)">${dayVN(x.han)}</b>` : dayVN(x.han)}</td><td>${hsBadge(x.k)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-st">Không có khóa khai giảng trong khoảng này.</td></tr>'}</tbody></table></div></div>`;
-  $('#zP', box).src = zaloCanvas(list).toDataURL('image/png');
-  const sent = m => { DB.settings.zaloLast = new Date().toISOString(); persist(); $('#zM', box).textContent = m; };
-  $('#zN', box).onchange = e => { DB.settings.zaloNgay = Math.min(60, Math.max(1, +e.target.value || 15)); commit('Thông báo Zalo: ' + DB.settings.zaloNgay + ' ngày'); render(); };
-  $('#zS', box).onchange = e => { zaloSkip = e.target.checked; render(); };
+    <div class="tbl" style="margin-top:16px"><table><thead><tr><th>Khóa</th><th>${BG ? 'Bế giảng' : 'Khai giảng'}</th><th class="num">Còn</th><th>${BG ? 'Hạn hoàn thành' : 'Hạn nhập HS'}</th><th>${BG ? 'Số HV · Thi TN' : 'Hồ sơ'}</th></tr></thead><tbody>
+      ${list.map(x => { const d = zDate(x, mode); return `<tr style="box-shadow:inset 4px 0 0 ${{ r: 'var(--red)', o: 'var(--amber)', g: 'var(--green)' }[zUrg(x)]}"><td><a href="#" data-k="${x.k.id}" class="hang">${kCode(x.k)}</a> <span class="small muted">${esc(zCode(x.k))}</span></td><td>${dayVN(d)}${isOff(d) ? `<div class="small" style="color:var(--red)">${esc(offWhy(d))}</div>` : ''}</td><td class="num">${x.d}</td><td>${x.early ? `<b style="color:var(--red)">${dayVN(x.han)}</b>` : dayVN(x.han)}</td><td>${BG ? `${hvOf(x.k.id).filter(h => h.tt !== 'bohoc').length} HV · ${x.k.thiTN ? '<span class="badge b-run">🎓 đã nhập máy</span>' : '<span class="badge b-end">chưa nhập máy</span>'}` : hsBadge(x.k)}</td></tr>`; }).join('') || `<tr><td colspan="5" class="empty-st">Không có khóa ${BG ? 'bế giảng' : 'khai giảng'} trong khoảng này.</td></tr>`}</tbody></table></div></div>`;
+  $('#zP', box).src = zaloCanvas(list, mode).toDataURL('image/png');
+  const sent = msg => { DB.settings.zaloLast = new Date().toISOString(); persist(); $('#zM', box).textContent = msg; };
+  $$('[data-zm]', box).forEach(b => b.onclick = () => { zaloMode = b.dataset.zm; render(); });
+  $('#zN', box).onchange = e => { const v = Math.min(60, Math.max(1, +e.target.value || 15)); if (BG) DB.settings.zaloBgNgay = v; else DB.settings.zaloNgay = v; commit(`Thông báo Zalo ${BG ? 'bế giảng' : 'khai giảng'}: ${v} ngày`); render(); };
+  $('#zS', box) && ($('#zS', box).onchange = e => { zaloSkip = e.target.checked; render(); });
+  if (BG) {
+    $('#zV', box).onchange = e => { const v = e.target.value.split('\n').map(x => x.replace(/^[\s\-+•✅]+/, '').trim()).filter(Boolean); DB.settings.bgViec = v.length ? v : DEFAULT_BG_VIEC.slice(); commit('Sửa nội dung chuẩn bị tốt nghiệp'); render(); };
+    $('#zNh', box).onchange = e => { DB.settings.bgNhan = e.target.value.trim(); commit('Sửa lời nhắn thông báo bế giảng'); render(); };
+    $('#zVd', box).onclick = () => { DB.settings.bgViec = DEFAULT_BG_VIEC.slice(); DB.settings.bgNhan = ''; commit('Nội dung chuẩn bị tốt nghiệp về mặc định'); render(); };
+  }
   $$('[data-zs]', box).forEach(b => b.onclick = () => { DB.settings.zaloStyle = b.dataset.zs; persist(); render(); });
   $$('[data-zt]', box).forEach(i => i.onchange = () => { DB.settings.zaloTen = { ...(DB.settings.zaloTen || {}), [i.dataset.zt]: i.value.trim() || zTen(i.dataset.zt) }; commit('Tên hạng trong thông báo: ' + i.dataset.zt + ' → ' + i.value.trim()); render(); });
-  $('#zR', box).onclick = () => { $('#zT', box).value = zaloText(zaloList(N, zaloSkip), st); };
+  $('#zR', box).onclick = () => { $('#zT', box).value = zaloText(zList(mode, N, zaloSkip), st, mode); };
   $('#zC', box).onclick = async () => { const ok = await copyText($('#zT', box).value); if (ok) { sent('Đã copy chữ — dán vào Zalo (Ctrl+V)'); toast('Đã copy nội dung. Mở Zalo và dán (Ctrl+V).', 'ok'); } else { $('#zT', box).select(); toast('Không copy tự động được — đã bôi đen, bấm Ctrl+C.', 'err'); } };
-  $('#zI', box).onclick = async () => { const r = await copyZaloImage(list); sent(r === 'copy' ? 'Đã copy ảnh — dán vào Zalo (Ctrl+V)' : 'Đã tải ảnh PNG'); toast(r === 'copy' ? 'Đã copy ảnh thông báo. Mở Zalo và dán (Ctrl+V).' : 'Máy không cho copy ảnh — đã tải file PNG, gửi file này vào Zalo.', 'ok', 6000); };
-  $('#zD', box).onclick = () => zaloCanvas(list).toBlob(b => downloadBlob(b, `ThongBao_KhaiGiang_${todayISO()}.png`), 'image/png');
+  $('#zI', box).onclick = async () => { const r = await copyZaloImage(list, mode); sent(r === 'copy' ? 'Đã copy ảnh — dán vào Zalo (Ctrl+V)' : 'Đã tải ảnh PNG'); toast(r === 'copy' ? 'Đã copy ảnh thông báo. Mở Zalo và dán (Ctrl+V).' : 'Máy không cho copy ảnh — đã tải file PNG, gửi file này vào Zalo.', 'ok', 6000); };
+  $('#zD', box).onclick = () => zaloCanvas(list, mode).toBlob(b => downloadBlob(b, zFile(mode)), 'image/png');
 }
 /* ---- Ngày nghỉ lễ (sửa được) ---- */
 async function editNghi() {
