@@ -252,7 +252,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.5.1';
+const APP_VER = 2, TOOL_VERSION = '2.5.2';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -1543,7 +1543,7 @@ function zaloText(list, style) {
   style = style || DB.settings.zaloStyle || 'vui';
   if (style === 'gon') return `Thông báo các khóa khai giảng ô tô sắp tới :\n${list.length ? list.map(x => '- ' + zLine(x)).join('\n') : '(không có khóa nào)'}\nGiáo viên có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập nhé .`;
   const dot = { r: '🔴', o: '🟠', g: '🟢' };
-  return `📢 THÔNG BÁO CÁC KHÓA KHAI GIẢNG Ô TÔ SẮP TỚI 🚗\n━━━━━━━━━━━━━━━\n${list.length ? list.map(x => `${dot[zUrg(x)]} ${zLine(x)}${zUrg(x) === 'r' ? ' ⏰' : ''}`).join('\n') : '(không có khóa nào)'}\n━━━━━━━━━━━━━━━\n📝 Kính nhờ quý Thầy/Cô có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.\n🙏 Em cảm ơn quý Thầy/Cô!`;
+  return `📢 THÔNG BÁO CÁC KHÓA KHAI GIẢNG Ô TÔ SẮP TỚI 🚗\n━━━━━━━━━━━━━━━\n${list.length ? list.map(x => `${dot[zUrg(x)]} ${zLine(x)}${zUrg(x) === 'r' ? ' ⏰' : ''}`).join('\n') : '(không có khóa nào)'}\n━━━━━━━━━━━━━━━\n📝 Kính nhờ Quý thầy có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ 🥹 hihi\n🙏 Em cảm ơn Quý thầy!`;
 }
 /* Khung thông báo dạng ẢNH (dán thẳng vào Zalo) */
 function zaloCanvas(list) {
@@ -1592,9 +1592,17 @@ function zaloCanvas(list) {
   // lời nhắn
   y += 6; g.fillStyle = '#fff8e1'; rr(P, y, W - 2 * P, 118, 16); g.fill(); g.strokeStyle = '#f3d27a'; g.lineWidth = 1.5; g.stroke();
   g.fillStyle = '#e8a317'; rr(P + 22, y + 24, 44, 44, 12); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(P + 33, y + 33, 22, 27); g.beginPath(); [40, 46, 52].forEach(yy => { g.moveTo(P + 38, y + yy); g.lineTo(P + 50, y + yy); }); g.lineWidth = 2; g.stroke();
-  g.fillStyle = '#5b4300'; g.font = F(700, 19); g.fillText('Kính nhờ quý Thầy/Cô có học viên trong các khóa trên', P + 84, y + 44);
+  g.fillStyle = '#5b4300'; g.font = F(700, 19); g.fillText('Kính nhờ Quý thầy có học viên trong các khóa trên', P + 84, y + 44);
   g.font = F(500, 18); g.fillText('nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.', P + 84, y + 72);
-  g.font = F(700, 17); g.fillStyle = '#1d4f9c'; g.fillText('Em cảm ơn quý Thầy/Cô!', P + 84, y + 100);
+  g.font = F(700, 17); g.fillStyle = '#1d4f9c'; g.fillText('Em cảm ơn Quý thầy!', P + 84, y + 100);
+  // mặt cười rưng rưng nước mắt + "hihi" (vẽ tay, không phụ thuộc font emoji)
+  { const line2 = 'nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.'; g.font = F(500, 18); const fx = P + 84 + g.measureText(line2).width + 30, fy = y + 66, R = 15;
+    const fg = g.createRadialGradient(fx - 5, fy - 6, 2, fx, fy, R); fg.addColorStop(0, '#ffe066'); fg.addColorStop(1, '#f5b700'); g.fillStyle = fg; g.beginPath(); g.arc(fx, fy, R, 0, 7); g.fill();
+    [[-5.5, -2], [5.5, -2]].forEach(([dx, dy]) => { g.fillStyle = '#4a3200'; g.beginPath(); g.ellipse(fx + dx, fy + dy, 3.6, 4.4, 0, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(fx + dx + 1.2, fy + dy - 1.6, 1.4, 0, 7); g.fill();
+      g.fillStyle = 'rgba(80,170,255,.75)'; g.beginPath(); g.ellipse(fx + dx, fy + dy + 4.2, 3.4, 1.8, 0, 0, 7); g.fill(); });
+    g.fillStyle = '#5ab4ff'; g.beginPath(); g.moveTo(fx + 9, fy + 2); g.quadraticCurveTo(fx + 13, fy + 9, fx + 9.5, fy + 10.5); g.quadraticCurveTo(fx + 6, fy + 9, fx + 9, fy + 2); g.fill();
+    g.strokeStyle = '#4a3200'; g.lineWidth = 1.8; g.lineCap = 'round'; g.beginPath(); g.arc(fx, fy + 4, 5, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
+    g.font = F(700, 17); g.fillStyle = '#e8a317'; g.fillText('hihi', fx + R + 8, fy + 6); }
   g.font = F(500, 13); g.fillStyle = '#9aa6b8'; g.textAlign = 'center'; g.fillText(DB.settings.coSo || '', W / 2, H - 16); g.textAlign = 'left';
   return c;
 }
@@ -2191,21 +2199,57 @@ async function vBackup(el) {
   };
 }
 /* ---------- THÙNG RÁC ---------- */
+const trSel = new Set(); let trFilter = { type: '', q: '' }, trLast = null;
+/* Khôi phục 1 mục thùng rác; trả về '' nếu được, hoặc lý do không khôi phục được */
+function trashRestoreOne(t) {
+  if ([...DB.hv, ...DB.khoa, ...DB.gv].some(x => x.id === t.data.id)) { DB.trash = DB.trash.filter(x => x !== t); return ''; }
+  if (t.type === 'hv') { if (!khoaById(t.data.khoaId)) return 'khóa của học viên không còn — khôi phục khóa trước'; if (t.data.cccd && DB.hv.some(h => h.khoaId === t.data.khoaId && h.cccd === t.data.cccd)) return 'khóa đã có lại CCCD này'; DB.hv.push(t.data); }
+  else if (t.type === 'khoa') { if (DB.khoa.some(k => k.hang === t.data.hang && k.so === t.data.so)) return 'đã có khóa trùng hạng + số'; DB.khoa.push(t.data); DB.hv.push(...(t.hvs || [])); }
+  else if (t.type === 'gv') DB.gv.push(t.data);
+  DB.trash = DB.trash.filter(x => x !== t); return '';
+}
 function vTrash(el) {
-  const T = DB.trash;
+  const TYPE = { hv: 'Học viên', khoa: 'Khóa', gv: 'Giáo viên' };
+  const ids = new Set(DB.trash.map(t => t.id)); [...trSel].forEach(i => ids.has(i) || trSel.delete(i));
+  const q = noAcc(trFilter.q || '');
+  const list = DB.trash.filter(t => (!trFilter.type || t.type === trFilter.type) && (!q || noAcc(t.label + ' ' + (t.reason || '')).includes(q)));
+  const left = t => (DB.settings.trashDays || 30) - Math.floor((Date.now() - new Date(t.at).getTime()) / 864e5);
+  const allOn = list.length && list.every(t => trSel.has(t.id));
   el.innerHTML = `<h1>Thùng rác</h1><p class="sub">Học viên, khóa, giáo viên bị xóa nằm ở đây ${DB.settings.trashDays} ngày rồi mới tự xóa hẳn. Khôi phục được bất cứ lúc nào trong thời gian đó.</p>
-  <div class="card"><div class="tbl"><table><thead><tr><th>Loại</th><th>Nội dung</th><th>Xóa lúc</th><th>Lý do</th><th>Còn</th><th></th></tr></thead><tbody>
-  ${T.map(t => { const left = (DB.settings.trashDays || 30) - Math.floor((Date.now() - new Date(t.at).getTime()) / 864e5); return `<tr><td>${{ hv: 'Học viên', khoa: 'Khóa', gv: 'Giáo viên' }[t.type] || t.type}</td><td><b>${esc(t.label)}</b></td><td>${fmtT(t.at)}</td><td class="small">${esc(t.reason)}</td><td class="small">${left} ngày</td><td style="white-space:nowrap"><button class="btn sm pri" data-rs="${t.id}">Khôi phục</button> <button class="btn sm dan" data-pg="${t.id}">Xóa hẳn</button></td></tr>`; }).join('') || '<tr><td colspan="6" class="empty-st">Thùng rác trống.</td></tr>'}
-  </tbody></table></div></div>`;
-  $$('[data-rs]', el).forEach(b => b.onclick = () => {
-    const t = T.find(x => x.id === b.dataset.rs);
-    if ([...DB.hv, ...DB.khoa, ...DB.gv].some(x => x.id === t.data.id)) { DB.trash = T.filter(x => x !== t); commit('Bỏ mục thùng rác đã tồn tại: ' + t.label); toast('Bản ghi này đã có lại trong dữ liệu (máy khác khôi phục) — đã bỏ khỏi thùng rác.'); render(); return; }
-    if (t.type === 'hv') { if (!khoaById(t.data.khoaId)) { toast('Khóa của học viên này không còn — khôi phục khóa trước.', 'err'); return; } if (t.data.cccd && DB.hv.some(h => h.khoaId === t.data.khoaId && h.cccd === t.data.cccd)) { toast('Khóa đã có lại CCCD này.', 'err'); return; } DB.hv.push(t.data); }
-    else if (t.type === 'khoa') { if (DB.khoa.some(k => k.hang === t.data.hang && k.so === t.data.so)) { toast('Đã có khóa trùng hạng + số.', 'err'); return; } DB.khoa.push(t.data); DB.hv.push(...t.hvs); }
-    else if (t.type === 'gv') DB.gv.push(t.data);
-    DB.trash = T.filter(x => x !== t); commit('Khôi phục từ thùng rác: ' + t.label); toast('Đã khôi phục ' + t.label, 'ok'); render();
-  });
-  $$('[data-pg]', el).forEach(b => b.onclick = async () => { const t = T.find(x => x.id === b.dataset.pg); if (await confirmBox('Xóa hẳn?', `Xóa vĩnh viễn <b>${esc(t.label)}</b>? (vẫn còn trong các bản sao lưu cũ)`, 'Xóa hẳn', true)) { DB.trash = T.filter(x => x !== t); commit('Xóa hẳn: ' + t.label); render(); } });
+  <div class="card"><div class="row" style="margin-bottom:10px"><select class="in" id="tT"><option value="">Mọi loại (${DB.trash.length})</option>${Object.entries(TYPE).map(([k, v]) => `<option value="${k}" ${trFilter.type === k ? 'selected' : ''}>${v} (${DB.trash.filter(t => t.type === k).length})</option>`).join('')}</select>
+    <input class="in" id="tQ" placeholder="Tìm tên, lý do…" value="${esc(trFilter.q || '')}" style="width:220px"><span class="sp"></span>
+    <button class="btn sm" id="tAll">${allOn ? 'Bỏ chọn' : 'Chọn tất cả'} (${list.length})</button></div>
+    ${trSel.size ? `<div class="note blue row" style="margin-bottom:10px"><b>Đã chọn ${trSel.size} mục</b><span class="sp"></span><button class="btn sm pri" id="tRs">♻ Khôi phục ${trSel.size} mục</button><button class="btn sm dan" id="tPg">🗑 Xóa hẳn ${trSel.size} mục</button><button class="btn sm" id="tNone">Bỏ chọn</button></div>` : ''}
+    <div class="tbl" style="max-height:66vh"><table><thead><tr><th style="width:34px"><input type="checkbox" id="tCk" ${allOn ? 'checked' : ''} title="Chọn / bỏ chọn tất cả đang hiện"></th><th>Loại</th><th>Nội dung</th><th>Xóa lúc</th><th>Lý do</th><th>Còn</th><th></th></tr></thead><tbody>
+  ${list.map(t => `<tr class="${trSel.has(t.id) ? 'hl' : ''}"><td><input type="checkbox" class="tck" data-id="${t.id}" ${trSel.has(t.id) ? 'checked' : ''}></td><td>${TYPE[t.type] || esc(t.type)}</td><td><b>${esc(t.label)}</b></td><td>${fmtT(t.at)}</td><td class="small">${esc(t.reason)}</td><td class="small">${left(t)} ngày</td><td style="white-space:nowrap"><button class="btn sm pri" data-rs="${t.id}">Khôi phục</button> <button class="btn sm dan" data-pg="${t.id}">Xóa hẳn</button></td></tr>`).join('') || `<tr><td colspan="7" class="empty-st">${DB.trash.length ? 'Không có mục khớp bộ lọc.' : 'Thùng rác trống.'}</td></tr>`}
+  </tbody></table></div>
+  ${DB.trash.length ? `<div class="row" style="margin-top:10px"><span class="small muted">Mẹo: giữ <b>Shift</b> khi tick để chọn cả đoạn.</span><span class="sp"></span><button class="btn sm dan" id="tEmpty">Dọn sạch thùng rác (${DB.trash.length})</button></div>` : ''}</div>`;
+  $('#tT', el).onchange = e => { trFilter.type = e.target.value; trLast = null; render(); };
+  $('#tQ', el).oninput = e => { trFilter.q = e.target.value; const pos = e.target.selectionStart; render(); const i = $('#tQ'); i.focus(); i.setSelectionRange(pos, pos); };
+  const toggleAll = on => { list.forEach(t => on ? trSel.add(t.id) : trSel.delete(t.id)); render(); };
+  $('#tAll', el).onclick = () => toggleAll(!allOn); $('#tCk', el).onchange = e => toggleAll(e.target.checked);
+  const cks = $$('.tck', el);
+  cks.forEach((c, i) => c.onclick = e => { const last = trLast != null && trLast < cks.length ? trLast : null; if (e.shiftKey && last != null) { const [x, y] = [Math.min(last, i), Math.max(last, i)]; for (let j = x; j <= y; j++) c.checked ? trSel.add(cks[j].dataset.id) : trSel.delete(cks[j].dataset.id); } else c.checked ? trSel.add(c.dataset.id) : trSel.delete(c.dataset.id); trLast = i; render(); });
+  const restoreMany = items => {
+    const order = { khoa: 0, gv: 1, hv: 2 }; const bad = []; let ok = 0;
+    items.slice().sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9)).forEach(t => { const r = trashRestoreOne(t); if (r) bad.push(`${t.label}: ${r}`); else { ok++; trSel.delete(t.id); } });
+    if (ok) commit(`Khôi phục từ thùng rác: ${ok} mục` + (items.length === 1 ? ' — ' + items[0].label : ''));
+    if (bad.length) toast(`${ok ? `Đã khôi phục ${ok} mục. ` : ''}Không khôi phục được ${bad.length}: ${bad.slice(0, 3).join('; ')}${bad.length > 3 ? '…' : ''}`, 'err', 9000); else toast(`Đã khôi phục ${ok} mục.`, 'ok');
+    render();
+  };
+  const purgeMany = async (items, title) => {
+    const hvN = items.reduce((n, t) => n + (t.type === 'khoa' ? (t.hvs || []).length : 0), 0);
+    if (!await confirmBox(title, `<p>Xóa vĩnh viễn <b>${items.length}</b> mục${hvN ? ` (gồm ${hvN} học viên trong các khóa)` : ''}:</p><div class="small" style="max-height:200px;overflow:auto;background:var(--gray-l);padding:8px;border-radius:6px">${items.slice(0, 60).map(t => '• ' + esc(t.label)).join('<br>')}${items.length > 60 ? `<br>… và ${items.length - 60} mục nữa` : ''}</div><p class="small muted">Không khôi phục được từ thùng rác nữa (vẫn còn trong các bản sao lưu cũ).</p>`, `Xóa hẳn ${items.length} mục`, true)) return;
+    const del = new Set(items.map(t => t.id)); DB.trash = DB.trash.filter(t => !del.has(t.id)); del.forEach(i => trSel.delete(i));
+    commit(`Xóa hẳn ${items.length} mục khỏi thùng rác` + (items.length === 1 ? ': ' + items[0].label : '')); toast(`Đã xóa hẳn ${items.length} mục.`, 'ok'); render();
+  };
+  const selected = () => DB.trash.filter(t => trSel.has(t.id));
+  $('#tRs', el) && ($('#tRs', el).onclick = () => restoreMany(selected()));
+  $('#tPg', el) && ($('#tPg', el).onclick = () => purgeMany(selected(), 'Xóa hẳn các mục đã chọn?'));
+  $('#tNone', el) && ($('#tNone', el).onclick = () => { trSel.clear(); render(); });
+  $('#tEmpty', el) && ($('#tEmpty', el).onclick = () => purgeMany(DB.trash.slice(), 'Dọn sạch thùng rác?'));
+  $$('[data-rs]', el).forEach(b => b.onclick = () => restoreMany([DB.trash.find(x => x.id === b.dataset.rs)]));
+  $$('[data-pg]', el).forEach(b => b.onclick = () => purgeMany([DB.trash.find(x => x.id === b.dataset.pg)], 'Xóa hẳn?'));
 }
 /* ---------- NHẬT KÝ THAY ĐỔI (từ máy chủ) ---------- */
 const FIELD_VN = { hoTen: 'Họ tên', ngaySinh: 'Ngày sinh', cccd: 'CCCD', sdt: 'SĐT', diaChi: 'Địa chỉ', noiCuTru: 'Nơi cư trú', gvId: 'Giáo viên', gvText: 'GV (chữ)', gvGoc: 'GV (chữ gốc)', maDK: 'Mã ĐKI', maNguon: 'Mã nguồn', soHS: 'Số HS', khoaId: 'Khóa', tt: 'Trạng thái', ttNote: 'Lý do trạng thái', thu: 'Thu học phí', hocPhi: 'Học phí phải đóng', ghiChu: 'Ghi chú', ngayKG: 'Khai giảng', ngayBG: 'Bế giảng', so: 'Số khóa', dong: 'Đóng sổ', moLai: 'Mở lại', tenGoi: 'Tên gọi tắt', alias: 'Tên khác', active: 'Đang dạy', nguonTS: 'Nguồn tuyển sinh' };

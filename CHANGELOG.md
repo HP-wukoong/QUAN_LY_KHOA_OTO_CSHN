@@ -1,5 +1,9 @@
 # Nhật ký thay đổi
 
+## 2.5.2 — 2026-10-19
+- Thông báo Zalo: xưng "Quý thầy", thêm biểu tượng rưng rưng 🥹 "hihi".
+- Thùng rác: chọn hàng loạt (tick / Chọn tất cả / giữ Shift chọn cả đoạn), lọc theo loại + tìm kiếm, khôi phục hoặc xóa hẳn hàng loạt, nút Dọn sạch thùng rác.
+
 ## 2.5.1 — 2026-10-19
 - Thông báo Zalo: **khung thông báo dạng ảnh** (Copy ảnh / Tải PNG) màu theo mức gấp; nội dung chữ 2 kiểu **Sinh động** / **Gọn** theo mẫu `Bss-23 : KG Chủ nhật _ 25/10/2026 – còn 6 ngày`; sửa được tên hạng hiển thị (Bss, Bstđ, CE…).
 - Sao lưu & Cài đặt: thêm dấu **!** giải thích từng mục (rê chuột / bấm để xem).
