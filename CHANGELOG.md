@@ -1,5 +1,9 @@
 # Nhật ký thay đổi
 
+## 2.5.1 — 2026-10-19
+- Thông báo Zalo: **khung thông báo dạng ảnh** (Copy ảnh / Tải PNG) màu theo mức gấp; nội dung chữ 2 kiểu **Sinh động** / **Gọn** theo mẫu `Bss-23 : KG Chủ nhật _ 25/10/2026 – còn 6 ngày`; sửa được tên hạng hiển thị (Bss, Bstđ, CE…).
+- Sao lưu & Cài đặt: thêm dấu **!** giải thích từng mục (rê chuột / bấm để xem).
+
 ## 2.5.0 — 2026-10-19
 - **Nhắc nhập máy thi tốt nghiệp** trước ngày bế giảng 1–5 ngày làm việc; tick "🎓 Đã nhập máy thi TN" từng khóa (Tổng quan, Lịch › Sắp bế giảng, trang khóa).
 - **Thông báo Zalo** nhắc giáo viên nộp hồ sơ: các khóa ô tô khai giảng trong 15 ngày tới, có số ngày còn lại, sửa được, bấm Copy dán vào Zalo.

@@ -1,10 +1,10 @@
 {
-  "version": "2.5.0",
+  "version": "2.5.1",
   "date": "2026-10-19",
-  "notes": "Nhắc nhập máy thi TN trước bế giảng; thông báo Zalo nhắc GV nộp hồ sơ; tính ngày làm việc (T7, CN, lễ); sao lưu giữ 15 ngày làm việc",
+  "notes": "Thông báo Zalo: khung ảnh sinh động + nội dung gọn theo mẫu; giải thích (!) cho mọi mục Sao lưu & Cài đặt",
   "files": {
-    "app.html": "78ec074e054347d8a6f1e995400825732d3c575053e622fc20eabbfd013fc168",
-    "server.py": "b85945241efe977f8c6ab24f05c3d08cc3dcca3ebe3306ab98f4c2e6227fdcbb",
+    "app.html": "ea5b0eb9a184d9f799936d447414aca6211a01d4c6c3e6dd3b959ed4299e2620",
+    "server.py": "e4544200a046c33a6e54d43b11a95fcf7d2197a3c6f043b89788c14e0c7e8cc2",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"

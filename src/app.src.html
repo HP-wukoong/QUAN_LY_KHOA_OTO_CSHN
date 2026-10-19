@@ -75,6 +75,12 @@ table{border-collapse:collapse;width:100%}
 .tbl tr.near td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .c{text-align:center}
+.tip{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#e8a317;color:#fff;font:800 11px/1 Arial,sans-serif;cursor:help;margin-left:6px;vertical-align:middle;flex:none;box-shadow:0 0 0 2px #fff3d1;user-select:none}
+.tip:hover,.tip:focus{background:#c77d00;outline:none}
+#tipBox{position:fixed;z-index:9999;max-width:340px;background:#24324a;color:#fff;font-size:12.5px;line-height:1.5;padding:9px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;display:none;white-space:normal}
+#tipBox b{color:#ffd76a}
+.zprev{width:100%;border-radius:12px;box-shadow:0 6px 22px rgba(30,60,120,.18);display:block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;background:#fff;padding:5px 12px;font-size:13px;cursor:pointer}.seg button.on{background:var(--blue);color:#fff}
 .mono{white-space:nowrap;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px}
 .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
 .b-run{background:var(--green-l);color:#2e6b19}
@@ -246,7 +252,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.5.0';
+const APP_VER = 2, TOOL_VERSION = '2.5.1';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -426,6 +432,20 @@ function autoCloseKhoa() {
    ========================================================= */
 const hangOf = code => DB.hang.find(h => h.code === code) || { code, name: code, days: 70, minAge: 18 };
 const kCode = k => esc(`${k.hang}-${pad2(k.so)}`);
+/* Dấu "!" giải thích chức năng: rê chuột / bấm để xem */
+const tip = t => `<span class="tip" tabindex="0" role="button" aria-label="Giải thích" data-tip="${esc(t)}">!</span>`;
+(() => {
+  let box = null, cur = null;
+  const show = el => { box = box || Object.assign(document.body.appendChild(document.createElement('div')), { id: 'tipBox' }); box.innerHTML = el.dataset.tip.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); box.style.display = 'block';
+    const r = el.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight; let x = Math.min(window.innerWidth - w - 8, Math.max(8, r.left + r.width / 2 - w / 2)), y = r.bottom + 8; if (y + h > window.innerHeight - 8) y = r.top - h - 8; box.style.left = x + 'px'; box.style.top = y + 'px'; cur = el; };
+  const hide = () => { if (box) box.style.display = 'none'; cur = null; };
+  document.addEventListener('mouseover', e => { const t = e.target.closest?.('.tip'); if (t) show(t); });
+  document.addEventListener('mouseout', e => { if (e.target.closest?.('.tip')) hide(); });
+  document.addEventListener('focusin', e => { if (e.target.classList?.contains('tip')) show(e.target); });
+  document.addEventListener('focusout', e => { if (e.target.classList?.contains('tip')) hide(); });
+  document.addEventListener('click', e => { const t = e.target.closest?.('.tip'); if (t) { e.preventDefault(); e.stopPropagation(); cur === t ? hide() : show(t); } }, true);
+  window.addEventListener('scroll', hide, true);
+})();
 const khoaById = id => DB.khoa.find(k => k.id === id);
 const gvById = id => DB.gv.find(g => g.id === id);
 const hvOf = kid => DB.hv.filter(h => h.khoaId === kid);
@@ -789,7 +809,7 @@ function vHome(el) {
   ${homeBackupNote()}
   ${hsAlertHtml(hsAlerts(), true)}
   ${bgAlertHtml(bgAlerts(), true)}
-  ${(n => n ? `<div class="card note blue"><div class="row"><span>📣 <b>${n}</b> khóa ô tô khai giảng trong ${+DB.settings.zaloNgay || 15} ngày tới chưa chốt hồ sơ — gửi thông báo Zalo nhắc giáo viên nộp hồ sơ.</span><span class="sp"></span><button class="btn sm pri" id="hZc">📋 Copy thông báo Zalo</button><a href="#" data-go="lich" data-lt="zalo" class="small">Xem / sửa →</a></div></div>` : '')(zaloList(+DB.settings.zaloNgay || 15, true).length)}
+  ${(n => n ? `<div class="card note blue"><div class="row"><span>📣 <b>${n}</b> khóa ô tô khai giảng trong ${+DB.settings.zaloNgay || 15} ngày tới chưa chốt hồ sơ — gửi thông báo Zalo nhắc giáo viên nộp hồ sơ.</span><span class="sp"></span><button class="btn sm pri" id="hZi">🖼 Copy ảnh thông báo</button> <button class="btn sm" id="hZc">📋 Copy chữ</button><a href="#" data-go="lich" data-lt="zalo" class="small">Xem / sửa →</a></div></div>` : '')(zaloList(+DB.settings.zaloNgay || 15, true).length)}
   <div class="grid g4">
     ${stats.map(s => `<div class="card stat"><div class="k">${esc(s.h.name)}</div><div class="v">${s.n} <span class="small muted">khóa</span></div>
       <div class="d">Gần nhất: ${s.last ? `<a href="#" data-k="${s.last.id}">${kCode(s.last)}</a> (KG ${isoToVN(s.last.ngayKG)})` : '—'}<br>Đang học: <b>${s.run.length}</b> khóa · <b>${s.hv}</b> HV</div></div>`).join('')}
@@ -801,6 +821,7 @@ function vHome(el) {
   </div>
   <div class="card"><div class="row"><h2 style="margin:0">Khóa đang học &amp; sắp khai giảng</h2><span class="sp"></span><button class="btn pri" data-go="khoa" data-new="1">＋ Tạo khóa mới</button></div><div id="runT" style="margin-top:10px"></div></div>`;
   $('#hFind', el)?.addEventListener('click', findOldData);
+  $('#hZi', el)?.addEventListener('click', async () => { const r = await copyZaloImage(zaloList(+DB.settings.zaloNgay || 15, true)); DB.settings.zaloLast = new Date().toISOString(); persist(); toast(r === 'copy' ? 'Đã copy ảnh thông báo. Mở Zalo và dán (Ctrl+V).' : 'Đã tải ảnh PNG — gửi file này vào Zalo.', 'ok', 6000); });
   $('#hZc', el)?.addEventListener('click', async () => { const ok = await copyText(zaloText(zaloList(+DB.settings.zaloNgay || 15, true))); if (ok) { DB.settings.zaloLast = new Date().toISOString(); persist(); } toast(ok ? 'Đã copy thông báo. Mở Zalo và dán (Ctrl+V).' : 'Không copy được — mở mục Lịch KG–BG › Thông báo Zalo.', ok ? 'ok' : 'err'); });
   const todo = [];
   drafts.forEach(k => todo.push(`<div class="alert-li">📝 <span>Đang chọn GV dở cho <b>${kCode(k)}</b></span><span class="sp"></span><button class="btn sm pri" data-imp="${k.id}">Tiếp tục</button></div>`));
@@ -1509,11 +1530,78 @@ function zaloList(days, skipDone) {
   return DB.khoa.filter(k => k.ngayKG && k.ngayKG >= t && daysBetween(t, k.ngayKG) <= days && !isLocked(k) && (!skipDone || hsState(k) !== 'xong'))
     .map(k => ({ k, ...dueInfo(k.ngayKG, 5) })).sort((a, b) => a.k.ngayKG.localeCompare(b.k.ngayKG) || a.k.hang.localeCompare(b.k.hang) || a.k.so - b.k.so);
 }
-function zaloText(list) {
-  const ln = x => { const k = x.k, d = x.d; let s = `- Khóa ${k.so} ${hangOf(k.hang).name}: KG ${DOWF[dowOf(k.ngayKG)]} ${isoToVN(k.ngayKG)} – ${d === 0 ? 'khai giảng HÔM NAY' : d === 1 ? 'còn 1 ngày (ngày mai)' : `còn ${d} ngày`}`;
-    if (x.early) s += ` (⚠ ${isOff(k.ngayKG) ? 'KG vào ' + offWhy(k.ngayKG) : 'trước KG nghỉ ' + offWhy(addDays(k.ngayKG, -1))} → nộp HS trước ${DOWF[dowOf(x.han)]} ${isoToVN(x.han).slice(0, 5)})`;
-    return s; };
-  return `Thông báo các khóa khai giảng ô tô sắp tới :\n${list.length ? list.map(ln).join('\n') : '(không có khóa nào)'}\nGiáo viên có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập nhé .`;
+/* Tên hạng ngắn trong thông báo: BSS→Bss, BSTD→Bstđ, NHCE→CE … (sửa được) */
+function zTen(code) {
+  const m = DB.settings.zaloTen || {}; if (m[code]) return m[code];
+  if (code === 'BSS') return 'Bss'; if (code === 'BSTD') return 'Bstđ';
+  return /^NH./.test(code) ? code.slice(2) : code;
+}
+const zCode = k => `${zTen(k.hang)}-${k.so}`;
+const zUrg = x => x.dh <= 2 ? 'r' : x.dh <= 7 ? 'o' : 'g';           // theo số ngày tới hạn nộp (đã tính T7/CN/lễ)
+const zLine = x => `${zCode(x.k)} : KG ${DOWF[dowOf(x.k.ngayKG)]} _ ${isoToVN(x.k.ngayKG)} – ${x.d === 0 ? 'khai giảng hôm nay' : x.d === 1 ? 'còn 1 ngày (ngày mai)' : `còn ${x.d} ngày`}`;
+function zaloText(list, style) {
+  style = style || DB.settings.zaloStyle || 'vui';
+  if (style === 'gon') return `Thông báo các khóa khai giảng ô tô sắp tới :\n${list.length ? list.map(x => '- ' + zLine(x)).join('\n') : '(không có khóa nào)'}\nGiáo viên có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập nhé .`;
+  const dot = { r: '🔴', o: '🟠', g: '🟢' };
+  return `📢 THÔNG BÁO CÁC KHÓA KHAI GIẢNG Ô TÔ SẮP TỚI 🚗\n━━━━━━━━━━━━━━━\n${list.length ? list.map(x => `${dot[zUrg(x)]} ${zLine(x)}${zUrg(x) === 'r' ? ' ⏰' : ''}`).join('\n') : '(không có khóa nào)'}\n━━━━━━━━━━━━━━━\n📝 Kính nhờ quý Thầy/Cô có học viên trong các khóa trên nộp Hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.\n🙏 Em cảm ơn quý Thầy/Cô!`;
+}
+/* Khung thông báo dạng ẢNH (dán thẳng vào Zalo) */
+function zaloCanvas(list) {
+  const S = 2, W = 960, P = 40, RH = 92, n = Math.max(1, list.length);
+  const H = 200 + 46 + n * (RH + 14) + 150 + 40;
+  const c = document.createElement('canvas'); c.width = W * S; c.height = H * S; const g = c.getContext('2d'); g.scale(S, S);
+  const F = (w, z) => `${w} ${z}px "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  const U = { r: ['#d64541', '#fdecea', 'GẤP'], o: ['#e08a00', '#fff4dc', 'SẮP TỚI'], g: ['#3f9a52', '#e8f5ea', 'CÒN THỜI GIAN'] };
+  // nền
+  g.fillStyle = '#f4f7fc'; g.fillRect(0, 0, W, H);
+  // đầu thẻ
+  const hg = g.createLinearGradient(0, 0, W, 190); hg.addColorStop(0, '#1d4f9c'); hg.addColorStop(1, '#2f86d6'); g.fillStyle = hg; rr(0, 0, W, 190, 0); g.fill();
+  g.globalAlpha = .10; g.fillStyle = '#fff'; [[W - 90, 30, 110], [W - 210, 170, 70], [70, 175, 46]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); g.globalAlpha = 1;
+  // biểu tượng loa
+  g.fillStyle = '#ffd34d'; rr(P, 44, 76, 76, 20); g.fill();
+  g.fillStyle = '#1d4f9c'; g.beginPath(); g.moveTo(P + 20, 72); g.lineTo(P + 32, 72); g.lineTo(P + 52, 58); g.lineTo(P + 52, 106); g.lineTo(P + 32, 92); g.lineTo(P + 20, 92); g.closePath(); g.fill();
+  g.strokeStyle = '#1d4f9c'; g.lineWidth = 3.5; g.lineCap = 'round'; [8, 15].forEach(r => { g.beginPath(); g.arc(P + 54, 82, r, -0.7, 0.7); g.stroke(); });
+  g.fillStyle = '#fff'; g.font = F(800, 34); g.fillText('THÔNG BÁO KHAI GIẢNG', P + 100, 82);
+  g.font = F(500, 19); g.fillStyle = '#dce9ff'; g.fillText('Các khóa đào tạo lái xe ô tô sắp tới', P + 100, 112);
+  g.font = F(600, 15); g.fillStyle = '#ffffff'; const upd = `Cập nhật ${DOWF[dowOf(todayISO())]}, ${isoToVN(todayISO())}`; rr(P + 100, 130, g.measureText(upd).width + 26, 30, 15); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); g.fillStyle = '#fff'; g.fillText(upd, P + 113, 151);
+  // chú thích màu
+  let y = 222; g.font = F(600, 14); let lx = P;
+  Object.values(U).forEach(([col, , t]) => { g.fillStyle = col; g.beginPath(); g.arc(lx + 7, y - 5, 7, 0, 7); g.fill(); g.fillStyle = '#4a5872'; g.fillText(t, lx + 20, y); lx += g.measureText(t).width + 48; });
+  g.textAlign = 'right'; g.fillStyle = '#7a879c'; g.fillText(`${list.length} khóa`, W - P, y); g.textAlign = 'left';
+  y = 246;
+  if (!list.length) { g.font = F(500, 18); g.fillStyle = '#7a879c'; g.fillText('Không có khóa nào khai giảng trong thời gian tới.', P, y + 50); }
+  list.forEach(x => {
+    const [col, bg] = U[zUrg(x)];
+    g.save(); g.shadowColor = 'rgba(30,60,120,.10)'; g.shadowBlur = 14; g.shadowOffsetY = 4; g.fillStyle = '#fff'; rr(P, y, W - 2 * P, RH, 16); g.fill(); g.restore();
+    g.save(); rr(P, y, W - 2 * P, RH, 16); g.clip(); g.fillStyle = col; g.fillRect(P, y, 8, RH); g.restore();
+    // mã khóa
+    g.font = F(800, 24); const code = zCode(x.k); const cw = Math.max(120, g.measureText(code).width + 34);
+    g.fillStyle = '#eaf1fd'; rr(P + 26, y + 22, cw, 48, 12); g.fill(); g.fillStyle = '#1d4f9c'; g.textAlign = 'center'; g.fillText(code, P + 26 + cw / 2, y + 55); g.textAlign = 'left';
+    // ngày
+    const dx = P + 26 + cw + 26;
+    g.font = F(600, 14); g.fillStyle = '#7a879c'; g.fillText('KHAI GIẢNG', dx, y + 34);
+    g.font = F(700, 22); g.fillStyle = '#1f2a3d'; g.fillText(`${DOWF[dowOf(x.k.ngayKG)]}, ${isoToVN(x.k.ngayKG)}`, dx, y + 62);
+    if (x.early) { g.font = F(600, 14); g.fillStyle = '#d64541'; g.fillText(`Nộp hồ sơ trước ${DOWF[dowOf(x.han)]} ${isoToVN(x.han).slice(0, 5)} (vướng ngày nghỉ)`, dx, y + 82); }
+    // đếm ngược
+    const t1 = x.d === 0 ? 'HÔM NAY' : x.d === 1 ? 'NGÀY MAI' : String(x.d), t2 = x.d <= 1 ? 'khai giảng' : 'ngày nữa';
+    const bw = 138, bx = W - P - bw - 20; g.fillStyle = bg; rr(bx, y + 14, bw, RH - 28, 14); g.fill();
+    g.textAlign = 'center'; g.fillStyle = col; g.font = F(800, x.d <= 1 ? 22 : 30); g.fillText((x.d > 1 ? 'còn ' : '') + t1, bx + bw / 2, y + (x.d <= 1 ? 48 : 52)); g.font = F(600, 13); g.fillText(t2, bx + bw / 2, y + 70); g.textAlign = 'left';
+    y += RH + 14;
+  });
+  // lời nhắn
+  y += 6; g.fillStyle = '#fff8e1'; rr(P, y, W - 2 * P, 118, 16); g.fill(); g.strokeStyle = '#f3d27a'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#e8a317'; rr(P + 22, y + 24, 44, 44, 12); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(P + 33, y + 33, 22, 27); g.beginPath(); [40, 46, 52].forEach(yy => { g.moveTo(P + 38, y + yy); g.lineTo(P + 50, y + yy); }); g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#5b4300'; g.font = F(700, 19); g.fillText('Kính nhờ quý Thầy/Cô có học viên trong các khóa trên', P + 84, y + 44);
+  g.font = F(500, 18); g.fillText('nộp hồ sơ sớm để em nhập kịp tiến độ khai giảng ạ.', P + 84, y + 72);
+  g.font = F(700, 17); g.fillStyle = '#1d4f9c'; g.fillText('Em cảm ơn quý Thầy/Cô!', P + 84, y + 100);
+  g.font = F(500, 13); g.fillStyle = '#9aa6b8'; g.textAlign = 'center'; g.fillText(DB.settings.coSo || '', W / 2, H - 16); g.textAlign = 'left';
+  return c;
+}
+async function copyZaloImage(list) {
+  const c = zaloCanvas(list);
+  try { if (!window.ClipboardItem) throw 0; await navigator.clipboard.write([new ClipboardItem({ 'image/png': new Promise(r => c.toBlob(r, 'image/png')) })]); return 'copy'; }
+  catch { c.toBlob(b => downloadBlob(b, `ThongBao_KhaiGiang_${todayISO()}.png`), 'image/png'); return 'file'; }
 }
 async function copyText(txt) {
   try { await navigator.clipboard.writeText(txt); return true; } catch { }
@@ -1522,20 +1610,32 @@ async function copyText(txt) {
 }
 let zaloSkip = true;
 function zaloView(box) {
-  const N = +DB.settings.zaloNgay || 15; const list = zaloList(N, zaloSkip); const early = list.filter(x => x.early).length;
-  box.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">📣 Thông báo Zalo nhắc giáo viên nộp hồ sơ</h2><span class="sp"></span>
+  const N = +DB.settings.zaloNgay || 15; const list = zaloList(N, zaloSkip); const early = list.filter(x => x.early).length; const st = DB.settings.zaloStyle || 'vui';
+  const hangs = [...new Set(DB.khoa.map(k => k.hang))];
+  box.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">📣 Thông báo Zalo nhắc giáo viên nộp hồ sơ</h2>${tip('Tạo thông báo gửi nhóm Zalo giáo viên: các khóa ô tô khai giảng trong **N ngày tới** tính từ hôm nay.\nCó 2 cách gửi: **ảnh khung thông báo** (bắt mắt, dán thẳng vào Zalo) và **nội dung chữ**. Nên gửi ảnh trước rồi dán chữ bên dưới.')}<span class="sp"></span>
     <label class="small">Khóa KG trong <input type="number" class="in" id="zN" value="${N}" min="1" max="60" style="width:64px;padding:4px 6px"> ngày tới</label>
-    <label class="small"><input type="checkbox" id="zS" ${zaloSkip ? 'checked' : ''}> Bỏ khóa đã chốt hồ sơ</label></div>
-    <p class="small muted" style="margin:6px 0 10px">Tính từ hôm nay ${dayVN(todayISO())}. ${early ? `<b style="color:var(--red)">${early} khóa</b> khai giảng vào/ngay sau ngày nghỉ (T7, CN, lễ) — đã ghi hạn nộp sớm hơn trong nội dung.` : 'Không có khóa nào vướng ngày nghỉ.'} Sửa trực tiếp trong ô bên dưới nếu cần rồi bấm Copy.</p>
-    <div class="grid" style="grid-template-columns:1.3fr 1fr;gap:14px;align-items:start">
-      <div><textarea class="in" id="zT" style="width:100%;min-height:260px;font-size:14px;line-height:1.5">${esc(zaloText(list))}</textarea>
-        <div class="row" style="margin-top:8px"><button class="btn pri" id="zC">📋 Copy nội dung</button><button class="btn" id="zR">↺ Tạo lại</button><span class="sp"></span><span class="small muted" id="zM">${DB.settings.zaloLast ? 'Copy lần cuối: ' + fmtT(DB.settings.zaloLast) : ''}</span></div></div>
-      <div class="tbl"><table><thead><tr><th>Khóa</th><th>Khai giảng</th><th class="num">Còn</th><th>Hạn HS</th><th>Hồ sơ</th></tr></thead><tbody>
-      ${list.map(x => `<tr style="${x.early ? 'box-shadow:inset 4px 0 0 var(--red)' : ''}"><td><a href="#" data-k="${x.k.id}" class="hang">${kCode(x.k)}</a></td><td>${dayVN(x.k.ngayKG)}${isOff(x.k.ngayKG) ? `<div class="small" style="color:var(--red)">${esc(offWhy(x.k.ngayKG))}</div>` : ''}</td><td class="num">${x.d}</td><td>${x.early ? `<b style="color:var(--red)">${dayVN(x.han)}</b>` : dayVN(x.han)}</td><td>${hsBadge(x.k)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-st">Không có khóa khai giảng trong khoảng này.</td></tr>'}</tbody></table></div></div></div>`;
+    <label class="small"><input type="checkbox" id="zS" ${zaloSkip ? 'checked' : ''}> Bỏ khóa đã chốt hồ sơ</label>${tip('Khóa đã tick đủ ① thông tin + ② ảnh thì không cần nhắc giáo viên nữa.')}</div>
+    <p class="small muted" style="margin:6px 0 12px">Hôm nay ${dayVN(todayISO())} · <b>${list.length}</b> khóa. Màu: 🔴 gấp · 🟠 sắp tới · 🟢 còn thời gian — tính theo hạn nộp, đã trừ T7, CN, ngày lễ.${early ? ` <b style="color:var(--red)">${early} khóa</b> vướng ngày nghỉ nên được tô màu gấp hơn và ghi hạn nộp sớm trên ảnh.` : ''}</p>
+    <div class="grid" style="grid-template-columns:1.05fr 1fr;gap:18px;align-items:start">
+      <div><div class="row" style="margin-bottom:8px"><b>🖼 Khung thông báo (ảnh)</b>${tip('Bấm **Copy ảnh** rồi vào Zalo bấm **Ctrl+V** là dán được ảnh.\nNếu máy không cho copy ảnh, tool sẽ tải file PNG về để bạn gửi.')}<span class="sp"></span><button class="btn pri" id="zI">🖼 Copy ảnh</button><button class="btn" id="zD">⬇ Tải PNG</button></div>
+        <img class="zprev" id="zP" alt="Khung thông báo"></div>
+      <div><div class="row" style="margin-bottom:8px"><b>✍ Nội dung chữ</b>${tip('**Sinh động**: có biểu tượng màu, lời nhắn lịch sự.\n**Gọn**: đúng mẫu ngắn, không biểu tượng.\nSửa trực tiếp trong ô rồi bấm Copy.')}<span class="sp"></span><span class="seg"><button data-zs="vui" class="${st === 'vui' ? 'on' : ''}">Sinh động</button><button data-zs="gon" class="${st === 'gon' ? 'on' : ''}">Gọn</button></span></div>
+        <textarea class="in" id="zT" style="width:100%;min-height:250px;font-size:14px;line-height:1.6">${esc(zaloText(list, st))}</textarea>
+        <div class="row" style="margin-top:8px"><button class="btn pri" id="zC">📋 Copy chữ</button><button class="btn" id="zR">↺ Tạo lại</button><span class="sp"></span><span class="small muted" id="zM">${DB.settings.zaloLast ? 'Gửi lần cuối: ' + fmtT(DB.settings.zaloLast) : ''}</span></div>
+        <details style="margin-top:12px"><summary class="small" style="cursor:pointer">Tên hạng hiển thị trong thông báo</summary>${tip('Tên ngắn đứng trước số khóa, vd **Bss**-23, **Bstđ**-29, **CE**-40. Sửa xong bấm ra ngoài là lưu.')}
+          <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px">${hangs.map(h => `<label class="f small">${esc(h)}<input class="in" data-zt="${esc(h)}" value="${esc(zTen(h))}"></label>`).join('')}</div></details></div></div>
+    <div class="tbl" style="margin-top:16px"><table><thead><tr><th>Khóa</th><th>Khai giảng</th><th class="num">Còn</th><th>Hạn nhập HS</th><th>Hồ sơ</th></tr></thead><tbody>
+      ${list.map(x => `<tr style="box-shadow:inset 4px 0 0 ${{ r: 'var(--red)', o: 'var(--amber)', g: 'var(--green)' }[zUrg(x)]}"><td><a href="#" data-k="${x.k.id}" class="hang">${kCode(x.k)}</a> <span class="small muted">${esc(zCode(x.k))}</span></td><td>${dayVN(x.k.ngayKG)}${isOff(x.k.ngayKG) ? `<div class="small" style="color:var(--red)">${esc(offWhy(x.k.ngayKG))}</div>` : ''}</td><td class="num">${x.d}</td><td>${x.early ? `<b style="color:var(--red)">${dayVN(x.han)}</b>` : dayVN(x.han)}</td><td>${hsBadge(x.k)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-st">Không có khóa khai giảng trong khoảng này.</td></tr>'}</tbody></table></div></div>`;
+  $('#zP', box).src = zaloCanvas(list).toDataURL('image/png');
+  const sent = m => { DB.settings.zaloLast = new Date().toISOString(); persist(); $('#zM', box).textContent = m; };
   $('#zN', box).onchange = e => { DB.settings.zaloNgay = Math.min(60, Math.max(1, +e.target.value || 15)); commit('Thông báo Zalo: ' + DB.settings.zaloNgay + ' ngày'); render(); };
   $('#zS', box).onchange = e => { zaloSkip = e.target.checked; render(); };
-  $('#zR', box).onclick = () => { $('#zT', box).value = zaloText(zaloList(N, zaloSkip)); };
-  $('#zC', box).onclick = async () => { const ok = await copyText($('#zT', box).value); if (ok) { DB.settings.zaloLast = new Date().toISOString(); persist(); $('#zM', box).textContent = 'Đã copy — dán vào nhóm Zalo (Ctrl+V)'; toast('Đã copy. Mở Zalo và dán (Ctrl+V).', 'ok'); } else { $('#zT', box).select(); toast('Không copy tự động được — đã bôi đen, bấm Ctrl+C.', 'err'); } };
+  $$('[data-zs]', box).forEach(b => b.onclick = () => { DB.settings.zaloStyle = b.dataset.zs; persist(); render(); });
+  $$('[data-zt]', box).forEach(i => i.onchange = () => { DB.settings.zaloTen = { ...(DB.settings.zaloTen || {}), [i.dataset.zt]: i.value.trim() || zTen(i.dataset.zt) }; commit('Tên hạng trong thông báo: ' + i.dataset.zt + ' → ' + i.value.trim()); render(); });
+  $('#zR', box).onclick = () => { $('#zT', box).value = zaloText(zaloList(N, zaloSkip), st); };
+  $('#zC', box).onclick = async () => { const ok = await copyText($('#zT', box).value); if (ok) { sent('Đã copy chữ — dán vào Zalo (Ctrl+V)'); toast('Đã copy nội dung. Mở Zalo và dán (Ctrl+V).', 'ok'); } else { $('#zT', box).select(); toast('Không copy tự động được — đã bôi đen, bấm Ctrl+C.', 'err'); } };
+  $('#zI', box).onclick = async () => { const r = await copyZaloImage(list); sent(r === 'copy' ? 'Đã copy ảnh — dán vào Zalo (Ctrl+V)' : 'Đã tải ảnh PNG'); toast(r === 'copy' ? 'Đã copy ảnh thông báo. Mở Zalo và dán (Ctrl+V).' : 'Máy không cho copy ảnh — đã tải file PNG, gửi file này vào Zalo.', 'ok', 6000); };
+  $('#zD', box).onclick = () => zaloCanvas(list).toBlob(b => downloadBlob(b, `ThongBao_KhaiGiang_${todayISO()}.png`), 'image/png');
 }
 /* ---- Ngày nghỉ lễ (sửa được) ---- */
 async function editNghi() {
@@ -1993,57 +2093,58 @@ async function vBackup(el) {
   const extraT = d => ((P.extra || []).find(x => x.dir === d) || {}).target || d;
   const pathRows = [['Thư mục tool', P.tool], ['File dữ liệu (đang dùng)', P.db], ['Thư mục sao lưu chính', P.backupRoot], ['• Hằng ngày', P.daily], ['• Theo tháng', P.monthly], ['• Excel tổng hợp', P.excel], ['• Trước khi khôi phục', P.preRestore],
     ...(P.extra || []).map(x => ['Sao lưu phụ', x.target, x.ok]), ['File cài đặt', P.config], ['Nhật ký máy chủ', P.log]];
+  const PT_TIP = {"Thư mục tool": "Nơi cài tool (chương trình). Đừng xóa thư mục này khi đang dùng.", "File dữ liệu (đang dùng)": "File chứa **toàn bộ dữ liệu** đang dùng: khóa, học viên, giáo viên, mã ĐKI, cài đặt. Đây là file quan trọng nhất — không sửa, không xóa tay.", "Thư mục sao lưu chính": "Thư mục gốc chứa các bản sao lưu tự động. Đổi được ở ô \"Thư mục sao lưu chính\" bên dưới.", "• Hằng ngày": "Bản sao lưu trong ngày (1 bản đầu ngày + bản mới nhất). Chỉ giữ trong **N ngày làm việc gần nhất** (cài ở mục Thư mục sao lưu phụ), cũ hơn tự xóa.", "• Theo tháng": "Mỗi tháng giữ 1 bản — để cứu dữ liệu khi phát hiện lỗi muộn (vài tuần sau).", "• Excel tổng hợp": "Các file Excel tổng hợp đã xuất — mở bằng Excel để xem/in, không dùng để khôi phục.", "• Trước khi khôi phục": "Mỗi lần khôi phục / quay về phiên bản cũ, tool chép bản đang dùng vào đây trước → **lỡ khôi phục nhầm vẫn lấy lại được**.", "Sao lưu phụ": "Thư mục phụ (Drive/USB) nhận bản chép thêm của mỗi bản sao lưu.", "File cài đặt": "File config.json: cổng, thư mục sao lưu, mã đơn vị, PIN (đã mã hóa)… Thường không cần mở.", "Nhật ký máy chủ": "File ghi lại hoạt động của tool (khởi động, sao lưu, lỗi). Gửi file này cho người hỗ trợ khi tool gặp lỗi."};
   const files = info.files || [];
   const kindName = { 'hang-ngay': 'Hằng ngày', 'theo-thang': 'Theo tháng', 'truoc-khi-khoi-phuc': 'Trước khi khôi phục', excel: 'Excel tổng hợp' };
-  el.innerHTML = `<h1>Sao lưu &amp; Cài đặt</h1><p class="sub">Dữ liệu chính: <span class="mono">${esc(info.db)}</span></p>
+  el.innerHTML = `<h1>Sao lưu &amp; Cài đặt</h1><p class="sub">Rê chuột hoặc bấm vào dấu <span class="tip" style="cursor:default">!</span> để xem giải thích từng mục. · Dữ liệu chính: <span class="mono">${esc(info.db)}</span></p>
   <div class="grid g4">
-    <div class="card stat" style="border-color:${netErr ? 'var(--red)' : 'var(--green)'}"><div class="k">Lưu dữ liệu</div><div class="v" style="font-size:18px">${netErr ? 'Mất kết nối' : 'Bản #' + serverRev}</div><div class="d">${netErr ? esc(netErr) : 'Mỗi thay đổi = 1 phiên bản, giữ ' + (cfg.giu_so_phien_ban || 400) + ' bản gần nhất'}</div></div>
-    <div class="card stat"><div class="k">Sao lưu gần nhất</div><div class="v" style="font-size:18px">${fmtT(lb.t)}</div><div class="d">${(lb.paths || []).length ? (lb.paths || []).map(x => `<span class="mono" title="${esc(x)}">${esc(x.split(/[\\/]/).pop())}</span>`).join('<br>') + '<br><span class="small">(xem đường dẫn đầy đủ ở bảng bên dưới)</span>' : 'Tự động mỗi 10 phút khi có thay đổi + 1 bản đầu ngày + 1 bản mỗi tháng'}</div></div>
-    <div class="card stat" style="border-color:${v.ok ? 'var(--green)' : v.ok === false ? 'var(--red)' : 'var(--amber)'}"><div class="k">Kiểm tra khôi phục</div><div class="v" style="font-size:18px">${v.ok ? '✓ Khôi phục được' : v.ok === false ? '✗ LỖI' : 'Chưa kiểm tra'}</div><div class="d">${v.t ? `${fmtT(v.t)} · ${v.nk ?? '?'} khóa, ${v.nh ?? '?'} HV<br><span class="mono" title="${esc(v.path || '')}">${esc(v.file || '')}</span>` : 'Tự kiểm tra mỗi 30 ngày'}</div></div>
-    <div class="card stat" style="border-color:${(info.extraStatus || []).some(x => x.ok) ? 'var(--green)' : 'var(--amber)'}"><div class="k">Thư mục sao lưu phụ</div><div class="v" style="font-size:18px">${(info.extraStatus || []).filter(x => x.ok).length}/${(info.extra || []).length}</div><div class="d">${(info.extra || []).length ? 'đang kết nối được' : 'Chưa cài — nên thêm Drive/USB'}</div></div>
+    <div class="card stat" style="border-color:${netErr ? 'var(--red)' : 'var(--green)'}"><div class="k">Lưu dữ liệu${tip('Mọi thay đổi được lưu **ngay lập tức** vào file dữ liệu trên máy (data\\qlkhoa.db).\nMỗi lần lưu tạo 1 **phiên bản** (#số) — xem và quay về ở bảng "Lịch sử phiên bản" bên dưới.\nViền **đỏ / Mất kết nối**: cửa sổ máy chủ của tool đã bị tắt — dữ liệu tạm giữ trong trình duyệt, mở lại tool là tự gửi lên.')}</div><div class="v" style="font-size:18px">${netErr ? 'Mất kết nối' : 'Bản #' + serverRev}</div><div class="d">${netErr ? esc(netErr) : 'Mỗi thay đổi = 1 phiên bản, giữ ' + (cfg.giu_so_phien_ban || 400) + ' bản gần nhất'}</div></div>
+    <div class="card stat"><div class="k">Sao lưu gần nhất${tip('Tool **tự chép** cả file dữ liệu ra thư mục sao lưu: mỗi 10 phút khi có thay đổi, 1 bản đầu ngày và 1 bản mỗi tháng.\nĐây là "bản dự phòng" để cứu dữ liệu khi máy hỏng, xóa nhầm, nhập nhầm file.')}</div><div class="v" style="font-size:18px">${fmtT(lb.t)}</div><div class="d">${(lb.paths || []).length ? (lb.paths || []).map(x => `<span class="mono" title="${esc(x)}">${esc(x.split(/[\\/]/).pop())}</span>`).join('<br>') + '<br><span class="small">(xem đường dẫn đầy đủ ở bảng bên dưới)</span>' : 'Tự động mỗi 10 phút khi có thay đổi + 1 bản đầu ngày + 1 bản mỗi tháng'}</div></div>
+    <div class="card stat" style="border-color:${v.ok ? 'var(--green)' : v.ok === false ? 'var(--red)' : 'var(--amber)'}"><div class="k">Kiểm tra khôi phục${tip('Tool mở thử bản sao lưu mới nhất để chắc chắn nó **đọc được và đủ dữ liệu** (số khóa, số học viên).\n**✓ Khôi phục được** = yên tâm. **✗ LỖI** = bấm "Sao lưu ngay" rồi kiểm tra lại; nếu vẫn lỗi thì báo người hỗ trợ.\nTự kiểm tra mỗi 30 ngày.')}</div><div class="v" style="font-size:18px">${v.ok ? '✓ Khôi phục được' : v.ok === false ? '✗ LỖI' : 'Chưa kiểm tra'}</div><div class="d">${v.t ? `${fmtT(v.t)} · ${v.nk ?? '?'} khóa, ${v.nh ?? '?'} HV<br><span class="mono" title="${esc(v.path || '')}">${esc(v.file || '')}</span>` : 'Tự kiểm tra mỗi 30 ngày'}</div></div>
+    <div class="card stat" style="border-color:${(info.extraStatus || []).some(x => x.ok) ? 'var(--green)' : 'var(--amber)'}"><div class="k">Thư mục sao lưu phụ${tip('Số thư mục phụ (Google Drive, OneDrive, USB…) đang kết nối được / tổng số đã cài.\nCó thư mục phụ thì **máy hỏng ổ cứng vẫn còn dữ liệu** ở nơi khác. Nên cài ít nhất 1.')}</div><div class="v" style="font-size:18px">${(info.extraStatus || []).filter(x => x.ok).length}/${(info.extra || []).length}</div><div class="d">${(info.extra || []).length ? 'đang kết nối được' : 'Chưa cài — nên thêm Drive/USB'}</div></div>
   </div>
-  <div class="card"><div class="row"><h2 style="margin:0">Thao tác</h2></div>
-    <div class="row" style="margin-top:10px"><button class="btn pri" id="bNow">💾 Sao lưu ngay</button><button class="btn" id="bVerify">🔍 Kiểm tra khôi phục ngay</button><button class="btn" id="bDl">⬇ Tải bản sao lưu (.json)</button><button class="btn" id="bUp">⬆ Khôi phục từ file .db / .json…</button><button class="btn" id="bFind">🔎 Tìm dữ liệu cũ trên máy</button><button class="btn ok" id="bXl">⬇ Xuất Excel tổng hợp</button></div>
+  <div class="card"><div class="row"><h2 style="margin:0">Thao tác</h2>${tip('Các nút thao tác nhanh với dữ liệu. Rê chuột vào dấu ! cạnh từng nút để xem chi tiết.')}</div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="bNow">💾 Sao lưu ngay</button>${tip('Tạo ngay 1 bản sao lưu (kể cả khi vừa sao lưu). Nên bấm **trước khi làm việc lớn**: nhập file, xóa nhiều, cập nhật tool.')}<button class="btn" id="bVerify">🔍 Kiểm tra khôi phục ngay</button>${tip('Sao lưu ngay rồi mở thử bản đó để chắc chắn **khôi phục được**.')}<button class="btn" id="bDl">⬇ Tải bản sao lưu (.json)</button>${tip('Tải toàn bộ dữ liệu về 1 file .json (vào thư mục Downloads). Dùng để **mang sang máy khác** hoặc cất riêng.')}<button class="btn" id="bUp">⬆ Khôi phục từ file .db / .json…</button>${tip('Chọn file **.db** (vd data\\qlkhoa.db, backups\\hang-ngay\\QLKhoaOto-….db) hoặc **.json** để đưa dữ liệu cũ vào tool.\nTrước khi khôi phục, tool tự lưu bản hiện tại vào "Trước khi khôi phục" → luôn quay lại được.')}<button class="btn" id="bFind">🔎 Tìm dữ liệu cũ trên máy</button>${tip('Tool tự quét Desktop, Documents, Downloads và các ổ D:, E:… để tìm **dữ liệu của bản cũ / thư mục cũ**, rồi cho chọn bản muốn nạp.')}<button class="btn ok" id="bXl">⬇ Xuất Excel tổng hợp</button>${tip('Xuất 1 file Excel tổng hợp mọi khóa và học viên (cũng được lưu 1 bản vào thư mục sao lưu "Excel tổng hợp").')}</div>
     <div class="drop small" id="bDrop" style="padding:14px;margin-top:12px">Kéo thả file Excel cũ <b>QUAN_LY_KHOA_DAO_TAO.xlsm</b> hoặc file sao lưu <b>.db</b> / <b>.json</b> (vd. <span class="mono">data\\qlkhoa.db</span>, <span class="mono">backups\\hang-ngay\\QLKhoaOto-….db</span>) vào đây để chuyển dữ liệu sang</div>
     <div id="bRes"></div></div>
-  <div class="card"><div class="row"><h2 style="margin:0">📁 Đường dẫn dữ liệu &amp; sao lưu</h2><span class="sp"></span><span class="small muted">Máy <b>${esc(P.host)}</b> · Mã đơn vị <b>${esc(P.maDonVi)}</b> · ID bản cài <b class="mono">${esc(P.instance)}</b></span></div>
-    <div class="tbl" style="margin-top:10px"><table><tbody>${pathRows.map(([lb, pth, ok]) => `<tr><td style="width:210px"><b>${lb}</b></td><td class="mono small" style="white-space:normal;word-break:break-all">${esc(pth)}${ok === false ? ' <span class="badge b-miss">không thấy</span>' : ''}</td><td style="white-space:nowrap;width:150px">${pathBtns(pth)}</td></tr>`).join('')}</tbody></table></div>
-    <div class="grid" style="grid-template-columns:1fr 2fr auto;gap:10px;margin-top:12px;align-items:end"><label class="f">Mã đơn vị (trong tên file)<input class="in" id="cMa" value="${esc(cfg.ma_don_vi || 'CSHN')}"></label><label class="f">Thư mục sao lưu chính (để trống = <span class="mono">${esc(P.tool)}\backups</span>)<input class="in" id="cRoot" value="${esc(cfg.thu_muc_sao_luu || '')}" placeholder="vd D:\SaoLuu_QLKhoaOto"></label><button class="btn pri" id="cPathSave">Lưu</button></div>
+  <div class="card"><div class="row"><h2 style="margin:0">📁 Đường dẫn dữ liệu &amp; sao lưu</h2>${tip('Nơi tool lưu từng loại file trên máy. Nút **📂 Mở** mở thư mục trong Windows Explorer, nút **📋** copy đường dẫn.\n**Mã đơn vị** và **ID bản cài** nằm trong tên/nhãn file sao lưu để không nhầm với file của máy hay đơn vị khác.')}<span class="sp"></span><span class="small muted">Máy <b>${esc(P.host)}</b> · Mã đơn vị <b>${esc(P.maDonVi)}</b> · ID bản cài <b class="mono">${esc(P.instance)}</b></span></div>
+    <div class="tbl" style="margin-top:10px"><table><tbody>${pathRows.map(([lb, pth, ok]) => `<tr><td style="width:230px"><b>${lb}</b>${PT_TIP[lb] ? tip(PT_TIP[lb]) : ''}</td><td class="mono small" style="white-space:normal;word-break:break-all">${esc(pth)}${ok === false ? ' <span class="badge b-miss">không thấy</span>' : ''}</td><td style="white-space:nowrap;width:150px">${pathBtns(pth)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="grid" style="grid-template-columns:1fr 2fr auto;gap:10px;margin-top:12px;align-items:end"><label class="f"><span>Mã đơn vị (trong tên file)${tip('Mã ngắn của đơn vị, vd **CSHN**. Có mặt trong tên mọi file sao lưu (QLKhoaOto-CSHN_ngày.db) để nhìn tên là biết file của đơn vị nào.')}</span><input class="in" id="cMa" value="${esc(cfg.ma_don_vi || 'CSHN')}"></label><label class="f"><span>Thư mục sao lưu chính ${tip('Muốn để bản sao lưu ở ổ khác (vd **D:\\SaoLuu_QLKhoaOto**) để cài lại Windows không mất, thì gõ đường dẫn rồi bấm Lưu. Bản cũ vẫn nằm ở chỗ cũ.')} <span class="small muted">— để trống = <span class="mono">${esc(P.tool)}\\backups</span></span></span><input class="in" id="cRoot" value="${esc(cfg.thu_muc_sao_luu || '')}" placeholder="vd D:\\SaoLuu_QLKhoaOto"></label><button class="btn pri" id="cPathSave">Lưu</button></div>
     <p class="small muted">Mỗi thư mục sao lưu có file <b>_THONG_TIN_SAO_LUU.txt</b> ghi rõ: tool nào, mã đơn vị, ID bản cài, máy tính, file dữ liệu gốc → nhìn vào là biết, không nhầm với file khác.</p></div>
   <div class="grid g2">
-  <div class="card"><h2>Thư mục sao lưu phụ</h2><p class="small muted">Mỗi bản sao lưu được chép thêm vào các thư mục này (thư mục con <b>QLKhoaOto_SaoLuu</b>). Gõ đường dẫn, mỗi dòng 1 thư mục — vd <span class="mono">G:\\My Drive\\SaoLuu</span> hoặc ổ USB <span class="mono">E:\\</span>.</p>
+  <div class="card"><h2>Thư mục sao lưu phụ${tip('Mỗi lần sao lưu, tool **chép thêm** 1 bản vào các thư mục ở đây.\nNên chọn thư mục Google Drive / OneDrive đã đồng bộ trên máy (dữ liệu lên mây) hoặc ổ USB.\n⚠ Thư mục phải là ổ/thư mục trên máy này; USB chưa cắm thì bỏ qua lần đó.')}</h2><p class="small muted">Mỗi bản sao lưu được chép thêm vào các thư mục này (thư mục con <b>QLKhoaOto_SaoLuu</b>). Gõ đường dẫn, mỗi dòng 1 thư mục — vd <span class="mono">G:\\My Drive\\SaoLuu</span> hoặc ổ USB <span class="mono">E:\\</span>.</p>
     <textarea class="in" id="cExtra" rows="3" style="width:100%">${esc((cfg.thu_muc_sao_luu_phu || []).join('\n'))}</textarea>
     <div class="small" style="margin:6px 0">${(info.extraStatus || []).map(x => `<div>${x.ok ? '✅' : '⚠️'} <span class="mono">${esc(x.dir)}</span> ${x.ok ? `→ <span class="mono">${esc(extraT(x.dir))}</span> ${pathBtns(extraT(x.dir))}` : '— không thấy (chưa cắm USB/Drive?)'}</div>`).join('')}</div>
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px"><label class="f">Giữ bản sao lưu (ngày làm việc gần nhất — cũ hơn tự xóa)<input class="in" type="number" id="cDay" value="${cfg.giu_ngay_lam_viec || 15}"></label><label class="f">Giữ bản theo tháng (tháng)<input class="in" type="number" id="cMon" value="${cfg.giu_ban_theo_thang}"></label></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px"><label class="f"><span>Giữ bản sao lưu (ngày làm việc)${tip('Bản sao lưu hằng ngày, Excel tổng hợp, "trước khi khôi phục" chỉ giữ trong **N ngày làm việc gần nhất** (không tính T7, CN, ngày lễ); cũ hơn tự xóa để tiết kiệm dung lượng.\nLuôn giữ tối thiểu 5 bản mới nhất dù cũ. Mặc định **15**.')}</span><input class="in" type="number" id="cDay" value="${cfg.giu_ngay_lam_viec || 15}"></label><label class="f"><span>Giữ bản theo tháng (tháng)${tip('Số bản theo tháng được giữ (mỗi tháng 1 file, thường dưới 1 MB). Mặc định **12** — đủ quay lại dữ liệu của 1 năm.')}</span><input class="in" type="number" id="cMon" value="${cfg.giu_ban_theo_thang}"></label></div>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="cSave">Lưu cài đặt sao lưu</button></div></div>
-  <div class="card"><h2>Bảo mật</h2>
+  <div class="card"><h2>Bảo mật${tip('Tool chứa thông tin cá nhân học viên (CCCD, ngày sinh, địa chỉ) — nên đặt **mã PIN** để người khác ngồi vào máy không xem được.')}</h2>
     <p class="small">${cfg._needPin ? '🔒 Đang bật mã PIN.' : '🔓 Chưa đặt mã PIN — ai mở máy cũng xem được CCCD, địa chỉ học viên.'}</p>
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">${cfg._needPin ? '<label class="f">PIN hiện tại<input class="in" type="password" id="pOld"></label>' : ''}<label class="f">PIN mới (để trống = bỏ PIN)<input class="in" type="password" id="pNew"></label>
-    <label class="f">Tự khóa sau (phút không dùng)<input class="in" type="number" id="cIdle" value="${cfg.khoa_man_hinh_sau_phut}"></label></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">${cfg._needPin ? '<label class="f">PIN hiện tại<input class="in" type="password" id="pOld"></label>' : ''}<label class="f"><span>PIN mới (để trống = bỏ PIN)${tip('Tối thiểu 4 ký tự. Mở tool hoặc sau thời gian không dùng sẽ phải nhập PIN.\n⚠ **Nhớ kỹ PIN** — quên phải nhờ người hỗ trợ xóa trong file cài đặt.')}</span><input class="in" type="password" id="pNew"></label>
+    <label class="f"><span>Tự khóa sau (phút không dùng)${tip('Không thao tác quá số phút này thì tool tự khóa, cần nhập PIN để mở (chỉ khi đã đặt PIN).')}</span><input class="in" type="number" id="cIdle" value="${cfg.khoa_man_hinh_sau_phut}"></label></div>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="pSave">Lưu mã PIN</button><button class="btn" id="cIdleSave">Lưu thời gian tự khóa</button></div>
     <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
-    <label class="small"><input type="checkbox" id="cLan" ${cfg.cho_phep_mang_noi_bo ? 'checked' : ''}> Cho máy khác trong mạng nội bộ dùng chung (bắt buộc có PIN, cần mở lại tool)</label>
+    <label class="small"><input type="checkbox" id="cLan" ${cfg.cho_phep_mang_noi_bo ? 'checked' : ''}> Cho máy khác trong mạng nội bộ dùng chung (bắt buộc có PIN, cần mở lại tool)</label>${tip('Bật thì máy khác cùng mạng (cùng wifi/LAN cơ quan) mở trình duyệt vào địa chỉ hiện bên dưới để **dùng chung 1 dữ liệu**. Tắt = chỉ máy này dùng.\nPhải đặt PIN trước. Dữ liệu chỉ nằm trên máy này.')}
     ${cfg.cho_phep_mang_noi_bo ? `<p class="small">Máy khác mở: ${(cfg._ips || []).map(ip => `<span class="mono">http://${esc(ip)}:${cfg.port}/</span>`).join(', ')}</p>` : ''}
   </div></div>
-  <div class="card"><div class="row"><h2 style="margin:0">Các bản sao lưu</h2><span class="sp"></span><select class="in" id="fKind"><option value="">Mọi loại</option>${Object.entries(kindName).map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select><input class="in" id="fName" placeholder="Lọc tên / ngày (vd 2026-10)…" style="width:200px"></div>
+  <div class="card"><div class="row"><h2 style="margin:0">Các bản sao lưu</h2>${tip('Danh sách mọi file sao lưu hiện có.\n**🔍** nhận dạng file (của bản cài nào, lưu lúc nào, bao nhiêu khóa/HV, file có lỗi không).\n**Khôi phục** đưa dữ liệu về đúng thời điểm của file đó (bản hiện tại được cất vào "Trước khi khôi phục").\nNhãn **file khác?** = tên không có mã đơn vị này, có thể là file của máy khác.')}<span class="sp"></span><select class="in" id="fKind"><option value="">Mọi loại</option>${Object.entries(kindName).map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select><input class="in" id="fName" placeholder="Lọc tên / ngày (vd 2026-10)…" style="width:200px"></div>
     <div class="tbl" style="max-height:420px;margin-top:10px" id="bkT"></div>
     <p class="small muted">Tên file luôn có mã đơn vị <b>${esc(P.maDonVi)}</b> (vd <span class="mono">QLKhoaOto-${esc(P.maDonVi)}_${todayISO()}.db</span>). Bấm 🔍 để nhận dạng file: của bản cài nào (ID <b>${esc(P.instance)}</b>), lưu lúc nào, bao nhiêu khóa/học viên.</p></div>
-  <div class="card"><h2>Lịch sử phiên bản (mỗi lần lưu)</h2><div class="tbl" style="max-height:300px"><table><thead><tr><th class="num">Bản</th><th>Thời điểm</th><th>Máy</th><th>Nội dung</th><th class="num">Khóa</th><th class="num">HV</th><th></th></tr></thead><tbody>
+  <div class="card"><h2>Lịch sử phiên bản (mỗi lần lưu)${tip('Mỗi thay đổi (nhập HV, sửa, xóa…) là 1 phiên bản, ghi rõ máy nào, làm gì.\n**Quay về** = đưa toàn bộ dữ liệu về đúng lúc đó — dùng khi lỡ tay xóa/nhập nhầm. Bản hiện tại vẫn được giữ lại để quay tiếp nếu cần.')}</h2><div class="tbl" style="max-height:300px"><table><thead><tr><th class="num">Bản</th><th>Thời điểm</th><th>Máy</th><th>Nội dung</th><th class="num">Khóa</th><th class="num">HV</th><th></th></tr></thead><tbody>
     ${revs.map(r => `<tr><td class="num">#${r.rev}</td><td>${fmtT(r.saved_at)}</td><td class="small">${esc(r.device === DEVICE ? 'máy này' : r.device)}</td><td class="small">${esc(r.reason || '')}</td><td class="num">${r.nk}</td><td class="num">${r.nh}</td><td>${r.rev !== serverRev ? `<button class="btn sm" data-rev="${r.rev}">Quay về</button>` : '<span class="badge b-run">hiện tại</span>'}</td></tr>`).join('')}</tbody></table></div></div>
-  <div class="card"><h2>Cài đặt chung</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
-    <label class="f">Tên cơ sở (hiện trên tool)<input class="in" id="sCo" value="${esc(S.coSo)}"></label>
-    <label class="f">Mã ĐKI chuẩn phải bắt đầu bằng<input class="in" id="sPre" value="${esc(S.maPrefix || '52002')}"></label>
-    <label class="f">Cột GV khai thác khi xuất Excel<select class="in" id="sGv"><option value="short">Tên gọi tắt (VD: L HOÀNG)</option><option value="full">Họ tên đầy đủ</option></select></label>
-    <label class="f">Tên đơn vị (dòng đầu khi in)<input class="in" id="sDv" value="${esc(S.tenDonViIn)}"></label>
-    <label class="f">Tên cơ sở (dòng 2 khi in)<input class="in" id="sCs" value="${esc(S.tenCoSoIn)}"></label>
-    <label class="f">Địa danh (… ngày … tháng … năm)<input class="in" id="sDd" value="${esc(S.diaDanh)}"></label>
-    <label class="f">Người lập (ký khi in)<input class="in" id="sNl" value="${esc(S.nguoiLap)}"></label>
-    <label class="f">Phụ trách cơ sở (ký khi in)<input class="in" id="sPt" value="${esc(S.phuTrach)}"></label>
-    <label class="f">Tự đóng sổ khóa sau bế giảng (ngày)<input class="in" type="number" id="sAc" value="${S.autoCloseDays}"></label>
-    <label class="f">Giữ trong thùng rác (ngày)<input class="in" type="number" id="sTd" value="${S.trashDays}"></label>
-    ${DB.hang.map((h, i) => `<label class="f">Số ngày học mặc định – ${esc(h.name)}<input class="in" type="number" data-hd="${i}" value="${h.days}"></label>`).join('')}
-    ${DB.hang.map(h => `<label class="f">Học phí mặc định – ${esc(h.name)} (đồng)<input class="in money" data-hp="${esc(h.code)}" value="${S.hocPhi[h.code] ? money(S.hocPhi[h.code]) : ''}"></label>`).join('')}
-    <label class="f" style="grid-column:1/-1">Từ khóa địa bàn gần cơ sở (khi chọn GV), cách nhau dấu phẩy<input class="in" id="sNear" value="${esc((S.nearKeys || []).join(', '))}"></label>
+  <div class="card"><h2>Cài đặt chung${tip('Thông tin hiển thị và mặc định của tool. Sửa xong bấm **Lưu cài đặt** ở cuối.')}</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+    <label class="f"><span>Tên cơ sở (hiện trên tool)${tip('Tên hiện ở góc trái trên cùng và trên Tổng quan.')}</span><input class="in" id="sCo" value="${esc(S.coSo)}"></label>
+    <label class="f"><span>Mã ĐKI chuẩn phải bắt đầu bằng${tip('Chỉ mã ĐKI bắt đầu bằng số này mới được nhận (mặc định **52002**). Mã khác (vd 52003) bị bỏ qua và coi là thiếu mã.')}</span><input class="in" id="sPre" value="${esc(S.maPrefix || '52002')}"></label>
+    <label class="f"><span>Cột GV khai thác khi xuất Excel${tip('Cách ghi tên giáo viên trong file Excel xuất ra: tên gọi tắt (L HOÀNG) hay họ tên đầy đủ.')}</span><select class="in" id="sGv"><option value="short">Tên gọi tắt (VD: L HOÀNG)</option><option value="full">Họ tên đầy đủ</option></select></label>
+    <label class="f"><span>Tên đơn vị (dòng đầu khi in)${tip('Dòng tiêu đề thứ nhất góc trái khi in danh sách, vd CÔNG TY CP ĐT VÀ DV GTVT BÌNH ĐỊNH.')}</span><input class="in" id="sDv" value="${esc(S.tenDonViIn)}"></label>
+    <label class="f"><span>Tên cơ sở (dòng 2 khi in)${tip('Dòng tiêu đề thứ hai khi in, vd CƠ SỞ HOÀI NHƠN.')}</span><input class="in" id="sCs" value="${esc(S.tenCoSoIn)}"></label>
+    <label class="f"><span>Địa danh (… ngày … tháng … năm)${tip('Địa danh trước dòng ngày tháng khi in, vd "Hoài Nhơn, ngày … tháng … năm …".')}</span><input class="in" id="sDd" value="${esc(S.diaDanh)}"></label>
+    <label class="f"><span>Người lập (ký khi in)${tip('Tên in ở chỗ ký "Người lập" cuối trang in.')}</span><input class="in" id="sNl" value="${esc(S.nguoiLap)}"></label>
+    <label class="f"><span>Phụ trách cơ sở (ký khi in)${tip('Tên in ở chỗ ký "Phụ trách cơ sở" cuối trang in.')}</span><input class="in" id="sPt" value="${esc(S.phuTrach)}"></label>
+    <label class="f"><span>Tự đóng sổ khóa sau bế giảng (ngày)${tip('Khóa đã bế giảng quá số ngày này thì tự **đóng sổ** (khóa lại, không sửa được nữa để tránh sửa nhầm). Mở lại được trong trang khóa.')}</span><input class="in" type="number" id="sAc" value="${S.autoCloseDays}"></label>
+    <label class="f"><span>Giữ trong thùng rác (ngày)${tip('Học viên/khóa/giáo viên bị xóa nằm trong Thùng rác số ngày này rồi mới xóa hẳn — khôi phục được trong thời gian đó.')}</span><input class="in" type="number" id="sTd" value="${S.trashDays}"></label>
+    ${DB.hang.map((h, i) => `<label class="f"><span>Số ngày học mặc định – ${esc(h.name)}${tip('Số ngày từ khai giảng đến bế giảng, dùng để **tự điền ngày bế giảng** khi tạo khóa mới.')}</span><input class="in" type="number" data-hd="${i}" value="${h.days}"></label>`).join('')}
+    ${DB.hang.map(h => `<label class="f"><span>Học phí mặc định – ${esc(h.name)} (đồng)${tip('Học phí tự điền cho học viên mới của hạng này (sửa riêng từng người được).')}</span><input class="in money" data-hp="${esc(h.code)}" value="${S.hocPhi[h.code] ? money(S.hocPhi[h.code]) : ''}"></label>`).join('')}
+    <label class="f" style="grid-column:1/-1"><span>Từ khóa địa bàn gần cơ sở (khi chọn GV), cách nhau dấu phẩy${tip('Khi chọn giáo viên, học viên có địa chỉ chứa các từ này (vd Hoài Nhơn, Tam Quan) được đánh dấu **gần cơ sở** để dễ phân GV.')}</span><input class="in" id="sNear" value="${esc((S.nearKeys || []).join(', '))}"></label>
   </div><div class="row" style="margin-top:12px"><button class="btn pri" id="sSave">Lưu cài đặt</button></div></div>`;
   $('#sGv', el).value = S.gvExport;
   bindMoney(el);
