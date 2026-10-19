@@ -26,7 +26,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.4.1"
+VERSION = "2.5.0"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -40,8 +40,10 @@ DEFAULT_CFG = {
     "port": 8686,
     "cho_phep_mang_noi_bo": False,   # True: máy khác trong mạng LAN truy cập được (bắt buộc đặt PIN)
     "thu_muc_sao_luu_phu": [],       # vd ["G:\\My Drive\\SaoLuu", "E:\\"] — chép thêm bản sao lưu ra đây
-    "giu_ban_hang_ngay": 90,
-    "giu_ban_theo_thang": 36,
+    "giu_ngay_lam_viec": 15,        # bản sao lưu (hằng ngày, Excel, trước khôi phục) giữ trong N ngày làm việc gần nhất, cũ hơn tự xóa
+    "giu_toi_thieu": 5,             # luôn giữ ít nhất N file mới nhất mỗi thư mục (dù cũ)
+    "giu_ban_hang_ngay": 90,        # (cũ, không còn dùng)
+    "giu_ban_theo_thang": 12,
     "giu_so_phien_ban": 400,
     "giu_phien_ban_ngay": 45,
     "khoa_man_hinh_sau_phut": 30,
@@ -402,6 +404,7 @@ def write_info_file(folder):
                f"Cập nhật lúc     : {now_iso()}\r\n\r\n"
                "Các file .db ở đây là bản sao lưu đầy đủ (mở được bằng tool: Sao lưu & Cài đặt → Khôi phục).\r\n"
                "Tên file: QLKhoaOto-<mã đơn vị>_<ngày>.db ; _dau-ngay = bản đầu ngày ; theo-thang = 1 bản/tháng.\r\n"
+               f"Tự dọn: chỉ giữ bản trong {CFG.get('giu_ngay_lam_viec', 15)} ngày làm việc gần nhất (bỏ T7, CN, ngày lễ); theo-thang giữ {CFG.get('giu_ban_theo_thang', 12)} tháng.\r\n"
                "ĐỪNG sửa/xóa tay. File có mã đơn vị hoặc ID khác là của bản cài khác.\r\n")
         with open(os.path.join(folder, "_THONG_TIN_SAO_LUU.txt"), "w", encoding="utf-8-sig") as f:
             f.write(txt)
@@ -443,6 +446,63 @@ def copy_to_extra(path, sub):
     return res
 
 
+def _holidays():
+    try:
+        _, _, data = read_state()
+        return {(x.get("d") if isinstance(x, dict) else str(x)) for x in ((data or {}).get("settings") or {}).get("ngayNghi") or []}, \
+            ((data or {}).get("settings") or {}).get("nghiT7", True) is not False
+    except Exception:
+        return set(), True
+
+
+def workday_cutoff(n):
+    """Ngày sớm nhất còn nằm trong N ngày làm việc gần nhất (tính cả hôm nay nếu là ngày làm việc)."""
+    hol, t7 = _holidays()
+    d, c = dt.date.today(), 0
+    for _ in range(400):
+        if d.weekday() < (5 if t7 else 6) and d.isoformat() not in hol:
+            c += 1
+            if c >= n:
+                break
+        d -= dt.timedelta(days=1)
+    return d.isoformat()
+
+
+def prune_folder(folder, cutoff, min_keep):
+    """Xóa file sao lưu của tool (QLKhoaOto*.db / .xlsx có ngày trong tên) cũ hơn cutoff; luôn giữ min_keep file mới nhất."""
+    if not folder or not os.path.isdir(folder):
+        return 0
+    fs = []
+    for n in os.listdir(folder):
+        g = DATE_RE.search(n)
+        if n.startswith("QLKhoaOto") and n.endswith((".db", ".xlsx")) and g:
+            fs.append((g.group(1), os.path.getmtime(os.path.join(folder, n)), n))
+    fs.sort(reverse=True)
+    gone = 0
+    for date, _, n in fs[min_keep:]:
+        if date < cutoff:
+            try:
+                os.remove(os.path.join(folder, n))
+                gone += 1
+            except Exception:
+                pass
+    return gone
+
+
+def prune_backups():
+    n = max(1, int(CFG.get("giu_ngay_lam_viec", 15)))
+    keep = max(1, int(CFG.get("giu_toi_thieu", 5)))
+    cut = workday_cutoff(n)
+    d, _, x, p = _bk_paths()
+    gone = sum(prune_folder(f, cut, keep) for f in (d, x, p))
+    for root in CFG.get("thu_muc_sao_luu_phu") or []:
+        if root and os.path.isdir(root):
+            gone += sum(prune_folder(extra_target(root, sub), cut, keep) for sub in ("hang-ngay", "excel"))
+    if gone:
+        log(f"Dọn {gone} bản sao lưu cũ hơn {cut} ({n} ngày làm việc)")
+    return {"cutoff": cut, "deleted": gone, "days": n}
+
+
 def do_backup(force=False):
     with WRITE_LOCK:
         d, m, _, _ = _bk_paths()
@@ -471,22 +531,15 @@ def do_backup(force=False):
         extra = []
         for f in made:
             extra = copy_to_extra(f, "theo-thang" if f.startswith(m) else "hang-ngay")
-        # dọn bản cũ (chỉ file của tool: QLKhoaOto*.db)
-        lim = (dt.date.today() - dt.timedelta(days=int(CFG.get("giu_ban_hang_ngay", 90)))).isoformat()
-        for n in os.listdir(d):
-            g = DATE_RE.search(n)
-            if n.startswith("QLKhoaOto") and n.endswith(".db") and g and g.group(1) < lim:
-                try:
-                    os.remove(os.path.join(d, n))
-                except Exception:
-                    pass
+        # dọn bản cũ: giữ N ngày làm việc gần nhất (chỉ file của tool: QLKhoaOto*)
+        pr = prune_backups()
         mons = sorted((n for n in os.listdir(m) if n.startswith("QLKhoaOto") and n.endswith(".db")), key=lambda n: os.path.getmtime(os.path.join(m, n)))
         for n in mons[: max(0, len(mons) - int(CFG.get("giu_ban_theo_thang", 36)))]:
             try:
                 os.remove(os.path.join(m, n))
             except Exception:
                 pass
-        info = {"t": now_iso(), "rev": rev, "files": [os.path.basename(x) for x in made], "paths": made, "extra": extra}
+        info = {"t": now_iso(), "rev": rev, "files": [os.path.basename(x) for x in made], "paths": made, "extra": extra, "prune": pr}
         con = connect()
         meta_set(con, "last_backup", info)
         con.commit()
@@ -1096,10 +1149,7 @@ class H(BaseHTTPRequestHandler):
             meta_set(con, "last_xlsx", {"t": now_iso(), "name": name})
             con.commit()
             con.close()
-            # giữ 60 file excel gần nhất
-            xs = sorted(n for n in os.listdir(x) if n.endswith(".xlsx"))
-            for n in xs[: max(0, len(xs) - 60)]:
-                os.remove(os.path.join(x, n))
+            prune_backups()
             return self._send(200, {"ok": True, "name": name, "extra": extra})
         if path == "/api/meta" and method == "GET":
             con = connect()
@@ -1153,7 +1203,7 @@ class H(BaseHTTPRequestHandler):
             for k in ("github_repo", "github_branch", "github_token"):
                 if k in b and b[k] != "***":
                     CFG[k] = str(b[k]).strip()
-            for k in ("giu_ban_hang_ngay", "giu_ban_theo_thang", "khoa_man_hinh_sau_phut"):
+            for k in ("giu_ngay_lam_viec", "giu_ban_hang_ngay", "giu_ban_theo_thang", "khoa_man_hinh_sau_phut"):
                 if k in b:
                     CFG[k] = max(1, int(b[k]))
             save_cfg(CFG)

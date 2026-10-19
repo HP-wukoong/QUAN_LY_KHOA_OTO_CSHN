@@ -1,10 +1,10 @@
 {
-  "version": "2.4.1",
-  "date": "2026-10-17",
-  "notes": "Sửa lỗi không nạp được dữ liệu cũ: nạp được file .db và .json (kể cả có BOM), nút Tìm dữ liệu cũ trên máy, gợi ý khi dữ liệu trống",
+  "version": "2.5.0",
+  "date": "2026-10-19",
+  "notes": "Nhắc nhập máy thi TN trước bế giảng; thông báo Zalo nhắc GV nộp hồ sơ; tính ngày làm việc (T7, CN, lễ); sao lưu giữ 15 ngày làm việc",
   "files": {
-    "app.html": "591dd9303a8bed0a2a6bd08834d883085911b36f0ddeef00b88ddad729d480b6",
-    "server.py": "777227d9c578b58d0b67b3e27789bf3e4d60bc43ca624ef74b503e1c307d53b8",
+    "app.html": "78ec074e054347d8a6f1e995400825732d3c575053e622fc20eabbfd013fc168",
+    "server.py": "b85945241efe977f8c6ab24f05c3d08cc3dcca3ebe3306ab98f4c2e6227fdcbb",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"

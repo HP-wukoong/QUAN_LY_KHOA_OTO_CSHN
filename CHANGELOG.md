@@ -1,5 +1,11 @@
 # Nhật ký thay đổi
 
+## 2.5.0 — 2026-10-19
+- **Nhắc nhập máy thi tốt nghiệp** trước ngày bế giảng 1–5 ngày làm việc; tick "🎓 Đã nhập máy thi TN" từng khóa (Tổng quan, Lịch › Sắp bế giảng, trang khóa).
+- **Thông báo Zalo** nhắc giáo viên nộp hồ sơ: các khóa ô tô khai giảng trong 15 ngày tới, có số ngày còn lại, sửa được, bấm Copy dán vào Zalo.
+- **Tính theo ngày làm việc**: bỏ T7, CN, ngày lễ (có sẵn lịch lễ 2026–2028, sửa được ở "📆 Ngày lễ"). Khóa KG/BG rơi vào ngày nghỉ hoặc ngay sau kỳ nghỉ được nhắc sớm hơn và ghi rõ hạn nộp.
+- **Sao lưu giữ 15 ngày làm việc gần nhất**, cũ hơn tự xóa (luôn giữ tối thiểu 5 bản mới nhất; bản theo tháng giữ 12 tháng).
+
 ## 2.4.1 — 2026-10-17
 - Sửa lỗi bản cài mới không nạp được dữ liệu cũ:
   - Nạp trực tiếp file `.db` (data\qlkhoa.db, backups\…\QLKhoaOto-*.db) và `.json` (chịu BOM, báo rõ khi chọn nhầm file _meta.json).
