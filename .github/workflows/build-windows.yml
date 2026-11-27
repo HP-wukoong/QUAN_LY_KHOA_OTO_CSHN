@@ -47,6 +47,16 @@ jobs:
             Start-Sleep -Milliseconds 500
             try { $r = Invoke-RestMethod http://127.0.0.1:8686/api/ping; if ($r.app -eq "QLKhoaOtoCSHN") { $ok = $true; Write-Host "OK v$($r.version)"; break } } catch {}
           }
+          if ($ok) {
+            $h = @{ "X-QLK" = "1" }
+            $l = Invoke-RestMethod http://127.0.0.1:8686/api/lan -Headers $h
+            Write-Host "LAN: ips=$($l.ips -join ',') host=$($l.host) fw=$($l.fw)"
+            $f = Invoke-RestMethod http://127.0.0.1:8686/api/lan/firewall -Method Post -Headers $h -ContentType "application/json" -Body "{}"
+            Write-Host "Mở tường lửa: ok=$($f.ok) $($f.err)"
+            $l2 = Invoke-RestMethod http://127.0.0.1:8686/api/lan -Headers $h
+            Write-Host "Sau khi mở: fw=$($l2.fw)"
+            if ($l2.fw -ne $true) { Stop-Process -Id $p.Id -Force; throw "Không mở được cổng tường lửa" }
+          }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           if (-not $ok) { Get-Content smoke/data/server.log -ErrorAction SilentlyContinue; throw "exe không chạy được máy chủ" }
 

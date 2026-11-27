@@ -15,6 +15,7 @@ import os
 import secrets
 import shutil
 import socket
+import subprocess
 import sqlite3
 import sys
 import threading
@@ -26,7 +27,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.5.3"
+VERSION = "2.5.4"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -895,16 +896,60 @@ def need_pin():
 
 
 # ---------------------------------------------------------------- HTTP
+BIND = {"host": "127.0.0.1", "port": 0}   # địa chỉ máy chủ ĐANG nghe thực tế (để biết đã bật LAN chưa)
+
+
 def local_ips():
+    """Mọi IPv4 nội bộ của máy (không cần Internet): ưu tiên dải LAN 192.168./10./172.16-31."""
     ips = set()
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
+        s.connect(("10.255.255.255", 1))          # không gửi gói nào, chỉ để lấy card mạng chính
         ips.add(s.getsockname()[0])
         s.close()
     except Exception:
         pass
-    return sorted(ips)
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ips.add(info[4][0])
+    except Exception:
+        pass
+    ips = {i for i in ips if not i.startswith(("127.", "169.254.", "0."))}
+    pri = lambda i: (0 if i.startswith("192.168.") else 1 if i.startswith("10.") else 2 if i.startswith("172.") else 3, i)
+    return sorted(ips, key=pri)
+
+
+FW_RULE = "QLKhoaOto - dung chung mang noi bo"
+
+
+def firewall_state(port):
+    """Windows: kiểm tra đã có luật tường lửa mở cổng chưa (không cần quyền admin). Khác Windows: None."""
+    if os.name != "nt":
+        return None
+    try:
+        r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={FW_RULE}"], capture_output=True, timeout=8,
+                           creationflags=0x08000000)
+        return r.returncode == 0 and str(port).encode() in r.stdout
+    except Exception:
+        return None
+
+
+def firewall_open(port):
+    """Mở cổng trên tường lửa Windows — hiện hộp thoại UAC để người dùng bấm Yes."""
+    if os.name != "nt":
+        return {"ok": False, "err": "Chỉ dùng trên Windows"}
+    cmd = (f'netsh advfirewall firewall delete rule name="{FW_RULE}" & '
+           f'netsh advfirewall firewall add rule name="{FW_RULE}" dir=in action=allow protocol=TCP localport={port} profile=any')
+    ps = ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command",
+          f"Start-Process cmd -Verb RunAs -WindowStyle Hidden -Wait -ArgumentList '/c {cmd}'"]
+    try:
+        r = subprocess.run(ps, capture_output=True, timeout=120, creationflags=0x08000000)
+        if r.returncode != 0:
+            return {"ok": False, "err": "Chưa mở được (có thể đã bấm No ở hộp thoại quyền quản trị)."}
+    except Exception as e:
+        return {"ok": False, "err": str(e)}
+    st = firewall_state(port)
+    return {"ok": bool(st), "err": "" if st else "Chưa thấy luật tường lửa — thử lại và bấm Yes ở hộp thoại."}
 
 
 class H(BaseHTTPRequestHandler):
@@ -1126,6 +1171,15 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, update_apply())
             except Exception as e:
                 return self._send(400, {"err": str(e)})
+        if path == "/api/lan" and method == "GET":
+            port = BIND["port"] or CFG.get("port", 8686)
+            return self._send(200, {"on": bool(CFG.get("cho_phep_mang_noi_bo")), "listening": BIND["host"] == "0.0.0.0", "port": port,
+                                    "ips": local_ips(), "host": socket.gethostname(), "pin": need_pin(), "fw": firewall_state(port),
+                                    "local": self.client_address[0] in ("127.0.0.1", "::1"), "you": self.client_address[0], "os": os.name})
+        if path == "/api/lan/firewall" and method == "POST":
+            if self.client_address[0] not in ("127.0.0.1", "::1"):
+                return self._send(403, {"err": "Chỉ mở tường lửa được trên chính máy chạy tool"})
+            return self._send(200, firewall_open(BIND["port"] or CFG.get("port", 8686)))
         if path == "/api/restart" and method == "POST":
             if self.client_address[0] not in ("127.0.0.1", "::1"):
                 return self._send(403, {"err": "Chỉ khởi động lại trên máy chạy tool"})
@@ -1293,6 +1347,7 @@ def main():
             print("Không mở được cổng mạng nào.")
             return
     srv.daemon_threads = True
+    BIND.update(host=bind, port=port)
     threading.Thread(target=backup_loop, daemon=True).start()
     log(f"Khởi động v{VERSION} tại {bind}:{port}")
     print("=" * 60)

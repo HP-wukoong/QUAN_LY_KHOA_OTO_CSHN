@@ -320,7 +320,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.5.3';
+const APP_VER = 2, TOOL_VERSION = '2.5.4';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -2146,6 +2146,42 @@ async function ghCheck(el) {
     } catch (e) { box.innerHTML = `<div class="note red">${esc(e.message)}</div>`; }
   };
 }
+/* ---- Dùng chung qua mạng nội bộ (LAN) ---- */
+async function lanRender(box) {
+  if (!box) return;
+  let L; try { L = await api('/api/lan'); } catch (e) { box.innerHTML = `<div class="note red small">Không kiểm tra được: ${esc(e.message)}</div>`; return; }
+  const urls = [...L.ips.map(ip => `http://${ip}:${L.port}/`), L.host ? `http://${L.host}:${L.port}/` : ''].filter(Boolean);
+  const st = (ok, txt) => ok === true ? `<span class="badge b-run">✓ ${txt || 'Xong'}</span>` : ok === null ? '<span class="badge b-end">không áp dụng</span>' : `<span class="badge b-miss">✗ ${txt || 'Chưa'}</span>`;
+  const ready = L.pin && L.on && L.listening && L.fw !== false;
+  const step = (n, title, ok, body, t) => `<div class="row" style="align-items:flex-start;gap:12px;padding:10px 0;border-top:1px dashed var(--line)"><b style="min-width:26px;height:26px;border-radius:50%;background:${ok === false ? '#f3c4c0' : '#cfe8d6'};display:flex;align-items:center;justify-content:center">${n}</b><div style="flex:1"><div class="row"><b>${title}</b>${t ? tip(t) : ''}<span class="sp"></span>${st(ok)}</div>${body ? `<div class="small" style="margin-top:4px">${body}</div>` : ''}</div></div>`;
+  if (!L.local) {
+    box.innerHTML = `<h2>📡 Dùng chung qua mạng nội bộ</h2><div class="note blue small">Bạn đang dùng tool <b>từ máy khác</b> (máy này: ${esc(L.you)}) — dữ liệu nằm trên máy chủ <b>${esc(L.host)}</b>. Mọi thay đổi lưu thẳng về máy chủ; sao lưu do máy chủ tự làm. Cài đặt mạng chỉ chỉnh được trên máy chủ.</div>`;
+    return;
+  }
+  box.innerHTML = `<div class="row"><h2 style="margin:0">📡 Dùng chung qua mạng nội bộ (LAN)</h2>${tip('Cho các máy tính khác **cùng mạng** (cùng wifi / cùng mạng dây cơ quan) mở tool bằng trình duyệt và **dùng chung 1 dữ liệu** với máy này.\nMáy này là **máy chủ**: phải bật máy và mở tool thì máy khác mới vào được. Dữ liệu và sao lưu chỉ nằm trên máy này.\nNhiều người sửa cùng lúc được — tool tự gộp thay đổi của từng máy.')}<span class="sp"></span>${ready ? '<span class="badge b-run" style="font-size:13px">● Đang chia sẻ</span>' : '<span class="badge b-end" style="font-size:13px">○ Chưa chia sẻ</span>'}</div>
+    <p class="small muted" style="margin:6px 0 4px">Làm lần lượt 4 bước dưới đây trên <b>máy này</b> (máy chủ). Chỉ cần làm 1 lần.</p>
+    ${step(1, 'Đặt mã PIN', L.pin, L.pin ? 'Máy khác phải nhập PIN này mới vào được.' : 'Đặt PIN ở mục <b>Bảo mật</b> phía trên — bắt buộc để người lạ trong mạng không xem được dữ liệu học viên.', 'Bảo vệ thông tin cá nhân học viên khi mở cho cả mạng.')}
+    ${step(2, 'Bật dùng chung', L.on, `<label><input type="checkbox" id="lOn" ${L.on ? 'checked' : ''} ${L.pin ? '' : 'disabled'}> Cho máy khác trong mạng nội bộ dùng chung tool</label>`, 'Tắt lại bất cứ lúc nào để chỉ máy này dùng.')}
+    ${step(3, 'Khởi động lại tool', L.on ? L.listening : (L.listening ? false : true), L.on && !L.listening ? `Cần khởi động lại để mở cổng mạng. <button class="btn sm pri" id="lRs">↻ Khởi động lại ngay</button>` : !L.on && L.listening ? `Đã tắt dùng chung — khởi động lại để đóng cổng mạng. <button class="btn sm" id="lRs">↻ Khởi động lại</button>` : L.listening ? `Đang nghe kết nối từ mạng ở cổng <b>${L.port}</b>.` : 'Làm sau bước 2.', 'Tool chỉ mở/đóng cổng mạng khi khởi động. Dữ liệu được lưu trước khi khởi động lại.')}
+    ${step(4, 'Mở cổng tường lửa Windows', L.fw === null ? null : L.fw, L.fw === null ? 'Máy này không dùng tường lửa Windows.' : L.fw ? `Đã mở cổng ${L.port} trên tường lửa.` : `Windows chặn máy khác vào nếu chưa mở cổng. <button class="btn sm pri" id="lFw">🛡 Mở cổng tường lửa</button> <span class="muted">— bấm <b>Yes</b> ở hộp thoại quyền quản trị hiện ra.</span>`, 'Thêm 1 luật tường lửa cho phép cổng ' + L.port + ' (TCP). Cần quyền quản trị máy (hộp thoại UAC).\nNếu máy dùng phần mềm diệt virus có tường lửa riêng (Kaspersky, ESET…) thì mở cổng trong phần mềm đó.')}
+    <div style="margin-top:12px;padding:14px;border-radius:10px;background:${ready ? '#eaf6ee' : 'var(--gray-l)'}">
+      <div class="row"><b>🖥 Trên máy khác: mở Chrome / Edge, gõ địa chỉ</b>${tip('Thử lần lượt các địa chỉ nếu có nhiều. Địa chỉ theo **tên máy** không đổi khi IP thay đổi.\nBấm **Tải lối tắt** rồi chép file sang Desktop máy khác — lần sau bấm đúp là mở.')}</div>
+      ${urls.length ? urls.map((u, i) => `<div class="row" style="margin-top:8px"><span class="mono" style="font-size:${i ? 15 : 19}px;font-weight:${i ? 500 : 700};color:var(--blue)">${esc(u)}</span>${i === L.ips.length ? '<span class="small muted">(theo tên máy)</span>' : ''}<span class="sp"></span><button class="btn sm" data-lcp="${esc(u)}">📋 Copy</button><button class="btn sm" data-lurl="${esc(u)}">⬇ Tải lối tắt</button></div>`).join('') : '<div class="note red small">Máy này chưa kết nối mạng nào.</div>'}
+      ${ready ? '' : '<div class="small muted" style="margin-top:8px">Làm xong 4 bước trên thì các địa chỉ này mới dùng được.</div>'}
+    </div>
+    <details style="margin-top:10px"><summary class="small" style="cursor:pointer">Máy khác không vào được?</summary><ul class="small" style="margin:6px 0 0 18px;line-height:1.7">
+      <li>Máy chủ phải <b>đang bật và đang mở tool</b> (cửa sổ đen của tool không được tắt).</li>
+      <li>Hai máy phải <b>cùng mạng</b> (cùng modem/wifi). Wifi khách thường bị chặn giữa các máy.</li>
+      <li>Kiểm tra bước 4 (tường lửa). Mạng đặt kiểu <b>Public</b> trên Windows vẫn được vì luật mở cho mọi loại mạng.</li>
+      <li>IP máy chủ có thể đổi sau khi khởi động lại modem → dùng địa chỉ theo <b>tên máy</b>, hoặc nhờ người quản lý mạng đặt IP tĩnh cho máy chủ.</li>
+      <li>Thử trên máy khác: mở <span class="mono">${esc(urls[0] || 'http://IP:' + L.port + '/')}api/ping</span> — hiện chữ <span class="mono">QLKhoaOtoCSHN</span> là thông mạng.</li></ul></details>`;
+  const re = () => lanRender(box);
+  $('#lOn', box)?.addEventListener('change', async e => { try { await api('/api/config', { body: { cho_phep_mang_noi_bo: e.target.checked } }); toast(e.target.checked ? 'Đã bật. Bấm "Khởi động lại ngay" ở bước 3.' : 'Đã tắt. Khởi động lại để đóng cổng mạng.', 'ok', 7000); re(); } catch (er) { e.target.checked = !e.target.checked; toast(er.message, 'err', 7000); } });
+  $('#lRs', box)?.addEventListener('click', restartTool);
+  $('#lFw', box)?.addEventListener('click', async ev => { ev.target.disabled = true; ev.target.textContent = 'Đang chờ bấm Yes…'; try { const r = await api('/api/lan/firewall', { body: {} }); toast(r.ok ? 'Đã mở cổng tường lửa.' : r.err, r.ok ? 'ok' : 'err', 8000); } catch (er) { toast(er.message, 'err', 8000); } re(); });
+  $$('[data-lcp]', box).forEach(b => b.onclick = async () => toast(await copyText(b.dataset.lcp) ? 'Đã copy địa chỉ.' : 'Không copy được — bôi đen và Ctrl+C.', 'ok'));
+  $$('[data-lurl]', box).forEach(b => b.onclick = () => downloadBlob(new Blob([`[InternetShortcut]\r\nURL=${b.dataset.lurl}\r\n`], { type: 'application/octet-stream' }), `Quan ly khoa o to (${(DB.settings.coSo || 'CSHN').replace(/[\\/:*?"<>|]/g, '')}).url`));
+}
 async function restartTool() {
   await flushSave();
   try { await api('/api/restart', { body: {} }); } catch (e) { toast(e.message + ' — hãy đóng cửa sổ đen và mở lại CHAY_TOOL.bat.', 'err', 9000); return; }
@@ -2250,10 +2286,9 @@ async function vBackup(el) {
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">${cfg._needPin ? '<label class="f">PIN hiện tại<input class="in" type="password" id="pOld"></label>' : ''}<label class="f"><span>PIN mới (để trống = bỏ PIN)${tip('Tối thiểu 4 ký tự. Mở tool hoặc sau thời gian không dùng sẽ phải nhập PIN.\n⚠ **Nhớ kỹ PIN** — quên phải nhờ người hỗ trợ xóa trong file cài đặt.')}</span><input class="in" type="password" id="pNew"></label>
     <label class="f"><span>Tự khóa sau (phút không dùng)${tip('Không thao tác quá số phút này thì tool tự khóa, cần nhập PIN để mở (chỉ khi đã đặt PIN).')}</span><input class="in" type="number" id="cIdle" value="${cfg.khoa_man_hinh_sau_phut}"></label></div>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="pSave">Lưu mã PIN</button><button class="btn" id="cIdleSave">Lưu thời gian tự khóa</button></div>
-    <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
-    <label class="small"><input type="checkbox" id="cLan" ${cfg.cho_phep_mang_noi_bo ? 'checked' : ''}> Cho máy khác trong mạng nội bộ dùng chung (bắt buộc có PIN, cần mở lại tool)</label>${tip('Bật thì máy khác cùng mạng (cùng wifi/LAN cơ quan) mở trình duyệt vào địa chỉ hiện bên dưới để **dùng chung 1 dữ liệu**. Tắt = chỉ máy này dùng.\nPhải đặt PIN trước. Dữ liệu chỉ nằm trên máy này.')}
-    ${cfg.cho_phep_mang_noi_bo ? `<p class="small">Máy khác mở: ${(cfg._ips || []).map(ip => `<span class="mono">http://${esc(ip)}:${cfg.port}/</span>`).join(', ')}</p>` : ''}
+    <p class="small muted" style="margin-top:12px">Dùng chung tool cho máy khác: xem mục <a href="#lanBox">📡 Dùng chung qua mạng nội bộ</a> bên dưới.</p>
   </div></div>
+  <div class="card" id="lanBox"><div class="empty-st small">Đang kiểm tra mạng…</div></div>
   <div class="card"><div class="row"><h2 style="margin:0">Các bản sao lưu</h2>${tip('Danh sách mọi file sao lưu hiện có.\n**🔍** nhận dạng file (của bản cài nào, lưu lúc nào, bao nhiêu khóa/HV, file có lỗi không).\n**Khôi phục** đưa dữ liệu về đúng thời điểm của file đó (bản hiện tại được cất vào "Trước khi khôi phục").\nNhãn **file khác?** = tên không có mã đơn vị này, có thể là file của máy khác.')}<span class="sp"></span><select class="in" id="fKind"><option value="">Mọi loại</option>${Object.entries(kindName).map(([a, b]) => `<option value="${a}">${b}</option>`).join('')}</select><input class="in" id="fName" placeholder="Lọc tên / ngày (vd 2026-10)…" style="width:200px"></div>
     <div class="tbl" style="max-height:420px;margin-top:10px" id="bkT"></div>
     <p class="small muted">Tên file luôn có mã đơn vị <b>${esc(P.maDonVi)}</b> (vd <span class="mono">QLKhoaOto-${esc(P.maDonVi)}_${todayISO()}.db</span>). Bấm 🔍 để nhận dạng file: của bản cài nào (ID <b>${esc(P.instance)}</b>), lưu lúc nào, bao nhiêu khóa/học viên.</p></div>
@@ -2307,7 +2342,7 @@ async function vBackup(el) {
   $('#cSave', el).onclick = async () => { try { const r = await api('/api/config', { body: { thu_muc_sao_luu_phu: $('#cExtra', el).value.split('\n'), giu_ngay_lam_viec: +$('#cDay', el).value || 15, giu_ban_theo_thang: +$('#cMon', el).value || 36 } }); await api('/api/backup/now', { body: {} }); toast('Đã lưu và sao lưu thử ra thư mục phụ.', 'ok'); render(); } catch (e) { toast(e.message, 'err'); } };
   $('#cIdleSave', el).onclick = async () => { try { await api('/api/config', { body: { khoa_man_hinh_sau_phut: +$('#cIdle', el).value || 30 } }); SERVER.idleMin = +$('#cIdle', el).value || 30; toast('Đã lưu.', 'ok'); } catch (e) { toast(e.message, 'err'); } };
   $('#pSave', el).onclick = async () => { const nw = $('#pNew', el).value; if (nw && nw.length < 4) { toast('PIN tối thiểu 4 ký tự.', 'err'); return; } if (!nw && !await confirmBox('Bỏ mã PIN?', 'Ai mở máy cũng xem được dữ liệu học viên.', 'Bỏ PIN', true)) return; try { await api('/api/pin', { body: { old: $('#pOld', el)?.value || '', new: nw } }); SERVER.needPin = !!nw; toast(nw ? 'Đã đặt mã PIN. Nhớ kỹ — quên PIN phải xóa trong file dữ liệu.' : 'Đã bỏ mã PIN.', 'ok', 7000); render(); } catch (e) { toast(e.message, 'err'); } };
-  $('#cLan', el).onchange = async e => { try { const r = await api('/api/config', { body: { cho_phep_mang_noi_bo: e.target.checked } }); toast(r.note || 'Đã lưu', 'ok', 7000); render(); } catch (er) { e.target.checked = !e.target.checked; toast(er.message, 'err', 7000); } };
+  lanRender($('#lanBox', el));
   $('#sSave', el).onclick = () => {
     S.coSo = $('#sCo', el).value.trim() || S.coSo; { const np = $('#sPre', el).value.trim() || '52002'; if (np !== S.maPrefix) { const bad = DB.hv.filter(h => h.maDK && !h.maDK.startsWith(np)).length; if (bad && !confirm(`Đổi tiền tố thành ${np}: ${bad} mã ĐKI hiện có không khớp sẽ bị coi là sai khi nhập mới (dữ liệu cũ giữ nguyên). Tiếp tục?`)) return; S.maPrefix = np; } } S.gvExport = $('#sGv', el).value;
     S.tenDonViIn = $('#sDv', el).value.trim(); S.tenCoSoIn = $('#sCs', el).value.trim(); S.diaDanh = $('#sDd', el).value.trim(); S.nguoiLap = $('#sNl', el).value.trim(); S.phuTrach = $('#sPt', el).value.trim();

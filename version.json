@@ -1,10 +1,10 @@
 {
-  "version": "2.5.3",
-  "date": "2026-10-19",
-  "notes": "Thông báo bế giảng: nhắc GV chuẩn bị bài KT trả nợ môn, sổ nhiên liệu, sổ tay GV, giáo án… (sửa được); bỏ chữ hihi",
+  "version": "2.5.4",
+  "date": "2026-11-27",
+  "notes": "Dùng chung qua mạng LAN: hướng dẫn 4 bước, tự mở cổng tường lửa Windows, khởi động lại 1 nút, địa chỉ theo IP + tên máy, tải lối tắt cho máy khác",
   "files": {
-    "app.html": "580c7320b862dc2c19c6306bf3addc407bc844dd8f22830a253b2b3015246a64",
-    "server.py": "201b140290a4b668ab534dc392f8de7fd789557c1188fa783f2cb2a30e92ebea",
+    "app.html": "16f1e89306eee01ee8151c7071a7cb68a45d479ab3a90caca7b0ed386b92e28d",
+    "server.py": "beb48fab18810b93da5f7412627cda6a604d191cd2707fc2a06e6e7c3418ff96",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"
