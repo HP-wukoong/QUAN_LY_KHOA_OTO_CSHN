@@ -1,5 +1,9 @@
 # Nhật ký thay đổi
 
+## 2.6.1 — 2026-11-27
+- Máy khác truy cập qua mạng ở **chế độ chỉ xem** (mặc định): xem, tìm, lọc, chọn hàng loạt, xuất Excel / in, copy thông báo Zalo bình thường; không sửa, xóa, nạp file, tick hồ sơ. Máy chủ chặn cả ở phía máy chủ (403). Góc trên hiện "👁 Chế độ chỉ xem".
+- Máy chủ chọn được quyền cho máy khác ở mục Dùng chung qua mạng: **Chỉ xem** hoặc **Được sửa**.
+
 ## 2.6.0 — 2026-11-27
 - Mục **💽 Bộ nhớ**: biểu đồ tròn dung lượng tool theo từng phần, thanh dung lượng ổ đĩa (tool / file khác / còn trống, cảnh báo khi còn < 2 GB), chi tiết bên trong file dữ liệu (dữ liệu hiện tại, lịch sử phiên bản, nhật ký thay đổi, chỗ trống), các nút dọn an toàn (sao lưu quá hạn, phiên bản cũ, nhật ký cũ, thu gọn file dữ liệu, bản chương trình cũ, nhật ký máy chủ).
 - Mục **🔄 Cập nhật**: bật/tắt **tự động cập nhật** — tự kiểm tra GitHub mỗi 3 giờ và mỗi lần **bấm F5**; có bản mới thì sao lưu → tải (kiểm tra mã SHA-256) → cài → khởi động lại. Các máy/tab đang mở thấy dòng "Đã cập nhật — bấm F5".

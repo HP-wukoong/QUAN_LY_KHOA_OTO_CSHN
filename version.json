@@ -1,10 +1,10 @@
 {
-  "version": "2.6.0",
+  "version": "2.6.1",
   "date": "2026-11-27",
-  "notes": "Mục Bộ nhớ (trực quan, dọn dẹp an toàn) + mục Cập nhật: tự động cập nhật mỗi 3 giờ hoặc khi bấm F5",
+  "notes": "Máy khác trong mạng: chế độ chỉ xem (xem, chọn, xuất file; không sửa/xóa)",
   "files": {
-    "app.html": "4bb3e65f5f7ffe45463af404768c6fdf223768f61292eec6e3d22f5d09023c53",
-    "server.py": "386ece40c43d6a78f5ca05f58c9efb2fcd2ba31685a6b5a94d12202fe603af4d",
+    "app.html": "006ae15f90bef71205b7738f45fdeb7dfd79a3b27111b2f1f3c31fb1906da45b",
+    "server.py": "d95ec2ac75ee2f8478769478b501e341a79cd3290975a999474a43eb8dba4c08",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"

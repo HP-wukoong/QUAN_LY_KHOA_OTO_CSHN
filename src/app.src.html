@@ -186,6 +186,7 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
         <div class="sres" id="sres"></div>
       </div>
       <div class="sp"></div>
+      <div class="hs-chip" id="roChip" style="display:none;background:#e8f0fc;color:#1d4f9c;border-color:#b9cdee;cursor:help" title="Máy này truy cập qua mạng ở chế độ CHỈ XEM: xem, tìm, chọn và xuất file được; không sửa, xóa, nạp dữ liệu. Muốn thay đổi hãy làm trên máy chủ.">👁 Chế độ chỉ xem</div>
       <div class="hs-chip" id="hsChip" style="display:none" title="Khóa sắp khai giảng chưa chốt hồ sơ"></div>
       <div class="bk" id="bkStatus" title="Trạng thái sao lưu"><span class="dot"></span><span>Sao lưu</span></div>
     </div>
@@ -254,7 +255,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.6.0';
+const APP_VER = 2, TOOL_VERSION = '2.6.1';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -268,6 +269,22 @@ function blankDB() {
   };
 }
 let DB = blankDB();
+/* ---- Máy khác trong mạng ở chế độ CHỈ XEM: xem, chọn, xuất file được; mọi thay đổi bị chặn (máy chủ cũng chặn) ---- */
+let READONLY = false, roTimer = null;
+function roRevert() {
+  const user = Date.now() - lastAct < 2000;
+  clearTimeout(roTimer);
+  roTimer = setTimeout(async () => { try { const st = await api('/api/state'); DB = migrate(st.data); serverRev = st.rev; DB.rev = st.rev; render(); } catch { } }, 250);
+  if (user) toast('👁 Máy này chỉ được xem — không sửa, xóa được. Muốn thay đổi hãy làm trên máy chủ.', 'err', 5000);
+}
+const RO_EDIT = /(xóa|thêm|tạo|sửa|dùng mã|mặc định|✎|✓ đã|lưu|nhập|nạp|chốt|khôi phục|gán|ghép|đổi|dọn|chuyển|quay về|cập nhật|bỏ xác nhận|đóng sổ|mở sổ|mở lại|đã nhập|thu gọn|khởi động|đặt|phân|điền|hoàn tác|sao lưu ngay|kiểm tra khôi phục|tìm dữ liệu|＋|➕|🧹|🗑|♻)/i;
+const RO_SAFE = /(xuất|tải|copy|in danh|🖨|xem|lọc|^chọn|bỏ chọn|^tìm|hủy|^đóng$|đo lại|tạo lại|kiểm tra lại|thử lại|📂|📋)/i;
+function roApply(root) {
+  if (!READONLY) return;
+  $$('[data-hs],[data-tnk],[data-tnl],[data-tn],[data-rs],[data-pg],[data-rev]', root).forEach(e => { e.disabled = true; e.title = 'Máy này chỉ được xem'; });
+  $$('table select, table input:not([type=checkbox]), table textarea', root).forEach(e => { if (!e.disabled) { e.disabled = true; e.title = 'Máy này chỉ được xem'; } });
+  $$('button', root).forEach(b => { if (b.disabled || b.closest('.nav,.seg') || b.dataset.roOk) return; const t = (b.textContent || '').trim(); if (RO_EDIT.test(t) && !RO_SAFE.test(t)) { b.disabled = true; b.title = 'Máy này chỉ được xem'; b.style.opacity = '.45'; } });
+}
 let LOADED = false, RECOVER = false, serverRev = 0, saveTimer = null, saving = false, dirtyAfterSend = false, netErr = '', lastSavedAt = '', SERVER = {}, META = {};
 let DEVICE = (() => { try { let d = localStorage.getItem('qlk_device'); if (!d) { d = 'may-' + uid(); localStorage.setItem('qlk_device', d); } return d; } catch { return 'may-' + uid(); } })();
 
@@ -311,9 +328,9 @@ let lastAct = Date.now();
 setInterval(async () => { if (!SERVER.needPin || loginPromise) return; if (Date.now() - lastAct > (SERVER.idleMin || 30) * 60e3) { await flushSave(); try { await api('/api/logout', { body: {} }); } catch { } loginFlow('Đã tự khóa do không dùng ' + (SERVER.idleMin || 30) + ' phút.'); } }, 30e3);
 
 function logAct(msg) { DB.log.unshift({ t: new Date().toISOString(), msg }); if (DB.log.length > 500) DB.log.length = 500; }
-function commit(msg) { if (!LOADED) { toast('Dữ liệu chưa tải xong — thao tác không được lưu. Tải lại trang.', 'err', 8000); return; } if (msg) logAct(msg); for (const h of DB.hv) { if (!h.tt) h.tt = 'hoc'; if (!h.thu) h.thu = []; } if (saving) dirtyAfterSend = true; clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; persist(); }, 500); refreshCounts(); renderBk('saving'); }
+function commit(msg) { if (READONLY) return roRevert(); if (!LOADED) { toast('Dữ liệu chưa tải xong — thao tác không được lưu. Tải lại trang.', 'err', 8000); return; } if (msg) logAct(msg); for (const h of DB.hv) { if (!h.tt) h.tt = 'hoc'; if (!h.thu) h.thu = []; } if (saving) dirtyAfterSend = true; clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; persist(); }, 500); refreshCounts(); renderBk('saving'); }
 async function persist(reason) {
-  if (!LOADED || RECOVER) return;
+  if (!LOADED || RECOVER || READONLY) return;
   if (saving) { dirtyAfterSend = true; return; }
   saving = true; dirtyAfterSend = false; renderBk('saving');
   let snapshot;
@@ -360,6 +377,7 @@ const snapNow = reason => flushSave(reason);
 /* Mỗi ngày 1 file Excel tổng hợp lưu vào backups/excel trên máy chủ (đọc được bằng Excel) */
 let xlsxBusy = false;
 async function dailyXlsx() {
+  if (READONLY) return;
   if (xlsxBusy || !DB.khoa.length) return; const name = `QLKhoaOto_${todayISO()}.xlsx`;
   if (META.last_xlsx && META.last_xlsx.name === name) return;
   xlsxBusy = true;
@@ -768,6 +786,7 @@ async function makeAllWorkbook() {
 let ROUTE = { v: 'home' };
 function go(v, p = {}) { $$('#toast div').forEach(d => { if (Date.now() - d.dataset.t > 400) d.remove(); }); ROUTE = { v, ...p }; location.hash = v + (p.id ? '/' + p.id : ''); render(); $('#view').scrollTop = 0; }
 function render() {
+  setTimeout(() => roApply(document), 0);
   $$('.nav').forEach(b => b.classList.toggle('on', b.dataset.v === ROUTE.v || (ROUTE.v === 'khoaDetail' && b.dataset.v === 'khoa') || (ROUTE.v === 'import' && b.dataset.v === 'khoa')));
   const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, lich: vLich, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp, storage: vStorage, update: vUpdate }[ROUTE.v] || vHome;
   $('#view').innerHTML = ''; V($('#view')); refreshCounts(); renderBk();
@@ -790,7 +809,7 @@ function modal(title, body, buttons) {
     const ft = $('footer', bg);
     buttons.forEach(b => { const x = document.createElement('button'); x.className = 'btn ' + (b.cls || ''); x.textContent = b.t; x.onclick = () => { const v = b.v instanceof Function ? b.v(bg) : b.v; if (v === false) return; bg.remove(); res(v); }; ft.appendChild(x); });
     bg.addEventListener('keydown', e => { if (e.key === 'Escape') { bg.remove(); res(null); } else if (e.key === 'Enter' && e.target.matches('input:not([type=checkbox]):not([type=radio])')) { e.preventDefault(); $('footer .pri', bg)?.click(); } });
-    document.body.appendChild(bg); bindMoney(bg); const f = $('input,select,textarea', bg) || $('footer .pri', bg) || $('footer button:last-child', bg); f && f.focus();
+    document.body.appendChild(bg); bindMoney(bg); roApply(bg); const f = $('input,select,textarea', bg) || $('footer .pri', bg) || $('footer button:last-child', bg); f && f.focus();
   });
 }
 const confirmBox = (t, body, okT = 'Đồng ý', dan) => modal(t, body, [{ t: 'Hủy', v: null }, { t: okT, cls: dan ? 'dan' : 'pri', v: true }]).then(v => !!v);
@@ -2089,7 +2108,7 @@ async function lanRender(box) {
   const ready = L.pin && L.on && L.listening && L.fw !== false;
   const step = (n, title, ok, body, t) => `<div class="row" style="align-items:flex-start;gap:12px;padding:10px 0;border-top:1px dashed var(--line)"><b style="min-width:26px;height:26px;border-radius:50%;background:${ok === false ? '#f3c4c0' : '#cfe8d6'};display:flex;align-items:center;justify-content:center">${n}</b><div style="flex:1"><div class="row"><b>${title}</b>${t ? tip(t) : ''}<span class="sp"></span>${st(ok)}</div>${body ? `<div class="small" style="margin-top:4px">${body}</div>` : ''}</div></div>`;
   if (!L.local) {
-    box.innerHTML = `<h2>📡 Dùng chung qua mạng nội bộ</h2><div class="note blue small">Bạn đang dùng tool <b>từ máy khác</b> (máy này: ${esc(L.you)}) — dữ liệu nằm trên máy chủ <b>${esc(L.host)}</b>. Mọi thay đổi lưu thẳng về máy chủ; sao lưu do máy chủ tự làm. Cài đặt mạng chỉ chỉnh được trên máy chủ.</div>`;
+    box.innerHTML = `<h2>📡 Dùng chung qua mạng nội bộ</h2><div class="note blue small">Bạn đang dùng tool <b>từ máy khác</b> (máy này: ${esc(L.you)}) — dữ liệu nằm trên máy chủ <b>${esc(L.host)}</b>. ${READONLY ? '<b>👁 Chế độ chỉ xem</b>: xem, tìm, chọn và xuất file được; sửa, xóa, nạp dữ liệu phải làm trên máy chủ.' : 'Mọi thay đổi lưu thẳng về máy chủ.'} Sao lưu do máy chủ tự làm. Cài đặt mạng chỉ chỉnh được trên máy chủ.</div>`;
     return;
   }
   box.innerHTML = `<div class="row"><h2 style="margin:0">📡 Dùng chung qua mạng nội bộ (LAN)</h2>${tip('Cho các máy tính khác **cùng mạng** (cùng wifi / cùng mạng dây cơ quan) mở tool bằng trình duyệt và **dùng chung 1 dữ liệu** với máy này.\nMáy này là **máy chủ**: phải bật máy và mở tool thì máy khác mới vào được. Dữ liệu và sao lưu chỉ nằm trên máy này.\nNhiều người sửa cùng lúc được — tool tự gộp thay đổi của từng máy.')}<span class="sp"></span>${ready ? '<span class="badge b-run" style="font-size:13px">● Đang chia sẻ</span>' : '<span class="badge b-end" style="font-size:13px">○ Chưa chia sẻ</span>'}</div>
@@ -2098,6 +2117,8 @@ async function lanRender(box) {
     ${step(2, 'Bật dùng chung', L.on, `<label><input type="checkbox" id="lOn" ${L.on ? 'checked' : ''} ${L.pin ? '' : 'disabled'}> Cho máy khác trong mạng nội bộ dùng chung tool</label>`, 'Tắt lại bất cứ lúc nào để chỉ máy này dùng.')}
     ${step(3, 'Khởi động lại tool', L.on ? L.listening : (L.listening ? false : true), L.on && !L.listening ? `Cần khởi động lại để mở cổng mạng. <button class="btn sm pri" id="lRs">↻ Khởi động lại ngay</button>` : !L.on && L.listening ? `Đã tắt dùng chung — khởi động lại để đóng cổng mạng. <button class="btn sm" id="lRs">↻ Khởi động lại</button>` : L.listening ? `Đang nghe kết nối từ mạng ở cổng <b>${L.port}</b>.` : 'Làm sau bước 2.', 'Tool chỉ mở/đóng cổng mạng khi khởi động. Dữ liệu được lưu trước khi khởi động lại.')}
     ${step(4, 'Mở cổng tường lửa Windows', L.fw === null ? null : L.fw, L.fw === null ? 'Máy này không dùng tường lửa Windows.' : L.fw ? `Đã mở cổng ${L.port} trên tường lửa.` : `Windows chặn máy khác vào nếu chưa mở cổng. <button class="btn sm pri" id="lFw">🛡 Mở cổng tường lửa</button> <span class="muted">— bấm <b>Yes</b> ở hộp thoại quyền quản trị hiện ra.</span>`, 'Thêm 1 luật tường lửa cho phép cổng ' + L.port + ' (TCP). Cần quyền quản trị máy (hộp thoại UAC).\nNếu máy dùng phần mềm diệt virus có tường lửa riêng (Kaspersky, ESET…) thì mở cổng trong phần mềm đó.')}
+    <div class="row" style="gap:12px;padding:12px 0;border-top:1px dashed var(--line);align-items:flex-start"><b style="min-width:26px;height:26px;border-radius:50%;background:#dbe6f8;display:flex;align-items:center;justify-content:center">🔐</b><div style="flex:1"><div class="row"><b>Quyền của máy khác</b>${tip('**Chỉ xem**: máy khác xem, tìm, lọc, chọn và **xuất file Excel / in** bình thường, nhưng **không sửa, xóa, nạp file, tick hồ sơ** được — máy chủ chặn luôn cả ở phía máy chủ.\n**Được sửa**: máy khác làm mọi việc như máy chủ.\nĐổi có hiệu lực ngay, máy khác bấm F5 là áp dụng.')}</div>
+      <div class="row small" style="gap:18px;margin-top:6px"><label><input type="radio" name="lRo" value="1" ${L.ro ? 'checked' : ''}> <b>Chỉ xem</b>, chọn &amp; xuất file (khuyên dùng)</label><label><input type="radio" name="lRo" value="0" ${L.ro ? '' : 'checked'}> Được sửa, xóa như máy chủ</label></div></div></div>
     <div style="margin-top:12px;padding:14px;border-radius:10px;background:${ready ? '#eaf6ee' : 'var(--gray-l)'}">
       <div class="row"><b>🖥 Trên máy khác: mở Chrome / Edge, gõ địa chỉ</b>${tip('Thử lần lượt các địa chỉ nếu có nhiều. Địa chỉ theo **tên máy** không đổi khi IP thay đổi.\nBấm **Tải lối tắt** rồi chép file sang Desktop máy khác — lần sau bấm đúp là mở.')}</div>
       ${urls.length ? urls.map((u, i) => `<div class="row" style="margin-top:8px"><span class="mono" style="font-size:${i ? 15 : 19}px;font-weight:${i ? 500 : 700};color:var(--blue)">${esc(u)}</span>${i === L.ips.length ? '<span class="small muted">(theo tên máy)</span>' : ''}<span class="sp"></span><button class="btn sm" data-lcp="${esc(u)}">📋 Copy</button><button class="btn sm" data-lurl="${esc(u)}">⬇ Tải lối tắt</button></div>`).join('') : '<div class="note red small">Máy này chưa kết nối mạng nào.</div>'}
@@ -2112,6 +2133,7 @@ async function lanRender(box) {
   const re = () => lanRender(box);
   $('#lOn', box)?.addEventListener('change', async e => { try { await api('/api/config', { body: { cho_phep_mang_noi_bo: e.target.checked } }); toast(e.target.checked ? 'Đã bật. Bấm "Khởi động lại ngay" ở bước 3.' : 'Đã tắt. Khởi động lại để đóng cổng mạng.', 'ok', 7000); re(); } catch (er) { e.target.checked = !e.target.checked; toast(er.message, 'err', 7000); } });
   $('#lRs', box)?.addEventListener('click', restartTool);
+  $$('[name=lRo]', box).forEach(r => r.onchange = async () => { try { await api('/api/config', { body: { may_khac_chi_xem: r.value === '1' } }); toast(r.value === '1' ? 'Máy khác: chỉ xem, chọn & xuất file.' : 'Máy khác: được sửa, xóa như máy chủ.', 'ok', 6000); re(); } catch (e) { toast(e.message, 'err'); } });
   $('#lFw', box)?.addEventListener('click', async ev => { ev.target.disabled = true; ev.target.textContent = 'Đang chờ bấm Yes…'; try { const r = await api('/api/lan/firewall', { body: {} }); toast(r.ok ? 'Đã mở cổng tường lửa.' : r.err, r.ok ? 'ok' : 'err', 8000); } catch (er) { toast(er.message, 'err', 8000); } re(); });
   $$('[data-lcp]', box).forEach(b => b.onclick = async () => toast(await copyText(b.dataset.lcp) ? 'Đã copy địa chỉ.' : 'Không copy được — bôi đen và Ctrl+C.', 'ok'));
   $$('[data-lurl]', box).forEach(b => b.onclick = () => downloadBlob(new Blob([`[InternetShortcut]\r\nURL=${b.dataset.lurl}\r\n`], { type: 'application/octet-stream' }), `Quan ly khoa o to (${(DB.settings.coSo || 'CSHN').replace(/[\\/:*?"<>|]/g, '')}).url`));
@@ -2539,6 +2561,7 @@ async function findOldData() {
   if (pick) return importFromPath(pick);
 }
 async function handleAnyFile(file) {
+  if (READONLY) { toast('👁 Máy này chỉ được xem — không nạp file được. Hãy nạp trên máy chủ.', 'err', 6000); return; }
   try {
     const s = await sniffFile(file);
     if (s.kind === 'backup') return importBackupFile(file);
@@ -2611,7 +2634,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
    ========================================================= */
 (async function boot() {
   await idbOpen();
-  try { const r = await fetch('/api/ping', { credentials: 'same-origin' }); SERVER = await r.json(); if (SERVER.app !== 'QLKhoaOtoCSHN') throw new Error('sai máy chủ'); }
+  try { const r = await fetch('/api/ping', { credentials: 'same-origin' }); SERVER = await r.json(); if (SERVER.app !== 'QLKhoaOtoCSHN') throw new Error('sai máy chủ'); READONLY = !!SERVER.readonly; if (READONLY) { $('#roChip').style.display = ''; document.body.classList.add('ro'); let mt = null; new MutationObserver(() => { clearTimeout(mt); mt = setTimeout(() => roApply(document), 30); }).observe(document.body, { childList: true, subtree: true }); } }
   catch (e) {
     $('#view').innerHTML = `<div class="card note red" style="max-width:720px"><h2>Chưa kết nối được máy chủ của tool</h2><p>Tool phiên bản 2 lưu dữ liệu vào file trên ổ đĩa qua một chương trình nhỏ chạy nền.</p><ol><li>Mở thư mục <b>QLKhoaOto</b>, bấm đúp <b>CHAY_TOOL.bat</b>.</li><li>Trình duyệt sẽ tự mở đúng địa chỉ (http://127.0.0.1:8686).</li><li>Giữ cửa sổ đen đó (thu nhỏ được) trong lúc dùng tool.</li></ol><p class="small muted">Không mở trực tiếp file app.html.</p></div>`;
     return;

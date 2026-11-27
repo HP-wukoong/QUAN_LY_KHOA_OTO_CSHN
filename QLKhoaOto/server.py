@@ -27,7 +27,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.6.0"
+VERSION = "2.6.1"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -47,7 +47,8 @@ DEFAULT_CFG = {
     "giu_ban_theo_thang": 12,
     "giu_so_phien_ban": 400,
     "giu_phien_ban_ngay": 45,
-    "tu_cap_nhat": True,            # tự tải & cài bản mới từ GitHub (sao lưu trước, giữ bản cũ)
+    "tu_cap_nhat": True,
+    "may_khac_chi_xem": True,       # máy khác trong mạng: chỉ xem + chọn + xuất file, không sửa/xóa            # tự tải & cài bản mới từ GitHub (sao lưu trước, giữ bản cũ)
     "khoa_man_hinh_sau_phut": 30,
     "tu_mo_trinh_duyet": True,
     "ma_don_vi": "CSHN",            # có trong tên mọi file sao lưu → không lẫn với file khác
@@ -1138,6 +1139,9 @@ def firewall_open(port):
     return {"ok": bool(st), "err": "" if st else "Chưa thấy luật tường lửa — thử lại và bấm Yes ở hộp thoại."}
 
 
+RO_ALLOWED = ("/api/restore/preview", "/api/backup/info")   # POST chỉ-đọc mà máy "chỉ xem" vẫn được gọi
+
+
 class H(BaseHTTPRequestHandler):
     server_version = "QLKhoaOto/" + VERSION
 
@@ -1184,6 +1188,12 @@ class H(BaseHTTPRequestHandler):
                 return v
         return ""
 
+    def _is_local(self):
+        return self.client_address[0] in ("127.0.0.1", "::1")
+
+    def _readonly(self):
+        return (not self._is_local()) and bool(CFG.get("may_khac_chi_xem", True))
+
     def _authed(self):
         if not need_pin():
             return True
@@ -1221,6 +1231,7 @@ class H(BaseHTTPRequestHandler):
                 return self._send(403, {"err": "thiếu header"})
             if path == "/api/ping":
                 return self._send(200, {"ok": True, "app": APP_ID, "version": VERSION, "needPin": need_pin(), "authed": self._authed(),
+                                        "readonly": self._readonly(),
                                         "lan": bool(CFG.get("cho_phep_mang_noi_bo")), "ips": local_ips(), "port": CFG["port"],
                                         "idleMin": CFG.get("khoa_man_hinh_sau_phut", 30)})
             if path == "/api/login" and method == "POST":
@@ -1242,6 +1253,8 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True})
             if not self._authed():
                 return self._send(401, {"err": "Cần nhập mã PIN"})
+            if method == "POST" and self._readonly() and path not in RO_ALLOWED:
+                return self._send(403, {"err": "Máy này chỉ được xem — không sửa, xóa được. Muốn sửa hãy làm trên máy chủ.", "readonly": True})
             return self._api(method, path, q)
         except Exception as e:
             log("ERR " + self.path + " " + traceback.format_exc())
@@ -1378,7 +1391,7 @@ class H(BaseHTTPRequestHandler):
         if path == "/api/lan" and method == "GET":
             port = BIND["port"] or CFG.get("port", 8686)
             return self._send(200, {"on": bool(CFG.get("cho_phep_mang_noi_bo")), "listening": BIND["host"] == "0.0.0.0", "port": port,
-                                    "ips": local_ips(), "host": socket.gethostname(), "pin": need_pin(), "fw": firewall_state(port),
+                                    "ips": local_ips(), "host": socket.gethostname(), "pin": need_pin(), "fw": firewall_state(port), "ro": bool(CFG.get("may_khac_chi_xem", True)),
                                     "local": self.client_address[0] in ("127.0.0.1", "::1"), "you": self.client_address[0], "os": os.name})
         if path == "/api/lan/firewall" and method == "POST":
             if self.client_address[0] not in ("127.0.0.1", "::1"):
@@ -1461,6 +1474,8 @@ class H(BaseHTTPRequestHandler):
             for k in ("github_repo", "github_branch", "github_token"):
                 if k in b and b[k] != "***":
                     CFG[k] = str(b[k]).strip()
+            if "may_khac_chi_xem" in b:
+                CFG["may_khac_chi_xem"] = bool(b["may_khac_chi_xem"])
             if "tu_cap_nhat" in b:
                 CFG["tu_cap_nhat"] = bool(b["tu_cap_nhat"])
             for k in ("giu_ngay_lam_viec", "giu_ban_hang_ngay", "giu_ban_theo_thang", "khoa_man_hinh_sau_phut"):
