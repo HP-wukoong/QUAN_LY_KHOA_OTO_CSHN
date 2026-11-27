@@ -27,7 +27,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.5.4"
+VERSION = "2.6.0"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -47,6 +47,7 @@ DEFAULT_CFG = {
     "giu_ban_theo_thang": 12,
     "giu_so_phien_ban": 400,
     "giu_phien_ban_ngay": 45,
+    "tu_cap_nhat": True,            # tự tải & cài bản mới từ GitHub (sao lưu trước, giữ bản cũ)
     "khoa_man_hinh_sau_phut": 30,
     "tu_mo_trinh_duyet": True,
     "ma_don_vi": "CSHN",            # có trong tên mọi file sao lưu → không lẫn với file khác
@@ -853,6 +854,191 @@ def restart_self():
     threading.Timer(0.8, lambda: os._exit(0)).start()
 
 
+# ---------------------------------------------------------------- BỘ NHỚ (dung lượng tool dùng)
+def _dir_size(path, pred=None):
+    n = c = 0
+    if path and os.path.isdir(path):
+        for dp, _, fns in os.walk(path):
+            for fn in fns:
+                if pred and not pred(fn):
+                    continue
+                try:
+                    n += os.path.getsize(os.path.join(dp, fn))
+                    c += 1
+                except OSError:
+                    pass
+    return n, c
+
+
+def _fsize(p):
+    try:
+        return os.path.getsize(p)
+    except OSError:
+        return 0
+
+
+def storage_info():
+    d, m, x, p = _bk_paths()
+    root = bk_root()
+    con = connect()
+    try:
+        rv = con.execute("SELECT COUNT(*), COALESCE(SUM(LENGTH(gz)),0), MIN(saved_at) FROM revs").fetchone()
+        au = con.execute("SELECT COUNT(*), COALESCE(SUM(LENGTH(COALESCE(old,''))+LENGTH(COALESCE(new,''))+LENGTH(COALESCE(label,''))+80),0), MIN(t) FROM audit").fetchone()
+        st = con.execute("SELECT LENGTH(json) FROM state WHERE id=1").fetchone()
+        pg = con.execute("PRAGMA page_count").fetchone()[0] * con.execute("PRAGMA page_size").fetchone()[0]
+        free_pg = con.execute("PRAGMA freelist_count").fetchone()[0] * con.execute("PRAGMA page_size").fetchone()[0]
+    finally:
+        con.close()
+    db_total = _fsize(DB_PATH) + _fsize(DB_PATH + "-wal") + _fsize(DB_PATH + "-shm")
+    prog = sum(_fsize(os.path.join(BASE, n)) for n in os.listdir(BASE) if os.path.isfile(os.path.join(BASE, n)))
+    if getattr(sys, "frozen", False):
+        prog += _fsize(sys.executable) if os.path.dirname(sys.executable) != BASE else 0
+    cats = [
+        {"id": "db", "name": "Dữ liệu đang dùng", "size": db_total, "count": 1, "path": DATA_DIR,
+         "detail": {"state": st[0] if st else 0, "revs": rv[1], "revsN": rv[0], "revsFrom": rv[2], "audit": au[1], "auditN": au[0], "auditFrom": au[2], "free": free_pg, "file": pg}},
+        {"id": "hang-ngay", "name": "Sao lưu hằng ngày", "path": d},
+        {"id": "theo-thang", "name": "Sao lưu theo tháng", "path": m},
+        {"id": "excel", "name": "Excel tổng hợp", "path": x},
+        {"id": "truoc", "name": "Trước khi khôi phục", "path": p},
+        {"id": "bancu", "name": "Bản chương trình cũ", "path": os.path.join(root, "ban-cu")},
+        {"id": "log", "name": "Nhật ký máy chủ", "size": _fsize(LOG_PATH), "count": 1, "path": DATA_DIR},
+        {"id": "prog", "name": "Chương trình", "size": prog, "count": 0, "path": BASE},
+    ]
+    for c in cats:
+        if "size" not in c:
+            c["size"], c["count"] = _dir_size(c["path"])
+    extra = []
+    for r in CFG.get("thu_muc_sao_luu_phu") or []:
+        if r and os.path.isdir(r):
+            sz, n = _dir_size(extra_target(r, ""), lambda f: f.startswith("QLKhoaOto"))
+            extra.append({"path": r, "size": sz, "count": n})
+    try:
+        du = shutil.disk_usage(BASE)
+        disk = {"total": du.total, "used": du.used, "free": du.free, "drive": os.path.splitdrive(BASE)[0] or "/"}
+    except Exception:
+        disk = None
+    return {"cats": cats, "total": sum(c["size"] for c in cats), "extra": extra, "disk": disk,
+            "cfg": {"days": CFG.get("giu_ngay_lam_viec", 15), "months": CFG.get("giu_ban_theo_thang", 12),
+                    "revDays": CFG.get("giu_phien_ban_ngay", 45), "revKeep": CFG.get("giu_so_phien_ban", 400)}}
+
+
+def storage_clean(what, opt=None):
+    """Dọn theo từng loại. Mọi thao tác chỉ xóa thứ có thể tạo lại / đã quá hạn giữ; dữ liệu đang dùng không bị đụng."""
+    if what == "vacuum":
+        do_backup(force=True)                     # sao lưu trước (đo dung lượng sau bước này)
+    before = storage_info()["total"]
+    msg = ""
+    if what == "prune":
+        r = prune_backups()
+        d, m, _, _ = _bk_paths()
+        mons = sorted(n for n in os.listdir(m) if n.startswith("QLKhoaOto") and n.endswith(".db"))
+        keepm = max(1, int(CFG.get("giu_ban_theo_thang", 12)))
+        for n in mons[:-keepm]:
+            try:
+                os.remove(os.path.join(m, n))
+            except OSError:
+                pass
+        msg = f"Đã dọn bản sao lưu cũ hơn {r['cutoff']} và bản theo tháng quá {keepm} tháng"
+    elif what == "revs":
+        days = max(1, int((opt or {}).get("days") or 30))
+        old = (dt.datetime.now() - dt.timedelta(days=days)).isoformat(timespec="seconds")
+        with WRITE_LOCK:
+            con = connect()
+            try:
+                cur = con.execute("SELECT MAX(rev) FROM revs").fetchone()[0] or 0
+                n = con.execute("DELETE FROM revs WHERE saved_at < ? AND rev < ?", (old, cur - 20)).rowcount
+                con.commit()
+            finally:
+                con.close()
+        msg = f"Đã xóa {n} phiên bản cũ hơn {days} ngày (luôn giữ 20 bản gần nhất)"
+    elif what == "audit":
+        days = max(30, int((opt or {}).get("days") or 365))
+        old = (dt.datetime.now() - dt.timedelta(days=days)).isoformat(timespec="seconds")
+        with WRITE_LOCK:
+            con = connect()
+            try:
+                n = con.execute("DELETE FROM audit WHERE t < ?", (old,)).rowcount
+                con.commit()
+            finally:
+                con.close()
+        msg = f"Đã xóa {n} dòng nhật ký thay đổi cũ hơn {days} ngày"
+    elif what == "vacuum":
+        with WRITE_LOCK:
+            con = connect()
+            try:
+                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                con.execute("VACUUM")
+                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            finally:
+                con.close()
+        msg = "Đã thu gọn file dữ liệu (đã sao lưu trước)"
+    elif what == "bancu":
+        bc = os.path.join(bk_root(), "ban-cu")
+        ds = sorted((os.path.join(bc, n) for n in os.listdir(bc)) if os.path.isdir(bc) else [], key=os.path.getmtime)
+        for q in ds[:-1]:
+            shutil.rmtree(q, ignore_errors=True) if os.path.isdir(q) else os.remove(q)
+        msg = f"Đã xóa {max(0, len(ds) - 1)} bản chương trình cũ (giữ 1 bản gần nhất để quay lại)"
+    elif what == "log":
+        try:
+            with open(LOG_PATH, "rb") as f:
+                f.seek(max(0, _fsize(LOG_PATH) - 200_000))
+                tail = f.read()
+            with open(LOG_PATH, "wb") as f:
+                f.write(tail)
+        except OSError:
+            pass
+        msg = "Đã rút gọn nhật ký máy chủ (giữ phần gần nhất)"
+    else:
+        raise ValueError("Không rõ mục cần dọn")
+    after = storage_info()
+    log("Bộ nhớ: " + msg)
+    return {"ok": True, "msg": msg, "freed": max(0, before - after["total"]), "info": after}
+
+
+# ---------------------------------------------------------------- TỰ CẬP NHẬT
+AUTO_UPD = {"checked": None, "latest": None, "applied": None, "err": "", "busy": False}
+LAST_WRITE = {"t": 0.0}
+
+
+def auto_update(restart=True):
+    """Kiểm tra GitHub; có bản mới thì sao lưu → cài → (chờ lúc rảnh) khởi động lại."""
+    if AUTO_UPD["busy"]:
+        return {"ok": False, "msg": "Đang cập nhật"}
+    AUTO_UPD["busy"] = True
+    try:
+        r = update_check()
+        AUTO_UPD.update(checked=now_iso(), latest=r.get("latest"), err="" if r.get("ok") else r.get("msg", ""))
+        if not r.get("ok") or not r.get("newer"):
+            return {"ok": True, "newer": False, **r}
+        do_backup(force=True)
+        u = update_apply()
+        AUTO_UPD["applied"] = {"from": u["from"], "to": u["to"], "t": now_iso()}
+        if restart:
+            def later():
+                for _ in range(300):                 # chờ tối đa ~5 phút cho lúc không ai đang lưu
+                    if time.time() - LAST_WRITE["t"] > 15:
+                        break
+                    time.sleep(1)
+                log(f"Tự cập nhật xong {u['from']} → {u['to']} — khởi động lại")
+                restart_self()
+            threading.Thread(target=later, daemon=True).start()
+        return {"ok": True, "newer": True, **u}
+    except Exception as e:
+        AUTO_UPD["err"] = str(e)
+        log("auto_update: " + repr(e))
+        return {"ok": False, "msg": str(e)}
+    finally:
+        AUTO_UPD["busy"] = False
+
+
+def auto_update_loop():
+    time.sleep(60)
+    while True:
+        if CFG.get("tu_cap_nhat", True):
+            auto_update()
+        time.sleep(3 * 3600)
+
+
 def backup_loop():
     while True:
         try:
@@ -1069,6 +1255,7 @@ class H(BaseHTTPRequestHandler):
             rev, saved, data = read_state()
             return self._send(200, {"rev": rev, "savedAt": saved, "data": data})
         if path == "/api/state" and method == "POST":
+            LAST_WRITE["t"] = time.time()
             body = self._json()
             data = body.get("data")
             if not isinstance(data, dict) or data.get("app") != APP_ID:
@@ -1171,6 +1358,23 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, update_apply())
             except Exception as e:
                 return self._send(400, {"err": str(e)})
+        if path == "/api/storage" and method == "GET":
+            return self._send(200, storage_info())
+        if path == "/api/storage/clean" and method == "POST":
+            if self.client_address[0] not in ("127.0.0.1", "::1"):
+                return self._send(403, {"err": "Chỉ dọn bộ nhớ được trên chính máy chạy tool"})
+            b = self._json()
+            try:
+                return self._send(200, storage_clean(str(b.get("what", "")), b))
+            except Exception as e:
+                return self._send(400, {"err": str(e)})
+        if path == "/api/update/status" and method == "GET":
+            return self._send(200, {"version": VERSION, "auto": bool(CFG.get("tu_cap_nhat", True)), **AUTO_UPD,
+                                    "local": self.client_address[0] in ("127.0.0.1", "::1")})
+        if path == "/api/update/auto" and method == "POST":
+            if self.client_address[0] not in ("127.0.0.1", "::1"):
+                return self._send(403, {"err": "Chỉ cập nhật trên máy chủ"})
+            return self._send(200, auto_update(restart=False))
         if path == "/api/lan" and method == "GET":
             port = BIND["port"] or CFG.get("port", 8686)
             return self._send(200, {"on": bool(CFG.get("cho_phep_mang_noi_bo")), "listening": BIND["host"] == "0.0.0.0", "port": port,
@@ -1257,6 +1461,8 @@ class H(BaseHTTPRequestHandler):
             for k in ("github_repo", "github_branch", "github_token"):
                 if k in b and b[k] != "***":
                     CFG[k] = str(b[k]).strip()
+            if "tu_cap_nhat" in b:
+                CFG["tu_cap_nhat"] = bool(b["tu_cap_nhat"])
             for k in ("giu_ngay_lam_viec", "giu_ban_hang_ngay", "giu_ban_theo_thang", "khoa_man_hinh_sau_phut"):
                 if k in b:
                     CFG[k] = max(1, int(b[k]))
@@ -1349,6 +1555,7 @@ def main():
     srv.daemon_threads = True
     BIND.update(host=bind, port=port)
     threading.Thread(target=backup_loop, daemon=True).start()
+    threading.Thread(target=auto_update_loop, daemon=True).start()
     log(f"Khởi động v{VERSION} tại {bind}:{port}")
     print("=" * 60)
     print(f" QUẢN LÝ KHÓA Ô TÔ CSHN  v{VERSION}")

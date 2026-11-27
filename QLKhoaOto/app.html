@@ -171,6 +171,8 @@ select.gv.empty{border-color:#f0c5c0;background:var(--red-l)}
     <button class="nav" data-v="report">📊 Báo cáo</button>
     <div style="height:8px"></div>
     <button class="nav" data-v="backup">💾 Sao lưu &amp; Cài đặt</button>
+    <button class="nav" data-v="storage">💽 Bộ nhớ</button>
+    <button class="nav" data-v="update">🔄 Cập nhật <span class="cnt" id="cntUpd" style="display:none">mới</span></button>
     <button class="nav" data-v="audit">📜 Nhật ký thay đổi</button>
     <button class="nav" data-v="trash">🗑 Thùng rác <span class="cnt" id="cntTrash">0</span></button>
     <button class="nav" data-v="help">❓ Hướng dẫn</button>
@@ -320,7 +322,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.5.4';
+const APP_VER = 2, TOOL_VERSION = '2.6.0';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -835,7 +837,7 @@ let ROUTE = { v: 'home' };
 function go(v, p = {}) { $$('#toast div').forEach(d => { if (Date.now() - d.dataset.t > 400) d.remove(); }); ROUTE = { v, ...p }; location.hash = v + (p.id ? '/' + p.id : ''); render(); $('#view').scrollTop = 0; }
 function render() {
   $$('.nav').forEach(b => b.classList.toggle('on', b.dataset.v === ROUTE.v || (ROUTE.v === 'khoaDetail' && b.dataset.v === 'khoa') || (ROUTE.v === 'import' && b.dataset.v === 'khoa')));
-  const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, lich: vLich, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp }[ROUTE.v] || vHome;
+  const V = { home: vHome, khoa: vKhoa, khoaDetail: vKhoaDetail, import: vImport, hv: vHv, gv: vGv, madk: vMadk, backup: vBackup, lich: vLich, check: vCheck, report: vReport, audit: vAudit, trash: vTrash, help: vHelp, storage: vStorage, update: vUpdate }[ROUTE.v] || vHome;
   $('#view').innerHTML = ''; V($('#view')); refreshCounts(); renderBk();
 }
 function refreshCounts() {
@@ -913,7 +915,7 @@ function khoaTable(list, selectable) {
   ${list.map(k => { const l = hvOf(k.id).filter(h => h.tt !== "bohoc"); const m = l.filter(h => !h.maDK).length; const cv = l.filter(h => !h.maDK && MA_RE.test(h.maNguon || '')).length, dn = l.filter(h => h.maTuNguon).length; const sel = selectable && kSel.has(k.id); return `<tr class="${sel ? 'hl' : ''}">${selectable ? `<td><input type="checkbox" class="kck" data-id="${k.id}" ${sel ? 'checked' : ''}></td>` : ''}<td><a href="#" data-k="${k.id}" class="hang">${kCode(k)}</a>${isLocked(k) ? ' 🔒' : ''}${DB.drafts?.[k.id] ? ' <span class="badge b-new" title="Đang chọn GV dở">nháp</span>' : ''}</td><td>${esc(hangOf(k.hang).name)}</td><td>${isoToVN(k.ngayKG)}</td><td>${isoToVN(k.ngayBG)}</td><td class="small">${esc(khoaGvText(k))}</td><td class="num">${l.length}</td><td class="num">${m ? `<span class="badge b-miss">${m}</span>` : '<span class="muted">0</span>'}${cv ? ` <span class="badge b-new" title="${cv} HV có mã 52003 chưa chuyển — tick khóa rồi bấm 'Dùng mã 52003'">52003: ${cv}</span>` : ''}${dn ? ` <span class="badge b-info" title="Đang dùng mã 52003 cho ${dn} HV">dùng 52003</span>` : ''}</td><td style="white-space:nowrap" title="${{ xong: 'Đã chốt hồ sơ', choanh: 'Đã nhập thông tin, chờ ảnh', chua: 'Chưa xác nhận' }[hsState(k)]}">${(k.hoSo || {}).tt ? '<span style="color:var(--green)">①✓</span>' : '<span class="muted">①</span>'} ${(k.hoSo || {}).anh ? '<span style="color:var(--green)">②✓</span>' : '<span class="muted">②</span>'}</td><td>${stBadge(k)}</td><td><button class="btn sm" data-k="${k.id}">Mở</button></td></tr>`; }).join('')}</tbody></table></div>`;
 }
 function bindCommon(el) {
-  $$('[data-upd]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('help', { check: true }); }));
+  $$('[data-upd]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('update'); }));
   $$('[data-k]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('khoaDetail', { id: a.dataset.k }); }));
   $$('[data-go]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); if (a.dataset.lt) lichTab = a.dataset.lt; if (a.dataset.zm) zaloMode = a.dataset.zm; go(a.dataset.go); if (a.dataset.new) newKhoaDialog(); }));
   $$('[data-imp]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go('import', { id: a.dataset.imp }); }));
@@ -2190,9 +2192,144 @@ async function restartTool() {
   for (let i = 0; i < 40; i++) { await new Promise(r => setTimeout(r, 750)); try { const r = await fetch('/api/ping'); if (r.ok) { location.reload(); return; } } catch { } }
   $('#view').innerHTML = '<div class="card note red">Chưa khởi động lại được — đóng cửa sổ đen và mở lại CHAY_TOOL.bat.</div>';
 }
+/* ================= BỘ NHỚ ================= */
+const fmtB = n => n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : (n || 0) + ' B';
+const ST_COL = { db: '#2f6fd6', 'hang-ngay': '#18a07f', 'theo-thang': '#7cc47a', excel: '#e8a317', truoc: '#9b6bd6', bancu: '#d6587a', log: '#8a94a6', prog: '#4fb3d9' };
+const ST_TIP = {
+  db: 'File chứa toàn bộ dữ liệu đang dùng (khóa, học viên, GV, mã ĐKI) cùng **lịch sử phiên bản** và **nhật ký thay đổi**. Không xóa được — chỉ dọn phần lịch sử cũ bên trong.',
+  'hang-ngay': 'Bản sao lưu tự động trong ngày. Tự xóa bản cũ hơn số ngày làm việc đã cài.',
+  'theo-thang': 'Mỗi tháng 1 bản — để cứu dữ liệu khi phát hiện lỗi muộn.',
+  excel: 'File Excel tổng hợp xuất mỗi ngày — để xem/in, không dùng khôi phục.',
+  truoc: 'Bản tự lưu ngay trước mỗi lần khôi phục / quay về phiên bản cũ.',
+  bancu: 'Chương trình phiên bản cũ giữ lại sau mỗi lần cập nhật — để quay lại nếu bản mới lỗi.',
+  log: 'Nhật ký hoạt động của máy chủ (khởi động, sao lưu, lỗi).',
+  prog: 'Các file chương trình của tool.' };
+const ST_ACT = { 'hang-ngay': 'prune', 'theo-thang': 'prune', excel: 'prune', truoc: 'prune', bancu: 'bancu', log: 'log' };
+async function stClean(what, opt, el) {
+  const T = { prune: ['Dọn bản sao lưu quá hạn?', 'Xóa bản sao lưu hằng ngày / Excel / trước khôi phục cũ hơn số <b>ngày làm việc</b> đã cài, và bản theo tháng quá số tháng đã cài. Luôn giữ các bản mới nhất.'],
+    revs: ['Xóa phiên bản cũ?', `Xóa các phiên bản (Lịch sử phiên bản) cũ hơn <b>${opt?.days} ngày</b>. Sau đó không "Quay về" được các thời điểm đó nữa (bản sao lưu file vẫn còn). Luôn giữ 20 bản gần nhất.`],
+    audit: ['Xóa nhật ký thay đổi cũ?', `Xóa các dòng Nhật ký thay đổi cũ hơn <b>${opt?.days} ngày</b>. Không ảnh hưởng dữ liệu.`],
+    vacuum: ['Thu gọn file dữ liệu?', 'Sắp xếp lại file dữ liệu để trả lại phần trống cho ổ đĩa. Tool sao lưu trước. Mất vài giây, nên làm khi không ai đang nhập.'],
+    bancu: ['Xóa bản chương trình cũ?', 'Xóa các bản chương trình cũ, chỉ giữ 1 bản gần nhất để quay lại khi cần.'],
+    log: ['Rút gọn nhật ký máy chủ?', 'Chỉ giữ phần nhật ký gần nhất (~200 KB).'] }[what];
+  if (!await confirmBox(T[0], `<p>${T[1]}</p>`, 'Dọn')) return;
+  if (what === 'vacuum' || what === 'revs') await flushSave();
+  try { const r = await api('/api/storage/clean', { body: { what, ...(opt || {}) } }); toast(`${r.msg}. Giải phóng ${fmtB(r.freed)}.`, 'ok', 7000); stRender(el, r.info); }
+  catch (e) { toast(e.message, 'err', 8000); }
+}
+async function vStorage(el) {
+  el.innerHTML = `<h1>Bộ nhớ sử dụng</h1><p class="sub">Dung lượng tool đang chiếm trên ổ đĩa của máy chủ và các nút dọn dẹp an toàn.</p><div id="stBox"><div class="empty-st">Đang đo dung lượng…</div></div>`;
+  try { stRender(el, await api('/api/storage')); } catch (e) { $('#stBox', el).innerHTML = `<div class="card note red">${esc(e.message)}</div>`; }
+}
+function stRender(el, S) {
+  const box = $('#stBox', el); if (!box) return;
+  const cats = S.cats.filter(c => c.size > 0), tot = S.total || 1, D = S.disk, db = S.cats.find(c => c.id === 'db');
+  // vòng tròn (donut)
+  let acc = 0; const R = 70, C = 2 * Math.PI * R;
+  const arcs = cats.map(c => { const f = c.size / tot, a = `<circle r="${R}" cx="90" cy="90" fill="none" stroke="${ST_COL[c.id]}" stroke-width="26" stroke-dasharray="${Math.max(0.5, f * C - 1.5)} ${C}" stroke-dashoffset="${-acc * C}" transform="rotate(-90 90 90)"><title>${esc(c.name)}: ${fmtB(c.size)}</title></circle>`; acc += f; return a; }).join('');
+  const toolPct = D ? S.total / D.total * 100 : 0, usedPct = D ? (D.used - S.total) / D.total * 100 : 0, freePct = D ? D.free / D.total * 100 : 0;
+  const dd = db.detail, mx = Math.max(...S.cats.map(c => c.size), 1);
+  const lowDisk = D && D.free < 2 * 1073741824;
+  box.innerHTML = `
+  <div class="grid" style="grid-template-columns:minmax(300px,1fr) 1.4fr;gap:16px;align-items:stretch">
+    <div class="card" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      <svg viewBox="0 0 180 180" width="180" height="180" style="flex:none"><circle r="${R}" cx="90" cy="90" fill="none" stroke="var(--gray-l)" stroke-width="26"/>${arcs}
+        <text x="90" y="86" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink,#1f2a3d)">${fmtB(S.total)}</text><text x="90" y="106" text-anchor="middle" font-size="11" fill="#7a879c">tool đang dùng</text></svg>
+      <div style="flex:1;min-width:150px">${cats.map(c => `<div class="row small" style="gap:8px;margin:3px 0"><span style="width:11px;height:11px;border-radius:3px;background:${ST_COL[c.id]}"></span><span>${esc(c.name)}</span><span class="sp"></span><b>${(c.size / tot * 100).toFixed(c.size / tot < .1 ? 1 : 0)}%</b></div>`).join('')}</div>
+    </div>
+    <div class="card"><div class="row"><h2 style="margin:0">💽 Ổ đĩa ${esc(D ? D.drive : '')}</h2>${tip('Dung lượng của ổ đĩa chứa tool. **Xanh dương** = tool, **xám** = chương trình/file khác, **trắng** = còn trống.\nCòn dưới 2 GB thì nên dọn, vì sao lưu cần chỗ trống để ghi.')}<span class="sp"></span>${D ? `<span class="badge ${lowDisk ? 'b-miss' : 'b-run'}">${lowDisk ? '⚠ Sắp đầy' : '✓ Còn thoải mái'}</span>` : ''}</div>
+      ${D ? `<div style="display:flex;height:28px;border-radius:8px;overflow:hidden;margin:14px 0 8px;background:#fff;border:1px solid var(--line)">
+        <div style="width:${Math.max(toolPct, .6)}%;background:#2f6fd6" title="Tool: ${fmtB(S.total)}"></div><div style="width:${usedPct}%;background:#b9c2d0" title="File khác: ${fmtB(D.used - S.total)}"></div></div>
+        <div class="row small" style="gap:16px"><span><b style="color:#2f6fd6">■</b> Tool ${fmtB(S.total)}</span><span><b style="color:#b9c2d0">■</b> File khác ${fmtB(D.used - S.total)}</span><span>□ Còn trống <b>${fmtB(D.free)}</b> (${freePct.toFixed(0)}%)</span><span class="sp"></span><span class="muted">Tổng ${fmtB(D.total)}</span></div>
+        <p class="small muted" style="margin:12px 0 0">Tool chiếm <b>${toolPct < 0.01 ? '< 0,01' : toolPct.toFixed(2)}%</b> ổ đĩa. ${lowDisk ? '<b style="color:var(--red)">Ổ đĩa sắp đầy — dọn bớt file khác trên máy hoặc chuyển thư mục sao lưu sang ổ khác.</b>' : 'Không cần lo về dung lượng.'}</p>` : '<p class="muted">Không đọc được thông tin ổ đĩa.</p>'}
+    </div>
+  </div>
+  <div class="card"><div class="row"><h2 style="margin:0">Chi tiết từng phần</h2>${tip('Dung lượng từng loại file của tool. Nút **Dọn** chỉ xóa phần quá hạn giữ hoặc có thể tạo lại — dữ liệu đang dùng không bao giờ bị đụng.')}<span class="sp"></span><button class="btn sm" id="stRe">↻ Đo lại</button></div>
+    <div class="tbl" style="margin-top:10px"><table><thead><tr><th>Phần</th><th style="width:38%">Dung lượng</th><th class="num">Số file</th><th></th></tr></thead><tbody>
+    ${S.cats.map(c => `<tr><td><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${ST_COL[c.id]};margin-right:6px"></span><b>${esc(c.name)}</b>${tip(ST_TIP[c.id] || '')}<div class="mono small muted" style="white-space:normal">${esc(c.path)}</div></td>
+      <td><div class="row" style="gap:8px"><div style="flex:1;height:10px;border-radius:5px;background:var(--gray-l);overflow:hidden"><div style="height:100%;width:${c.size / mx * 100}%;background:${ST_COL[c.id]}"></div></div><b style="min-width:70px;text-align:right">${fmtB(c.size)}</b></div></td>
+      <td class="num">${c.id === 'db' || c.id === 'log' || c.id === 'prog' ? '' : c.count}</td>
+      <td style="white-space:nowrap">${ST_ACT[c.id] && c.size ? `<button class="btn sm" data-stc="${ST_ACT[c.id]}">🧹 Dọn</button>` : ''} <button class="btn sm" data-sto="${esc(c.path)}" title="Mở thư mục">📂</button></td></tr>`).join('')}
+    </tbody></table></div>
+    ${S.extra.length ? `<p class="small" style="margin-top:10px"><b>Thư mục sao lưu phụ:</b> ${S.extra.map(x => `<span class="mono">${esc(x.path)}</span> — ${fmtB(x.size)} (${x.count} file)`).join(' · ')}</p>` : ''}
+  </div>
+  <div class="card"><div class="row"><h2 style="margin:0">🔍 Bên trong file dữ liệu</h2>${tip('File dữ liệu gồm: **dữ liệu hiện tại** + **lịch sử phiên bản** (để Quay về) + **nhật ký thay đổi** (ai sửa gì) + **chỗ trống** chưa trả lại ổ đĩa.\nLịch sử và nhật ký tăng dần theo thời gian — dọn bớt phần cũ nếu file to.')}</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px">
+      <div class="card stat" style="margin:0"><div class="k">Dữ liệu hiện tại</div><div class="v">${fmtB(dd.state)}</div><div class="d">${DB.khoa.length} khóa · ${DB.hv.length} học viên</div></div>
+      <div class="card stat" style="margin:0"><div class="k">Lịch sử phiên bản</div><div class="v">${fmtB(dd.revs)}</div><div class="d">${dd.revsN} bản${dd.revsFrom ? ' · từ ' + fmtT(dd.revsFrom) : ''}<br>Tự xóa bản cũ hơn ${S.cfg.revDays} ngày khi quá ${S.cfg.revKeep} bản</div>
+        <div class="row" style="margin-top:8px;gap:6px"><span class="small">Xóa cũ hơn</span><input type="number" class="in" id="stRd" value="30" min="1" style="width:62px;padding:3px 6px"><span class="small">ngày</span><button class="btn sm" id="stRv">🧹</button></div></div>
+      <div class="card stat" style="margin:0"><div class="k">Nhật ký thay đổi</div><div class="v">${fmtB(dd.audit)}</div><div class="d">${dd.auditN.toLocaleString('vi-VN')} dòng${dd.auditFrom ? ' · từ ' + fmtT(dd.auditFrom) : ''}</div>
+        <div class="row" style="margin-top:8px;gap:6px"><span class="small">Xóa cũ hơn</span><input type="number" class="in" id="stAd" value="365" min="30" style="width:66px;padding:3px 6px"><span class="small">ngày</span><button class="btn sm" id="stAu">🧹</button></div></div>
+      <div class="card stat" style="margin:0"><div class="k">Chỗ trống thu gọn được</div><div class="v">${fmtB(dd.free)}</div><div class="d">Phần trống bên trong file sau khi xóa bớt</div>
+        <button class="btn sm${dd.free > 1048576 ? ' pri' : ''}" id="stVc" style="margin-top:8px">🗜 Thu gọn file dữ liệu</button></div>
+    </div></div>
+  <div class="card"><div class="row"><h2 style="margin:0">⚙ Tự dọn</h2>${tip('Tool tự dọn theo các mức này mỗi lần sao lưu (10 phút/lần). Đổi số ở **Sao lưu & Cài đặt → Thư mục sao lưu phụ**.')}<span class="sp"></span><button class="btn sm pri" id="stAll">🧹 Dọn sao lưu quá hạn ngay</button></div>
+    <ul class="small" style="margin:8px 0 0 18px;line-height:1.8"><li>Sao lưu hằng ngày, Excel, trước khôi phục: giữ <b>${S.cfg.days} ngày làm việc</b> gần nhất (luôn giữ tối thiểu 5 bản).</li><li>Sao lưu theo tháng: giữ <b>${S.cfg.months} tháng</b>.</li><li>Lịch sử phiên bản: giữ <b>${S.cfg.revKeep} bản</b> hoặc <b>${S.cfg.revDays} ngày</b> gần nhất.</li></ul></div>`;
+  $('#stRe', box).onclick = () => vStorage(el);
+  $$('[data-stc]', box).forEach(b => b.onclick = () => stClean(b.dataset.stc, null, el));
+  $$('[data-sto]', box).forEach(b => b.onclick = async () => { try { await api('/api/open', { body: { path: b.dataset.sto } }); } catch (e) { toast(e.message, 'err'); } });
+  $('#stRv', box).onclick = () => stClean('revs', { days: +$('#stRd', box).value || 30 }, el);
+  $('#stAu', box).onclick = () => stClean('audit', { days: +$('#stAd', box).value || 365 }, el);
+  $('#stVc', box).onclick = () => stClean('vacuum', null, el);
+  $('#stAll', box).onclick = () => stClean('prune', null, el);
+}
+/* ================= CẬP NHẬT ================= */
+async function vUpdate(el) {
+  el.innerHTML = `<h1>Cập nhật phần mềm</h1><p class="sub">Đang dùng phiên bản <b>${TOOL_VERSION}</b>. Bản mới phát hành trên GitHub.</p><div id="upBox"><div class="empty-st">Đang kiểm tra…</div></div>`;
+  let st = {}; try { st = await api('/api/update/status'); } catch { }
+  const box = $('#upBox', el);
+  const draw = (r, busy) => {
+    const newer = r && r.ok && r.newer;
+    box.innerHTML = `<div class="grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card" style="text-align:center;padding:26px"><div class="small muted">ĐANG DÙNG</div><div style="font-size:40px;font-weight:800;color:var(--blue)">v${esc(TOOL_VERSION)}</div>
+        ${!r ? '<div class="muted">Đang kiểm tra GitHub…</div>' : !r.ok ? `<div class="note small" style="text-align:left">${esc(r.msg || 'Không kiểm tra được')}</div>` : newer ? `<div class="badge b-new" style="font-size:14px;padding:4px 12px">⬆ Có bản mới v${esc(r.latest)}${r.date ? ' · ' + esc(r.date) : ''}</div>` : '<div class="badge b-run" style="font-size:14px;padding:4px 12px">✓ Đang dùng bản mới nhất</div>'}
+        <div class="row" style="justify-content:center;margin-top:16px;gap:8px"><button class="btn" id="upChk" ${busy ? 'disabled' : ''}>↻ Kiểm tra lại</button>${newer && st.local ? `<button class="btn pri" id="upGo" ${busy ? 'disabled' : ''}>⬇ Cập nhật ngay lên v${esc(r.latest)}</button>` : ''}</div>
+        ${newer && !st.local ? '<p class="small muted">Cập nhật được thực hiện trên máy chủ (máy chạy tool).</p>' : ''}
+        ${newer && r.notes ? `<div class="note blue small" style="text-align:left;margin-top:14px"><b>Có gì mới:</b> ${esc(r.notes)}</div>` : ''}</div>
+      <div class="card"><div class="row"><h2 style="margin:0">🔄 Tự động cập nhật</h2>${tip('Bật thì tool tự lo việc cập nhật:\n• Kiểm tra GitHub **mỗi 3 giờ** khi đang chạy.\n• Mỗi lần **bấm F5** (tải lại trang) cũng kiểm tra luôn.\nCó bản mới: **sao lưu dữ liệu trước** → tải về (kiểm tra mã an toàn) → cài → khởi động lại lúc không ai đang lưu. Bản cũ được giữ để quay lại.')}</div>
+        <label class="row" style="margin:14px 0;gap:10px;font-size:15px;cursor:${st.local ? 'pointer' : 'default'}"><input type="checkbox" id="upAuto" ${st.auto ? 'checked' : ''} ${st.local ? '' : 'disabled'} style="width:20px;height:20px"> <b>Tự động cập nhật lên bản mới nhất</b></label>
+        <ol class="small" style="margin:0 0 0 18px;line-height:1.8"><li>Tool tự kiểm tra mỗi 3 giờ, hoặc ngay khi bạn <b>bấm F5</b>.</li><li>Có bản mới → sao lưu dữ liệu → tải & cài → khởi động lại.</li><li>Các máy đang mở tool sẽ thấy dòng <b>"Đã cập nhật — bấm F5"</b> ở đầu trang.</li></ol>
+        <div class="small muted" style="margin-top:12px">${st.checked ? 'Lần kiểm tra tự động gần nhất: ' + fmtT(st.checked) : 'Chưa kiểm tra tự động lần nào kể từ khi mở tool.'}${st.applied ? `<br>Lần tự cập nhật gần nhất: v${esc(st.applied.from)} → <b>v${esc(st.applied.to)}</b> lúc ${fmtT(st.applied.t)}` : ''}${st.err ? `<br><span style="color:var(--red)">Lỗi lần trước: ${esc(st.err)}</span>` : ''}</div>
+        <p class="small" style="margin-top:12px"><a href="#" id="upGh">Cài đặt kho GitHub (nâng cao) →</a></p></div></div>`;
+    $('#upChk', box).onclick = () => check(true);
+    $('#upGo', box) && ($('#upGo', box).onclick = () => runUpdate(r.latest));
+    $('#upAuto', box).onchange = async e => { try { await api('/api/config', { body: { tu_cap_nhat: e.target.checked } }); st.auto = e.target.checked; toast(e.target.checked ? 'Đã bật tự động cập nhật.' : 'Đã tắt tự động cập nhật — nhớ vào đây cập nhật thủ công.', 'ok'); } catch (er) { e.target.checked = !e.target.checked; toast(er.message, 'err'); } };
+    $('#upGh', box).onclick = e => { e.preventDefault(); go('help', { check: 1 }); };
+  };
+  const check = async () => { draw(null, true); let r; try { r = await api('/api/update/check'); } catch (e) { r = { ok: false, msg: e.message }; } UPD = r; draw(r); };
+  check();
+}
+/* Cập nhật ngay (máy chủ): sao lưu → cài → khởi động lại → tải lại trang */
+async function runUpdate(latest) {
+  const ov = document.createElement('div'); ov.className = 'modal-bg';
+  ov.innerHTML = `<div class="modal" style="max-width:420px;text-align:center"><div class="mb" style="padding:30px"><div style="font-size:42px">⬇</div><h2 style="margin:8px 0">Đang cập nhật lên v${esc(latest || '')}</h2><p class="small muted" id="ovM">Đang sao lưu dữ liệu và tải bản mới…</p></div></div>`;
+  document.body.appendChild(ov);
+  await flushSave();
+  try { const r = await api('/api/update/auto', { body: {} }); if (!r.ok) throw new Error(r.msg || 'Không cập nhật được'); if (!r.newer) { ov.remove(); toast('Đang dùng bản mới nhất.', 'ok'); return; } $('#ovM', ov).textContent = `Đã cài v${r.to}. Đang khởi động lại…`; }
+  catch (e) { ov.remove(); toast('Cập nhật lỗi: ' + e.message, 'err', 9000); return; }
+  ov.remove(); restartTool();
+}
+/* Bấm F5 (tải lại) = kiểm tra & tự cập nhật nếu bật; các máy khác thấy dòng nhắc F5 khi máy chủ đã lên bản mới */
+async function f5Update() {
+  try {
+    const st = await api('/api/update/status'); if (!st.auto || !st.local) return dailyUpdateCheck();
+    const last = +(sessionStorage.getItem('qlk_f5') || 0); if (Date.now() - last < 90e3) return; sessionStorage.setItem('qlk_f5', Date.now());
+    const r = await api('/api/update/check'); UPD = r;
+    if (r.ok && r.newer && !$('.modal-bg')) { toast(`Có bản mới v${r.latest} — đang tự cập nhật…`, 'ok', 4000); runUpdate(r.latest); }
+  } catch { }
+}
+async function verWatch() {
+  try { const p = await fetch('/api/ping').then(r => r.json()); if (p.version && p.version !== TOOL_VERSION && !$('#verBar')) {
+    const b = document.createElement('div'); b.id = 'verBar';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9000;background:linear-gradient(90deg,#1d4f9c,#2f86d6);color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.2)';
+    b.innerHTML = `🎉 Tool đã được cập nhật lên <b>v${esc(p.version)}</b> (trang đang mở là v${esc(TOOL_VERSION)}). Bấm <b>F5</b> để dùng bản mới. <button class="btn sm" style="background:#fff;color:#1d4f9c;border:0" id="verGo">↻ Tải lại (F5)</button>`;
+    document.body.appendChild(b); $('#verGo', b).onclick = async () => { await flushSave(); location.reload(); }; } } catch { }
+}
+setInterval(verWatch, 60e3); window.addEventListener('focus', verWatch);
+
 let UPD = null;
 async function dailyUpdateCheck() {
-  try { const k = 'qlk_upd_' + todayISO(); const c = localStorage.getItem(k); if (c) { UPD = JSON.parse(c); return; } UPD = await api('/api/update/check'); if (UPD.ok) localStorage.setItem(k, JSON.stringify(UPD)); if (UPD.newer && ROUTE.v === 'home') render(); } catch { }
+  try { setTimeout(() => { const c = $('#cntUpd'); if (c) c.style.display = UPD && UPD.newer ? '' : 'none'; }, 4000); const k = 'qlk_upd_' + todayISO(); const c = localStorage.getItem(k); if (c) { UPD = JSON.parse(c); return; } UPD = await api('/api/update/check'); if (UPD.ok) localStorage.setItem(k, JSON.stringify(UPD)); if (UPD.newer && ROUTE.v === 'home') render(); } catch { }
 }
 function vHelp(el) {
   el.innerHTML = `<h1>Hướng dẫn sử dụng</h1><p class="sub">Phiên bản ${TOOL_VERSION} · ${esc(DB.settings.coSo)}</p>
@@ -2570,7 +2707,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   }
   const [v, id] = location.hash.replace('#', '').split('/');
   if (v && v !== 'import') ROUTE = { v, id }; render();
-  setTimeout(dailyUpdateCheck, 3000);
+  setTimeout(f5Update, 2500); setTimeout(verWatch, 5000);
   setTimeout(hsNotify, 2000); setInterval(() => { hsNotify(); refreshCounts(); }, 60 * 60e3);
 })();
 </script>

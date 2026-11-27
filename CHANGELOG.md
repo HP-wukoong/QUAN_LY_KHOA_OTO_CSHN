@@ -1,5 +1,9 @@
 # Nhật ký thay đổi
 
+## 2.6.0 — 2026-11-27
+- Mục **💽 Bộ nhớ**: biểu đồ tròn dung lượng tool theo từng phần, thanh dung lượng ổ đĩa (tool / file khác / còn trống, cảnh báo khi còn < 2 GB), chi tiết bên trong file dữ liệu (dữ liệu hiện tại, lịch sử phiên bản, nhật ký thay đổi, chỗ trống), các nút dọn an toàn (sao lưu quá hạn, phiên bản cũ, nhật ký cũ, thu gọn file dữ liệu, bản chương trình cũ, nhật ký máy chủ).
+- Mục **🔄 Cập nhật**: bật/tắt **tự động cập nhật** — tự kiểm tra GitHub mỗi 3 giờ và mỗi lần **bấm F5**; có bản mới thì sao lưu → tải (kiểm tra mã SHA-256) → cài → khởi động lại. Các máy/tab đang mở thấy dòng "Đã cập nhật — bấm F5".
+
 ## 2.5.4 — 2026-11-27
 - **Dùng chung qua mạng nội bộ (LAN)**: mục riêng trong Sao lưu & Cài đặt, làm theo 4 bước có đánh dấu ✓ (PIN → bật → khởi động lại 1 nút → mở cổng tường lửa Windows tự động qua hộp thoại quyền quản trị).
 - Hiện mọi địa chỉ cho máy khác (theo IP và theo tên máy), nút Copy, **Tải lối tắt** (.url) để chép sang Desktop máy khác; mục "Máy khác không vào được?".
