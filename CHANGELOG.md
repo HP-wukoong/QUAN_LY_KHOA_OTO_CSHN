@@ -1,5 +1,14 @@
 # Nhật ký thay đổi
 
+## 2.6.2 — 2026-11-27
+- Sửa dọn dẹp bộ nhớ không giảm được dung lượng:
+  - Bản sao lưu giờ được **làm gọn** (chỉ chứa dữ liệu, không kèm lịch sử phiên bản) — nhỏ hơn ~15 lần, khôi phục vẫn đủ dữ liệu. Bản theo tháng giữ thêm nhật ký thay đổi.
+  - Các bản sao lưu cũ (nặng) **tự được làm gọn** khi mở tool, hoặc khi bấm "Dọn sao lưu".
+  - Ngày đã qua chỉ giữ 1 bản cuối ngày (bỏ bản đầu ngày).
+  - Xóa phiên bản / nhật ký thay đổi xong tự thu gọn file dữ liệu để trả lại dung lượng.
+  - Khi không có gì để dọn, thông báo nói rõ lý do thay vì "Giải phóng 0 B".
+  - Sửa ô "Xóa phiên bản cũ hơn … ngày" bỏ qua giá trị nhập.
+
 ## 2.6.1 — 2026-11-27
 - Máy khác truy cập qua mạng ở **chế độ chỉ xem** (mặc định): xem, tìm, lọc, chọn hàng loạt, xuất Excel / in, copy thông báo Zalo bình thường; không sửa, xóa, nạp file, tick hồ sơ. Máy chủ chặn cả ở phía máy chủ (403). Góc trên hiện "👁 Chế độ chỉ xem".
 - Máy chủ chọn được quyền cho máy khác ở mục Dùng chung qua mạng: **Chỉ xem** hoặc **Được sửa**.

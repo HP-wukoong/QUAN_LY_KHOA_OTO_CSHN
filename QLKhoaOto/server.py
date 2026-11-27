@@ -27,7 +27,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "2.6.1"
+VERSION = "2.6.2"
 APP_ID = "QLKhoaOtoCSHN"
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -415,7 +415,33 @@ def write_info_file(folder):
         log("write_info_file: " + repr(e))
 
 
-def sqlite_copy(dst):
+def compact_db_file(fp, keep_audit=False):
+    """Làm gọn 1 file sao lưu: bỏ lịch sử phiên bản (revs) — khôi phục chỉ cần dữ liệu (state) —, bỏ nhật ký nếu không cần, rồi VACUUM.
+    Trả về số byte giảm được. File không phải của tool / đang lỗi thì bỏ qua."""
+    before = _fsize(fp)
+    con = sqlite3.connect(fp, timeout=30)
+    try:
+        con.execute("PRAGMA journal_mode=DELETE")
+        tabs = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "state" not in tabs:
+            return 0
+        n = 0
+        if "revs" in tabs:
+            n += con.execute("SELECT COUNT(*) FROM revs").fetchone()[0]
+            con.execute("DELETE FROM revs")
+        if "audit" in tabs and not keep_audit:
+            n += con.execute("SELECT COUNT(*) FROM audit").fetchone()[0]
+            con.execute("DELETE FROM audit")
+        con.commit()
+        if n or con.execute("PRAGMA freelist_count").fetchone()[0]:
+            con.execute("VACUUM")
+    finally:
+        con.close()
+    return max(0, before - _fsize(fp))
+
+
+def sqlite_copy(dst, keep_audit=False):
+    """Chép CSDL đang dùng ra file sao lưu (đã làm gọn: chỉ dữ liệu, không kèm lịch sử phiên bản)."""
     tmp = dst + ".tmp"
     src = connect()
     out = sqlite3.connect(tmp)
@@ -424,7 +450,36 @@ def sqlite_copy(dst):
     out.execute("PRAGMA journal_mode=DELETE")
     out.close()
     src.close()
+    try:
+        compact_db_file(tmp, keep_audit=keep_audit)
+    except Exception as e:
+        log("compact: " + repr(e))
     os.replace(tmp, dst)
+
+
+def compact_old_backups():
+    """Làm gọn các bản sao lưu cũ (tạo trước v2.6.2 còn kèm lịch sử phiên bản nên rất nặng)."""
+    d, m, _, p = _bk_paths()
+    dirs = [(d, False), (p, False), (m, True)]
+    for r in CFG.get("thu_muc_sao_luu_phu") or []:
+        if r and os.path.isdir(r):
+            dirs += [(extra_target(r, "hang-ngay"), False), (extra_target(r, "theo-thang"), True)]
+    freed = n = 0
+    for folder, keep in dirs:
+        if not os.path.isdir(folder):
+            continue
+        for fn in os.listdir(folder):
+            if fn.startswith("QLKhoaOto") and fn.endswith(".db"):
+                try:
+                    f = compact_db_file(os.path.join(folder, fn), keep_audit=keep)
+                    if f:
+                        freed += f
+                        n += 1
+                except Exception as e:
+                    log(f"compact {fn}: {e!r}")
+    if n:
+        log(f"Làm gọn {n} bản sao lưu cũ, giảm {freed // 1048576} MB")
+    return {"n": n, "freed": freed}
 
 
 def extra_target(root, sub=""):
@@ -489,6 +544,18 @@ def prune_folder(folder, cutoff, min_keep):
                 gone += 1
             except Exception:
                 pass
+    # ngày đã qua: chỉ cần bản cuối ngày → bỏ bản "đầu ngày" khi đã có bản cuối ngày cùng ngày
+    today = dt.date.today().isoformat()
+    names = set(os.listdir(folder))
+    for n in list(names):
+        if "_dau-ngay" in n and n.endswith(".db"):
+            g = DATE_RE.search(n)
+            if g and g.group(1) < today and n.replace("_dau-ngay", "") in names:
+                try:
+                    os.remove(os.path.join(folder, n))
+                    gone += 1
+                except Exception:
+                    pass
     return gone
 
 
@@ -529,7 +596,7 @@ def do_backup(force=False):
             made.append(cur)
         mon = os.path.join(m, bk_name(f"{month}.db"))
         if not os.path.exists(mon):
-            sqlite_copy(mon)
+            sqlite_copy(mon, keep_audit=True)
             made.append(mon)
         extra = []
         for f in made:
@@ -923,6 +990,17 @@ def storage_info():
                     "revDays": CFG.get("giu_phien_ban_ngay", 45), "revKeep": CFG.get("giu_so_phien_ban", 400)}}
 
 
+def _vacuum_live():
+    with WRITE_LOCK:
+        con = connect()
+        try:
+            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            con.execute("VACUUM")
+            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        finally:
+            con.close()
+
+
 def storage_clean(what, opt=None):
     """Dọn theo từng loại. Mọi thao tác chỉ xóa thứ có thể tạo lại / đã quá hạn giữ; dữ liệu đang dùng không bị đụng."""
     if what == "vacuum":
@@ -939,7 +1017,9 @@ def storage_clean(what, opt=None):
                 os.remove(os.path.join(m, n))
             except OSError:
                 pass
-        msg = f"Đã dọn bản sao lưu cũ hơn {r['cutoff']} và bản theo tháng quá {keepm} tháng"
+        c = compact_old_backups()
+        msg = (f"Đã xóa {r['deleted']} bản sao lưu cũ hơn {r['cutoff']} / bản đầu ngày thừa" + (f", làm gọn {c['n']} bản cũ" if c["n"] else "")
+               + f"; bản theo tháng giữ {keepm} tháng")
     elif what == "revs":
         days = max(1, int((opt or {}).get("days") or 30))
         old = (dt.datetime.now() - dt.timedelta(days=days)).isoformat(timespec="seconds")
@@ -951,6 +1031,7 @@ def storage_clean(what, opt=None):
                 con.commit()
             finally:
                 con.close()
+        _vacuum_live()
         msg = f"Đã xóa {n} phiên bản cũ hơn {days} ngày (luôn giữ 20 bản gần nhất)"
     elif what == "audit":
         days = max(30, int((opt or {}).get("days") or 365))
@@ -962,16 +1043,10 @@ def storage_clean(what, opt=None):
                 con.commit()
             finally:
                 con.close()
+        _vacuum_live()
         msg = f"Đã xóa {n} dòng nhật ký thay đổi cũ hơn {days} ngày"
     elif what == "vacuum":
-        with WRITE_LOCK:
-            con = connect()
-            try:
-                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                con.execute("VACUUM")
-                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            finally:
-                con.close()
+        _vacuum_live()
         msg = "Đã thu gọn file dữ liệu (đã sao lưu trước)"
     elif what == "bancu":
         bc = os.path.join(bk_root(), "ban-cu")
@@ -992,8 +1067,15 @@ def storage_clean(what, opt=None):
     else:
         raise ValueError("Không rõ mục cần dọn")
     after = storage_info()
+    freed = max(0, before - after["total"])
+    if not freed:
+        msg += {"prune": f" — không có bản nào quá hạn: mọi bản đều trong {CFG.get('giu_ngay_lam_viec', 15)} ngày làm việc gần nhất (giảm số ngày giữ nếu muốn xóa thêm)",
+                "bancu": " — chỉ còn 1 bản cũ nhất cần giữ để quay lại",
+                "revs": " — không có phiên bản nào cũ hơn số ngày đã chọn",
+                "audit": " — không có nhật ký nào cũ hơn số ngày đã chọn",
+                "vacuum": " — file đã gọn sẵn", "log": " — nhật ký còn nhỏ"}.get(what, "")
     log("Bộ nhớ: " + msg)
-    return {"ok": True, "msg": msg, "freed": max(0, before - after["total"]), "info": after}
+    return {"ok": True, "msg": msg, "freed": freed, "info": after}
 
 
 # ---------------------------------------------------------------- TỰ CẬP NHẬT
@@ -1571,6 +1653,7 @@ def main():
     BIND.update(host=bind, port=port)
     threading.Thread(target=backup_loop, daemon=True).start()
     threading.Thread(target=auto_update_loop, daemon=True).start()
+    threading.Thread(target=lambda: (time.sleep(20), compact_old_backups(), prune_backups()), daemon=True).start()
     log(f"Khởi động v{VERSION} tại {bind}:{port}")
     print("=" * 60)
     print(f" QUẢN LÝ KHÓA Ô TÔ CSHN  v{VERSION}")

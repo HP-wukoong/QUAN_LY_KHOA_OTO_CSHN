@@ -323,7 +323,7 @@ function vnCompare(a, b) {
    LƯU TRỮ: máy chủ Python + SQLite (data/qlkhoa.db).
    Mất kết nối → giữ "bản chờ" trong trình duyệt, tự gửi lại khi có kết nối.
    ========================================================= */
-const APP_VER = 2, TOOL_VERSION = '2.6.1';
+const APP_VER = 2, TOOL_VERSION = '2.6.2';
 const HV_TT = { hoc: 'Đang học', baoluu: 'Bảo lưu', bohoc: 'Bỏ học', xong: 'Hoàn thành' };
 function blankDB() {
   return {
@@ -2228,7 +2228,7 @@ const ST_TIP = {
   prog: 'Các file chương trình của tool.' };
 const ST_ACT = { 'hang-ngay': 'prune', 'theo-thang': 'prune', excel: 'prune', truoc: 'prune', bancu: 'bancu', log: 'log' };
 async function stClean(what, opt, el) {
-  const T = { prune: ['Dọn bản sao lưu quá hạn?', 'Xóa bản sao lưu hằng ngày / Excel / trước khôi phục cũ hơn số <b>ngày làm việc</b> đã cài, và bản theo tháng quá số tháng đã cài. Luôn giữ các bản mới nhất.'],
+  const T = { prune: ['Dọn sao lưu?', 'Tool sẽ:<br>• Xóa bản sao lưu hằng ngày / Excel / trước khôi phục cũ hơn số <b>ngày làm việc</b> đã cài (luôn giữ 5 bản mới nhất).<br>• Ngày đã qua chỉ giữ 1 bản cuối ngày (bỏ bản đầu ngày).<br>• <b>Làm gọn</b> các bản sao lưu cũ còn kèm lịch sử phiên bản (khôi phục vẫn đầy đủ dữ liệu).<br>• Bản theo tháng giữ đúng số tháng đã cài.'],
     revs: ['Xóa phiên bản cũ?', `Xóa các phiên bản (Lịch sử phiên bản) cũ hơn <b>${opt?.days} ngày</b>. Sau đó không "Quay về" được các thời điểm đó nữa (bản sao lưu file vẫn còn). Luôn giữ 20 bản gần nhất.`],
     audit: ['Xóa nhật ký thay đổi cũ?', `Xóa các dòng Nhật ký thay đổi cũ hơn <b>${opt?.days} ngày</b>. Không ảnh hưởng dữ liệu.`],
     vacuum: ['Thu gọn file dữ liệu?', 'Sắp xếp lại file dữ liệu để trả lại phần trống cho ổ đĩa. Tool sao lưu trước. Mất vài giây, nên làm khi không ai đang nhập.'],
@@ -2279,7 +2279,7 @@ function stRender(el, S) {
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px">
       <div class="card stat" style="margin:0"><div class="k">Dữ liệu hiện tại</div><div class="v">${fmtB(dd.state)}</div><div class="d">${DB.khoa.length} khóa · ${DB.hv.length} học viên</div></div>
       <div class="card stat" style="margin:0"><div class="k">Lịch sử phiên bản</div><div class="v">${fmtB(dd.revs)}</div><div class="d">${dd.revsN} bản${dd.revsFrom ? ' · từ ' + fmtT(dd.revsFrom) : ''}<br>Tự xóa bản cũ hơn ${S.cfg.revDays} ngày khi quá ${S.cfg.revKeep} bản</div>
-        <div class="row" style="margin-top:8px;gap:6px"><span class="small">Xóa cũ hơn</span><input type="number" class="in" id="stRd" value="30" min="1" style="width:62px;padding:3px 6px"><span class="small">ngày</span><button class="btn sm" id="stRv">🧹</button></div></div>
+        <div class="row" style="margin-top:8px;gap:6px"><span class="small">Xóa cũ hơn</span><input type="number" class="in" id="stRd" value="30" min="1" title="Tối thiểu 1 ngày" style="width:62px;padding:3px 6px"><span class="small">ngày</span><button class="btn sm" id="stRv">🧹</button></div></div>
       <div class="card stat" style="margin:0"><div class="k">Nhật ký thay đổi</div><div class="v">${fmtB(dd.audit)}</div><div class="d">${dd.auditN.toLocaleString('vi-VN')} dòng${dd.auditFrom ? ' · từ ' + fmtT(dd.auditFrom) : ''}</div>
         <div class="row" style="margin-top:8px;gap:6px"><span class="small">Xóa cũ hơn</span><input type="number" class="in" id="stAd" value="365" min="30" style="width:66px;padding:3px 6px"><span class="small">ngày</span><button class="btn sm" id="stAu">🧹</button></div></div>
       <div class="card stat" style="margin:0"><div class="k">Chỗ trống thu gọn được</div><div class="v">${fmtB(dd.free)}</div><div class="d">Phần trống bên trong file sau khi xóa bớt</div>
@@ -2290,7 +2290,7 @@ function stRender(el, S) {
   $('#stRe', box).onclick = () => vStorage(el);
   $$('[data-stc]', box).forEach(b => b.onclick = () => stClean(b.dataset.stc, null, el));
   $$('[data-sto]', box).forEach(b => b.onclick = async () => { try { await api('/api/open', { body: { path: b.dataset.sto } }); } catch (e) { toast(e.message, 'err'); } });
-  $('#stRv', box).onclick = () => stClean('revs', { days: +$('#stRd', box).value || 30 }, el);
+  $('#stRv', box).onclick = () => { const v = $('#stRd', box).value.trim(); stClean('revs', { days: v === '' ? 30 : Math.max(1, +v || 1) }, el); };
   $('#stAu', box).onclick = () => stClean('audit', { days: +$('#stAd', box).value || 365 }, el);
   $('#stVc', box).onclick = () => stClean('vacuum', null, el);
   $('#stAll', box).onclick = () => stClean('prune', null, el);

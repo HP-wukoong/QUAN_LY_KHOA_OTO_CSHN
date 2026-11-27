@@ -1,10 +1,10 @@
 {
-  "version": "2.6.1",
+  "version": "2.6.2",
   "date": "2026-11-27",
-  "notes": "Máy khác trong mạng: chế độ chỉ xem (xem, chọn, xuất file; không sửa/xóa)",
+  "notes": "Sửa dọn dẹp bộ nhớ: sao lưu làm gọn (không kèm lịch sử phiên bản), ngày cũ giữ 1 bản/ngày, tự làm gọn bản cũ, thu gọn sau khi xóa phiên bản/nhật ký, báo rõ khi không có gì để dọn",
   "files": {
-    "app.html": "006ae15f90bef71205b7738f45fdeb7dfd79a3b27111b2f1f3c31fb1906da45b",
-    "server.py": "d95ec2ac75ee2f8478769478b501e341a79cd3290975a999474a43eb8dba4c08",
+    "app.html": "8f1134ed673f5d63c270e625aa6fba904a5be03dc6429fb76ce233b9662dc4f2",
+    "server.py": "c5b5f3668af0ee48e9e328ab2c6a581a3ba207a44b368eaf3a1b6738bc37f139",
     "CHAY_TOOL.bat": "05fc61d39f6131be2c53a198b982b3681be3376343d39e7ce57e7748cb777d1f",
     "TAO_LOI_TAT_DESKTOP.bat": "da3b0d696d9dbf73fce5aba98b3596184a6c89f85df9e6c418a120337fa19f75",
     "DOC_TRUOC_HUONG_DAN.txt": "089ca97e9af383a9f4564cd2ddfd757c6ffd865ae501e9fba9c81a27f7854d2d"
